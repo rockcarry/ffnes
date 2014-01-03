@@ -1,6 +1,8 @@
 // 包含头文件
+#include "nes.h"
 #include "ppu.h"
 
+// 内部全局变量定义
 static BYTE DEF_PPU_PAL[64 * 3] =
 {
     0x75, 0x75, 0x75,
@@ -70,11 +72,35 @@ static BYTE DEF_PPU_PAL[64 * 3] =
 };
 
 // 函数实现
-void ppu_init(PPU *ppu)
+void ppu_reset(PPU *ppu)
 {
     ppu->bmp_pal = DEF_PPU_PAL;
 }
 
-void ppu_close(PPU *ppu)
+void ppu_render(PPU *ppu)
 {
 }
+
+void DEF_PPU_REG_RBC(MEM *pm, int addr)
+{
+    NES *nes = container_of(pm, NES, ppuregs);
+    switch (addr)
+    {
+    case 0x0004:
+        nes->ppu.sprram[nes->buf_ppuregs[0x0003]] = nes->buf_ppuregs[0x0004];
+        break;
+    }
+}
+
+void DEF_PPU_REG_WBC(MEM *pm, int addr)
+{
+    NES *nes = container_of(pm, NES, ppuregs);
+    switch (addr)
+    {
+    case 0x0004:
+        nes->buf_ppuregs[0x0004] = nes->ppu.sprram[nes->buf_ppuregs[0x0003]];
+        break;
+    }
+}
+
+

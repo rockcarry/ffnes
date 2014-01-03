@@ -20,6 +20,9 @@ typedef long     int   LONG;
 
 #endif
 
+#define offsetof(type, member)          ((size_t)&((type*)0)->member)
+#define container_of(ptr, type, member) (type*)((char*)(ptr) - offsetof(type, member))
+
 /* 该宏用于消除变量未使用的警告 */
 #define DO_USE_VAR(var)  do { var = var; } while (0)
 

@@ -3,6 +3,7 @@
 
 // 包含头文件
 #include "stdefine.h"
+#include "mem.h"
 
 // 类型定义
 typedef struct {
@@ -15,8 +16,10 @@ typedef struct {
     BYTE *bmp_pal;
 } PPU;
 
-void ppu_init (PPU *ppu);
-void ppu_close(PPU *ppu);
+void ppu_reset (PPU *ppu);
+void ppu_render(PPU *ppu);
+void DEF_PPU_REG_RBC(MEM *pm, int addr);
+void DEF_PPU_REG_WBC(MEM *pm, int addr);
 
 #endif
 

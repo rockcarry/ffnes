@@ -11,10 +11,12 @@ enum {
     MEM_REG,
 };
 
-typedef struct {
+typedef struct tagMEM {
     int   type;
     int   size;
     BYTE *data;
+    void (*r_callback)(struct tagMEM *pm, int addr);
+    void (*w_callback)(struct tagMEM *pm, int addr);
 } MEM;
 
 // º¯ÊıÉùÃ÷

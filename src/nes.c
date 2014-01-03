@@ -4,8 +4,11 @@
 #include "nes.h"
 
 // º¯ÊýÉùÃ÷
-void nes_init(NES *nes)
+void nes_reset(NES *nes)
 {
+    // clear it
+    memset(nes, 0, sizeof(NES));
+
     //++ cbus mem map ++//
     // create cpu ram
     nes->cram.type = MEM_RAM;
@@ -16,6 +19,8 @@ void nes_init(NES *nes)
     nes->ppuregs.type = MEM_REG;
     nes->ppuregs.size = NES_PPUREGS_SIZE;
     nes->ppuregs.data = nes->buf_ppuregs;
+    nes->ppuregs.r_callback = DEF_PPU_REG_RBC;
+    nes->ppuregs.w_callback = DEF_PPU_REG_WBC;
 
     // create ppu regs
     nes->apuregs.type = MEM_REG;
@@ -107,10 +112,6 @@ void nes_init(NES *nes)
     // 0x3F00, 0x3F04, 0x3F08, 0x3F0C, 0x3F10, 0x3F14, 0x3F18, 0x3F1C mirring and store the background color
     bus_setmem(nes->pbus, 9, 0x3F00, 0x3F1F, &(nes->palette));
     //-- pbus mem map --//
-}
-
-void nes_close(NES *nes)
-{
 }
 
 #else
