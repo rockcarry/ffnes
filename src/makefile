@@ -10,6 +10,7 @@ OBJS = \
     mem.o \
     bus.o \
     nes.o \
+    ppu.o \
 
 # 所有的可执行目标
 EXES = \

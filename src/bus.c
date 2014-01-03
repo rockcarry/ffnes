@@ -2,37 +2,58 @@
 #include "bus.h"
 
 // º¯ÊıÊµÏÖ
-static int find_mem_bank(BUS bus, int addr)
+static MEM* find_mem_bank(BUS bus, int baddr, int *maddr)
 {
     int i;
-    for (i=0; i<NES_MAX_BUS_SIZE; i++) {
-        if (!bus[i].mem || (addr >= bus[i].start && addr <= bus[i].end))
+    for (i=0; i<NES_MAX_BUS_SIZE && bus[i].membank; i++) {
+        if (baddr >= bus[i].start && baddr <= bus[i].end)
         {
-            return i;
+            if (bus[i].type == BUS_MAP_MIRROR) {
+                baddr &= bus[i].mirmask;
+                continue;
+            }
+
+            if (bus[i].type == BUS_MAP_MEMORY) {
+                *maddr = baddr - bus[i].start;
+                return bus[i].membank;
+            }
         }
     }
-    return -1;
+    return NULL;
 }
 
-void bus_read(BUS bus, int addr, BYTE *data)
+void bus_read(BUS bus, int baddr, BYTE *data)
 {
-    int bank = find_mem_bank(bus, addr);
-    if (bank > 0) {
-        mem_read(bus[bank].mem, addr - bus[bank].start, data);
+    int  maddr = 0;
+    MEM *mbank = find_mem_bank(bus, baddr, &maddr);
+    if (mbank) {
+        mem_read(mbank, maddr, data);
     }
 }
 
-void bus_write(BUS bus, int addr, BYTE data)
+void bus_write(BUS bus, int baddr, BYTE data)
 {
-    int bank = find_mem_bank(bus, addr);
-    if (bank > 0) {
-        mem_write(bus[bank].mem, addr - bus[bank].start, data);
+    int  maddr = 0;
+    MEM *mbank = find_mem_bank(bus, baddr, &maddr);
+    if (mbank) {
+        mem_write(mbank, maddr, data);
     }
 }
 
-void bus_setmap(BUS bus, int i, int start, int end, MEM *mem)
+void bus_setmem(BUS bus, int i, int start, int end, MEM *membank)
 {
-    bus[i].start = start;
-    bus[i].end   = end;
-    bus[i].mem   = mem;
+    bus[i].type    = BUS_MAP_MEMORY;
+    bus[i].start   = start;
+    bus[i].end     = end;
+    bus[i].membank = membank;
 }
+
+void bus_setmir(BUS bus, int i, int start, int end, WORD mirmask)
+{
+    bus[i].type    = BUS_MAP_MIRROR;
+    bus[i].start   = start;
+    bus[i].end     = end;
+    bus[i].mirmask = mirmask;
+}
+
+

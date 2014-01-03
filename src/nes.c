@@ -1,118 +1,116 @@
 #ifndef _TEST_
 
 // 包含头文件
-#include <stdlib.h>
 #include "nes.h"
 
 // 函数声明
-BOOL nes_create(NES *nes)
+void nes_init(NES *nes)
 {
     //++ cbus mem map ++//
     // create cpu ram
     nes->cram.type = MEM_RAM;
-    nes->cram.size = 0x0800;
-    mem_create(&(nes->cram));
+    nes->cram.size = NES_CRAM_SIZE;
+    nes->cram.data = nes->buf_cram;
 
     // create ppu regs
     nes->ppuregs.type = MEM_REG;
-    nes->ppuregs.size = 0x0008;
-    mem_create(&(nes->ppuregs));
+    nes->ppuregs.size = NES_PPUREGS_SIZE;
+    nes->ppuregs.data = nes->buf_ppuregs;
 
     // create ppu regs
     nes->apuregs.type = MEM_REG;
-    nes->apuregs.size = 0x0018;
-    mem_create(&(nes->apuregs));
+    nes->apuregs.size = NES_APUREGS_SIZE;
+    nes->apuregs.data = nes->buf_apuregs;
 
     // create expansion rom
     nes->erom.type = MEM_ROM;
-    nes->erom.size = 0x1FE8;
-    mem_create(&(nes->erom));
+    nes->erom.size = NES_EROM_SIZE;
+    nes->erom.data = nes->buf_erom;
 
     // create sram
     nes->sram.type = MEM_RAM;
-    nes->sram.size = 0x2000;
-    mem_create(&(nes->sram));
+    nes->sram.size = NES_SRAM_SIZE;
+    nes->sram.data = nes->buf_sram;
 
     // create PRG-ROM 0
     nes->prgrom0.type = MEM_ROM;
-    nes->prgrom0.size = 0x4000;
-    mem_create(&(nes->prgrom0));
+    nes->prgrom0.size = NES_PRGROM0_SIZE;
+    nes->prgrom0.data = nes->buf_prgrom0;
 
     // create PRG-ROM 1
     nes->prgrom1.type = MEM_ROM;
-    nes->prgrom1.size = 0x4000;
-    mem_create(&(nes->prgrom1));
+    nes->prgrom1.size = NES_PRGROM1_SIZE;
+    nes->prgrom1.data = nes->buf_prgrom1;
 
     // init nes cbus
-    bus_setmap(nes->cbus, 0, 0x0000, 0x1FFF, &(nes->cram   ));
-    bus_setmap(nes->cbus, 1, 0x2000, 0x3FFF, &(nes->ppuregs));
-    bus_setmap(nes->cbus, 2, 0x4000, 0x4017, &(nes->apuregs));
-    bus_setmap(nes->cbus, 3, 0x4018, 0x5FFF, &(nes->erom   ));
-    bus_setmap(nes->cbus, 4, 0x6000, 0x7FFF, &(nes->sram   ));
-    bus_setmap(nes->cbus, 5, 0x8000, 0xBFFF, &(nes->prgrom0));
-    bus_setmap(nes->cbus, 6, 0xC000, 0xFFFF, &(nes->prgrom1));
-    bus_setmap(nes->cbus, 7, 0x0000, 0x0000, NULL           );
+    bus_setmem(nes->cbus, 0, 0x0000, 0x1FFF, &(nes->cram   ));
+    bus_setmem(nes->cbus, 1, 0x2000, 0x3FFF, &(nes->ppuregs));
+    bus_setmem(nes->cbus, 2, 0x4000, 0x4017, &(nes->apuregs));
+    bus_setmem(nes->cbus, 3, 0x4018, 0x5FFF, &(nes->erom   ));
+    bus_setmem(nes->cbus, 4, 0x6000, 0x7FFF, &(nes->sram   ));
+    bus_setmem(nes->cbus, 5, 0x8000, 0xBFFF, &(nes->prgrom0));
+    bus_setmem(nes->cbus, 6, 0xC000, 0xFFFF, &(nes->prgrom1));
+    bus_setmem(nes->cbus, 7, 0x0000, 0x0000, NULL           );
     //-- cbus mem map --//
 
     //++ pbus mem map ++//
     // create pattern table #0
     nes->pattab0.type = MEM_ROM;
-    nes->pattab0.size = 0x1000;
-    mem_create(&(nes->pattab0));
+    nes->pattab0.size = NES_PATTAB0_SIZE;
+    nes->pattab0.data = nes->buf_pattab0;
 
     // create pattern table #1
     nes->pattab1.type = MEM_ROM;
-    nes->pattab1.size = 0x1000;
-    mem_create(&(nes->pattab1));
+    nes->pattab1.size = NES_PATTAB1_SIZE;
+    nes->pattab1.data = nes->buf_pattab1;
 
     // create vram0
     nes->vram0.type = MEM_RAM;
-    nes->vram0.size = 0x0400;
-    mem_create(&(nes->vram0));
+    nes->vram0.size = NES_VRAM0_SIZE;
+    nes->vram0.data = nes->buf_vram0;
 
     // create vram1
     nes->vram1.type = MEM_RAM;
-    nes->vram1.size = 0x0400;
-    mem_create(&(nes->vram1));
+    nes->vram1.size = NES_VRAM1_SIZE;
+    nes->vram1.data = nes->buf_vram1;
 
     // create vram2
     nes->vram2.type = MEM_RAM;
-    nes->vram2.size = 0x0400;
-    mem_create(&(nes->vram2));
+    nes->vram2.size = NES_VRAM2_SIZE;
+    nes->vram2.data = nes->buf_vram2;
 
     // create vram3
     nes->vram3.type = MEM_RAM;
-    nes->vram3.size = 0x0400;
-    mem_create(&(nes->vram3));
+    nes->vram3.size = NES_VRAM2_SIZE;
+    nes->vram3.data = nes->buf_vram3;
+
+    // create color palette
+    nes->palette.type = MEM_RAM;
+    nes->palette.size = NES_PALETTE_SIZE;
+    nes->palette.data = nes->buf_palette;
 
     // init nes cbus
-    bus_setmap(nes->pbus, 0, 0x0000, 0x0FFF, &(nes->pattab0));
-    bus_setmap(nes->pbus, 1, 0x1000, 0x1FFF, &(nes->pattab1));
-    bus_setmap(nes->pbus, 2, 0x2000, 0x23FF, &(nes->vram0  ));
-    bus_setmap(nes->pbus, 3, 0x2400, 0x27FF, &(nes->vram1  ));
-    bus_setmap(nes->pbus, 4, 0x2800, 0x2BFF, &(nes->vram2  ));
-    bus_setmap(nes->pbus, 5, 0x2C00, 0x2FFF, &(nes->vram3  ));
-    //-- pbus mem map --//
+    bus_setmir(nes->pbus, 0, 0x4000, 0xFFFF, 0x3FFF);
+    bus_setmir(nes->pbus, 1, 0x3000, 0x3EFF, 0x2EFF);
+    bus_setmir(nes->pbus, 2, 0x3F00, 0x3FFF, 0x3F1F);
 
-    return FALSE;
+    bus_setmem(nes->pbus, 3, 0x0000, 0x0FFF, &(nes->pattab0));
+    bus_setmem(nes->pbus, 4, 0x1000, 0x1FFF, &(nes->pattab1));
+    bus_setmem(nes->pbus, 5, 0x2000, 0x23FF, &(nes->vram0  ));
+    bus_setmem(nes->pbus, 6, 0x2400, 0x27FF, &(nes->vram1  ));
+    bus_setmem(nes->pbus, 7, 0x2800, 0x2BFF, &(nes->vram2  ));
+    bus_setmem(nes->pbus, 8, 0x2C00, 0x2FFF, &(nes->vram3  ));
+
+    // palette
+    // 0x3F00 - 0x3F0F: image palette
+    // 0x3F10 - 0x3F1F: sprite palette
+    // 0x3F00, 0x3F04, 0x3F08, 0x3F0C, 0x3F10, 0x3F14, 0x3F18, 0x3F1C mirring and store the background color
+    bus_setmem(nes->pbus, 9, 0x3F00, 0x3F1F, &(nes->palette));
+    //-- pbus mem map --//
 }
 
-void nes_destroy(NES *nes)
+void nes_close(NES *nes)
 {
-    mem_destroy(&(nes->cram   ));
-    mem_destroy(&(nes->ppuregs));
-    mem_destroy(&(nes->apuregs));
-    mem_destroy(&(nes->erom   ));
-    mem_destroy(&(nes->sram   ));
-    mem_destroy(&(nes->prgrom0));
-    mem_destroy(&(nes->prgrom1));
-
-    mem_destroy(&(nes->pattab0));
-    mem_destroy(&(nes->pattab1));
-    mem_destroy(&(nes->vram0  ));
-    mem_destroy(&(nes->vram1  ));
-    mem_destroy(&(nes->vram2  ));
-    mem_destroy(&(nes->vram3  ));
 }
 
 #else
