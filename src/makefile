@@ -11,6 +11,7 @@ OBJS = \
     bus.o \
     nes.o \
     ppu.o \
+    cartridge.o \
 
 # 所有的可执行目标
 EXES = \

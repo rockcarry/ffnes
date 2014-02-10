@@ -8,6 +8,7 @@
 #include "apu.h"
 #include "bus.h"
 #include "mem.h"
+#include "cartridge.h"
 
 #define NES_CRAM_SIZE     0x0800
 #define NES_PPUREGS_SIZE  0x0008
@@ -30,6 +31,7 @@ typedef struct {
     CPU cpu;  // 6502
     PPU ppu;  // 2c02
     APU apu;  // 2a03
+    CARTRIDGE cart;
 
     BUS cbus;    // cpu bus
     MEM cram;    // cpu ram
@@ -52,13 +54,13 @@ typedef struct {
     BYTE buf_cram   [NES_CRAM_SIZE   ];
     BYTE buf_ppuregs[NES_PPUREGS_SIZE];
     BYTE buf_apuregs[NES_APUREGS_SIZE];
-    BYTE buf_sram   [NES_EROM_SIZE   ];
+//  BYTE buf_sram   [NES_EROM_SIZE   ]; // in cartridge
     BYTE buf_erom   [NES_SRAM_SIZE   ];
-    BYTE buf_prgrom0[NES_PRGROM0_SIZE];
-    BYTE buf_prgrom1[NES_PRGROM1_SIZE];
+//  BYTE buf_prgrom0[NES_PRGROM0_SIZE]; // in cartridge
+//  BYTE buf_prgrom1[NES_PRGROM1_SIZE]; // in cartridge
 
-    BYTE buf_pattab0[NES_PATTAB0_SIZE];
-    BYTE buf_pattab1[NES_PATTAB1_SIZE];
+//  BYTE buf_pattab0[NES_PATTAB0_SIZE]; // in cartridge
+//  BYTE buf_pattab1[NES_PATTAB1_SIZE]; // in cartridge
     BYTE buf_vram0  [NES_VRAM0_SIZE  ];
     BYTE buf_vram1  [NES_VRAM1_SIZE  ];
     BYTE buf_vram2  [NES_VRAM2_SIZE  ];
@@ -67,7 +69,8 @@ typedef struct {
 } NES;
 
 // º¯ÊýÉùÃ÷
-void nes_reset(NES *nes);
+BOOL nes_init(NES *nes, char *file);
+void nes_free(NES *nes);
 
 #endif
 
