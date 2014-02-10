@@ -51,21 +51,21 @@ typedef struct {
     MEM vram3;   // vram3 1KB, in cart
     MEM palette; // color palette in ppu
 
-    BYTE buf_cram   [NES_CRAM_SIZE   ];
-    BYTE buf_ppuregs[NES_PPUREGS_SIZE];
-    BYTE buf_apuregs[NES_APUREGS_SIZE];
-//  BYTE buf_sram   [NES_EROM_SIZE   ]; // in cartridge
-    BYTE buf_erom   [NES_SRAM_SIZE   ];
-//  BYTE buf_prgrom0[NES_PRGROM0_SIZE]; // in cartridge
-//  BYTE buf_prgrom1[NES_PRGROM1_SIZE]; // in cartridge
+    BYTE  buf_cram   [NES_CRAM_SIZE   ];
+    BYTE  buf_ppuregs[NES_PPUREGS_SIZE];
+    BYTE  buf_apuregs[NES_APUREGS_SIZE];
+    BYTE *buf_sram;     // in cartridge
+    BYTE  buf_erom   [NES_SRAM_SIZE   ];
+    BYTE *buf_prgrom0;  // in cartridge
+    BYTE *buf_prgrom1;  // in cartridge
 
-//  BYTE buf_pattab0[NES_PATTAB0_SIZE]; // in cartridge
-//  BYTE buf_pattab1[NES_PATTAB1_SIZE]; // in cartridge
-    BYTE buf_vram0  [NES_VRAM0_SIZE  ];
-    BYTE buf_vram1  [NES_VRAM1_SIZE  ];
-    BYTE buf_vram2  [NES_VRAM2_SIZE  ];
-    BYTE buf_vram3  [NES_VRAM3_SIZE  ];
-    BYTE buf_palette[NES_PALETTE_SIZE];
+    BYTE *buf_pattab0;  // in cartridge
+    BYTE *buf_pattab1;  // in cartridge
+    BYTE  buf_vram0  [NES_VRAM0_SIZE  ];
+    BYTE  buf_vram1  [NES_VRAM1_SIZE  ];
+    BYTE  buf_vram2  [NES_VRAM2_SIZE  ];
+    BYTE  buf_vram3  [NES_VRAM3_SIZE  ];
+    BYTE  buf_palette[NES_PALETTE_SIZE];
 } NES;
 
 // º¯ÊýÉùÃ÷

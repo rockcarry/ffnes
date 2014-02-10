@@ -12,7 +12,10 @@ typedef struct {
     BYTE xi;
     BYTE yi;
     BYTE ps;
+    long cycles;
 } CPU;
+
+void cpu_reset(CPU *cpu);
 
 #endif
 

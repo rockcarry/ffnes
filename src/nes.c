@@ -10,9 +10,31 @@ BOOL nes_init(NES *nes, char *file)
     memset(nes, 0, sizeof(NES));
 
     // load cartridge first
-    if (!cartridge_load(&(nes->cart), file)) {
-        return FALSE;
+    if (cartridge_load(&(nes->cart), file)) {
+        // sram
+        nes->buf_sram = nes->cart.buf_sram;
+
+        // prom
+        if (nes->cart.prom_count <= 1) {
+            nes->buf_prgrom0 = nes->cart.buf_prom;
+            nes->buf_prgrom1 = nes->cart.buf_prom;
+        }
+        else {
+            nes->buf_prgrom0 = nes->cart.buf_prom;
+            nes->buf_prgrom1 = nes->cart.buf_prom + NES_PRGROM0_SIZE;
+        }
+
+        // crom
+        if (nes->cart.crom_count <= 1) {
+            nes->buf_pattab0 = nes->cart.buf_crom;
+            nes->buf_pattab1 = nes->cart.buf_crom;
+        }
+        else {
+            nes->buf_pattab0 = nes->cart.buf_crom;
+            nes->buf_pattab1 = nes->cart.buf_crom + NES_PRGROM0_SIZE;
+        }
     }
+    else return FALSE;
 
     //++ cbus mem map ++//
     // create cpu ram
@@ -40,20 +62,17 @@ BOOL nes_init(NES *nes, char *file)
     // create sram
     nes->sram.type = MEM_RAM;
     nes->sram.size = NES_SRAM_SIZE;
-    nes->sram.data = nes->cart.buf_sram;
+    nes->sram.data = nes->buf_sram;
 
     // create PRG-ROM 0
     nes->prgrom0.type = MEM_ROM;
     nes->prgrom0.size = NES_PRGROM0_SIZE;
-    nes->prgrom0.data = nes->cart.buf_prom;
+    nes->prgrom0.data = nes->buf_prgrom0;
 
     // create PRG-ROM 1
     nes->prgrom1.type = MEM_ROM;
     nes->prgrom1.size = NES_PRGROM1_SIZE;
-    if (nes->cart.prom_count <= 1) {
-        nes->prgrom1.data = nes->cart.buf_prom;
-    }
-    else nes->prgrom1.data = nes->cart.buf_prom + NES_PRGROM0_SIZE;
+    nes->prgrom1.data = nes->buf_prgrom1;
 
     // init nes cbus
     bus_setmem(nes->cbus, 0, 0x0000, 0x1FFF, &(nes->cram   ));
@@ -70,15 +89,12 @@ BOOL nes_init(NES *nes, char *file)
     // create pattern table #0
     nes->pattab0.type = MEM_ROM;
     nes->pattab0.size = NES_PATTAB0_SIZE;
-    nes->pattab0.data = nes->cart.buf_crom;
+    nes->pattab0.data = nes->buf_pattab0;
 
     // create pattern table #1
     nes->pattab1.type = MEM_ROM;
     nes->pattab1.size = NES_PATTAB1_SIZE;
-    if (nes->cart.crom_count <= 1) {
-        nes->pattab1.data = nes->cart.buf_crom;
-    }
-    else nes->pattab1.data = nes->cart.buf_crom + NES_PATTAB0_SIZE;
+    nes->pattab1.data = nes->buf_pattab1;
 
     // create vram0
     nes->vram0.type = MEM_RAM;
@@ -123,6 +139,8 @@ BOOL nes_init(NES *nes, char *file)
     // 0x3F00, 0x3F04, 0x3F08, 0x3F0C, 0x3F10, 0x3F14, 0x3F18, 0x3F1C mirring and store the background color
     bus_setmem(nes->pbus, 9, 0x3F00, 0x3F1F, &(nes->palette));
     //-- pbus mem map --//
+
+    return TRUE;
 }
 
 void nes_free(NES *nes)
