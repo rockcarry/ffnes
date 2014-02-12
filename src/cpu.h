@@ -17,7 +17,8 @@ typedef struct {
     long cycles_real;
 
 // private:
-    BUS  cbus;
+    BUS   cbus; // cpu bus
+    BYTE *cram; // cpu ram
 } CPU;
 
 // º¯ÊýÉùÃ÷

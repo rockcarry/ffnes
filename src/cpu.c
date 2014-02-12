@@ -63,39 +63,64 @@ flags.
 
 
 // 常量定义
-#define CPU_NMI_VECTOR  0xfffa
-#define CPU_RST_VECTOR  0xfffc
-#define CPU_IRQ_VECTOR  0xfffe
+#define NMI_VECTOR  0xfffa
+#define RST_VECTOR  0xfffc
+#define IRQ_VECTOR  0xfffe
 
-#define CPU_C_FLAG  (1 << 0)
-#define CPU_Z_FLAG  (1 << 1)
-#define CPU_I_FLAG  (1 << 2)
-#define CPU_D_FLAG  (1 << 3)
-#define CPU_B_FLAG  (1 << 4)
-#define CPU_R_FLAG  (1 << 5)
-#define CPU_O_FLAG  (1 << 6)
-#define CPU_N_FLAG  (1 << 7)
+#define C_FLAG  (1 << 0)
+#define Z_FLAG  (1 << 1)
+#define I_FLAG  (1 << 2)
+#define D_FLAG  (1 << 3)
+#define B_FLAG  (1 << 4)
+#define R_FLAG  (1 << 5)
+#define O_FLAG  (1 << 6)
+#define N_FLAG  (1 << 7)
+
+#define RAM         (cpu->cram)
+#define PC          (cpu->pc)
+#define SP          (cpu->sp)
+#define PS          (cpu->ps)
+#define PUSH(v)     do { RAM[(SP--) + 0x100] = (v); } while (0)
+#define POP()       RAM[++SP + 0x100]
+#define SET_FLAG(v) do { PS |=  (v); } while (0)
+#define CLR_FLAG(v) do { PS &= ~(v); } while (0)
+#define READB(byte, addr) do { bus_readb(cpu->cbus, addr, byte); } while (0)
+#define READW(word, addr) do { bus_readw(cpu->cbus, addr, word); } while (0)
+
+#define BRK() do { \
+                  PC++;                   \
+                  PUSH((PC >> 8) & 0xff); \
+                  PUSH((PC >> 0) & 0xff); \
+                  SET_FLAG(B_FLAG);       \
+                  PUSH(PS);               \
+                  SET_FLAG(I_FLAG);       \
+                  READW(&PC, IRQ_VECTOR); \
+              } while (0)
+
+#define JSR() do { \
+              } while (0)
 
 // 函数实现
 void cpu_init(CPU *cpu)
 {
     NES *nes  = container_of(cpu, NES, cpu);
     cpu->cbus = nes->cbus;
+    cpu->cram = nes->buf_cram;
 
-    bus_readw(cpu->cbus, CPU_RST_VECTOR, &(cpu->pc));
+    bus_readw(cpu->cbus, RST_VECTOR, &(cpu->pc));
     cpu->sp = 0xff;
     cpu->ax = 0x00;
     cpu->xi = 0x00;
     cpu->yi = 0x00;
-    cpu->ps = CPU_I_FLAG | CPU_R_FLAG;
+    cpu->ps = I_FLAG | R_FLAG;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
 }
 
 void cpu_reset(CPU *cpu)
 {
-    bus_readw(cpu->cbus, CPU_RST_VECTOR, &(cpu->pc));
-    cpu->ps |= CPU_I_FLAG;
+    bus_readw(cpu->cbus, RST_VECTOR, &(cpu->pc));
+    cpu->ps |= I_FLAG;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
 }
@@ -169,8 +194,7 @@ void cpu_run(CPU *cpu, int ncycle)
         {
             switch (opcode)
             {
-            case 0x00: // BRK
-                break;
+            case 0x00: BRK(); break;
             case 0x20: // JSR
                 break;
             case 0x40: // RTI
