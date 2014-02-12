@@ -13,7 +13,8 @@ typedef struct {
     BYTE xi;
     BYTE yi;
     BYTE ps;
-    long cycles;
+    long cycles_emu;
+    long cycles_real;
 
 // private:
     BUS  cbus;
