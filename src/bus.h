@@ -25,8 +25,8 @@ typedef struct {
 } *BUS;
 
 // º¯ÊýÉùÃ÷
-void bus_readb (BUS bus, int baddr, BYTE *byte);
-void bus_readw (BUS bus, int baddr, WORD *word);
+BYTE bus_readb (BUS bus, int baddr);
+WORD bus_readw (BUS bus, int baddr);
 void bus_writeb(BUS bus, int baddr, BYTE  byte);
 void bus_writew(BUS bus, int baddr, WORD  word);
 void bus_setmem(BUS bus, int i, int start, int end, MEM *membank);

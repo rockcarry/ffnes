@@ -94,8 +94,8 @@ flags.
 #define TST_FLAG(c, v)    do { PS &= ~(v); if (c) PS |= (v); } while (0)
 #define CHK_FLAG(v)       (PS & (v))
 
-#define READB(byte, addr) do { bus_readb(cpu->cbus, addr, byte); } while (0)
-#define READW(word, addr) do { bus_readw(cpu->cbus, addr, word); } while (0)
+#define READB(addr)       (bus_readb(cpu->cbus, addr))
+#define READW(addr)       (bus_readw(cpu->cbus, addr))
 
 #define ZPRDB(addr)       (RAM[(BYTE)(addr)])
 #define ZPRDW(addr)       (*(WORD*)(RAM + (addr)))
@@ -106,62 +106,62 @@ flags.
 //++ addressing mode ++//
 #define MR_IM() \
 do {                    \
-    READB(&DT, PC++);   \
+    DT = READB(PC++);   \
 } while (0)
 
 #define MR_ZP() \
 do {                    \
-    READB(&EA, PC++);   \
+    EA = READB(PC++);   \
     DT = ZPRDB(EA);     \
 } while (0)
 
 #define MR_ZX() \
 do {                        \
-    READB(&EA, PC++);       \
+    EA = READB(PC++);       \
     EA = (BYTE)(DT + XI);   \
     DT = ZPRDB(EA);         \
 } while (0)
 
 #define MR_ZY() \
 do {                        \
-    READB(&EA, PC++);       \
+    EA = READB(PC++);       \
     EA = (BYTE)(DT + YI);   \
     DT = ZPRDB(EA);         \
 } while (0)
 
 #define MR_AB() \
 do {                        \
-    READW(&EA, PC);         \
+    EA = READW(PC);         \
     PC += 2;                \
-    READB(&DT, EA);         \
+    DT = READB(EA);         \
 } while (0)
 
 #define MR_AX() \
 do {                        \
-    READW(&EA, PC);         \
+    EA = READW(PC);         \
     PC += 2;                \
-    READB(&DT, EA + XI);    \
+    DT = READB(EA + XI);    \
 } while (0)
 
 #define MR_AY() \
 do {                        \
-    READW(&EA, PC);         \
+    EA = READW(PC);         \
     PC += 2;                \
-    READB(&DT, EA + YI);    \
+    DT = READB(EA + YI);    \
 } while (0)
 
 #define MR_IX() \
 do {                        \
-    READB(&DT, PC++);       \
+    DT = READB(PC++);       \
     EA = ZPRDW(DT + XI);    \
-    READB(&DT, EA);         \
+    DT = READB(EA);         \
 } while (0)
 
 #define MR_IY() \
 do {                        \
-    READB(&DT, PC++);       \
+    DT = READB(PC++);       \
     EA = ZPRDW(DT);         \
-    READB(&DT, EA + YI);    \
+    DT = READB(EA + YI);    \
 } while (0)
 //-- addressing mode --//
 
@@ -206,7 +206,7 @@ do {                        \
     SET_FLAG(B_FLAG);       \
     PUSH(PS);               \
     SET_FLAG(I_FLAG);       \
-    READW(&PC, IRQ_VECTOR); \
+    PC = READW(IRQ_VECTOR); \
 } while (0)
 
 #define JSR() do { \
@@ -221,7 +221,7 @@ void cpu_init(CPU *cpu)
     cpu->cbus = nes->cbus;
     cpu->cram = nes->buf_cram;
 
-    bus_readw(cpu->cbus, RST_VECTOR, &(cpu->pc));
+    cpu->pc = bus_readw(cpu->cbus, RST_VECTOR);
     cpu->sp = 0xff;
     cpu->ax = 0x00;
     cpu->xi = 0x00;
@@ -239,7 +239,7 @@ void cpu_init(CPU *cpu)
 
 void cpu_reset(CPU *cpu)
 {
-    bus_readw(cpu->cbus, RST_VECTOR, &(cpu->pc));
+    cpu->pc  = bus_readw(cpu->cbus, RST_VECTOR);
     cpu->ps |= I_FLAG;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
@@ -259,7 +259,7 @@ void cpu_run(CPU *cpu, int ncycle)
     while (ncycle > 0)
     {
         // fetch opcode
-        bus_readb(cpu->cbus, cpu->pc++, &opcode);
+        opcode = bus_readb(cpu->cbus, cpu->pc++);
 
         // addressing
         switch ((opcode >> 2) & 0x7)

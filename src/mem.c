@@ -2,20 +2,22 @@
 #include "mem.h"
 
 // º¯ÊýÊµÏÖ
-void mem_readb(MEM *pm, int addr, BYTE *byte)
+BYTE mem_readb(MEM *pm, int addr)
 {
     // memory read callback
     if (pm->r_callback) pm->r_callback(pm, addr);
 
-    if (pm->data) *byte = pm->data[addr % pm->size];
+    if (pm->data) return pm->data[addr % pm->size];
+    else return 0;
 }
 
-void mem_readw(MEM *pm, int addr, WORD *word)
+WORD mem_readw(MEM *pm, int addr)
 {
     // memory read callback
     if (pm->r_callback) pm->r_callback(pm, addr);
 
-    if (pm->data) *word = *(WORD*)(pm->data + addr % pm->size);
+    if (pm->data) return *(WORD*)(pm->data + addr % pm->size);
+    else return 0;
 }
 
 void mem_writeb(MEM *pm, int addr, BYTE byte)

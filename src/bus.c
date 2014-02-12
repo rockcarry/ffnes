@@ -22,22 +22,24 @@ static MEM* find_mem_bank(BUS bus, int baddr, int *maddr)
     return NULL;
 }
 
-void bus_readb(BUS bus, int baddr, BYTE *byte)
+BYTE bus_readb(BUS bus, int baddr)
 {
     int  maddr = 0;
     MEM *mbank = find_mem_bank(bus, baddr, &maddr);
     if (mbank) {
-        mem_readb(mbank, maddr, byte);
+        return mem_readb(mbank, maddr);
     }
+    else return 0;
 }
 
-void bus_readw(BUS bus, int baddr, WORD *word)
+WORD bus_readw(BUS bus, int baddr)
 {
     int  maddr = 0;
     MEM *mbank = find_mem_bank(bus, baddr, &maddr);
     if (mbank) {
-        mem_readw(mbank, maddr, word);
+        return mem_readw(mbank, maddr);
     }
+    else return 0;
 }
 
 void bus_writeb(BUS bus, int baddr, BYTE byte)
