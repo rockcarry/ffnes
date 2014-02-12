@@ -87,10 +87,13 @@ flags.
 #define PUSH(v)     do { RAM[(SP--) + 0x100] = (v); } while (0)
 #define POP()       (RAM[++SP + 0x100])
 
-#define ZN_TAB            (cpu->zntab)
 #define SET_FLAG(v)       do { PS |=  (v); } while (0)
 #define CLR_FLAG(v)       do { PS &= ~(v); } while (0)
-#define SET_ZN_FLAG(v)    do { PS &= ~(Z_FLAG | N_FLAG); PS |= ZN_TAB[v]; } while (0)
+#define SET_ZN_FLAG(v)    do { \
+                              PS &= ~(Z_FLAG | N_FLAG); \
+                              if (!v) PS |= Z_FLAG;     \
+                              PS |= v & (1 << 7);       \
+                          } while (0)
 #define TST_FLAG(c, v)    do { PS &= ~(v); if (c) PS |= (v); } while (0)
 #define CHK_FLAG(v)       (PS & (v))
 
@@ -215,8 +218,6 @@ do {                        \
 // º¯ÊýÊµÏÖ
 void cpu_init(CPU *cpu)
 {
-    int i;
-
     NES *nes  = container_of(cpu, NES, cpu);
     cpu->cbus = nes->cbus;
     cpu->cram = nes->buf_cram;
@@ -229,12 +230,6 @@ void cpu_init(CPU *cpu)
     cpu->ps = I_FLAG | R_FLAG;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
-    
-    // init zntab
-    cpu->zntab[0] = Z_FLAG;
-    for (i=1; i<256; i++) {
-        cpu->zntab[i] = (i & 0x80) ? N_FLAG : 0;
-    }
 }
 
 void cpu_reset(CPU *cpu)
