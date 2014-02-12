@@ -188,7 +188,7 @@ BOOL nes_init(NES *nes, char *file)
 
     cpu_init(&(nes->cpu));
     ppu_init(&(nes->ppu));
-    apu_init(&(nes->ppu));
+    apu_init(&(nes->apu));
 
     return TRUE;
 }
@@ -203,7 +203,7 @@ void nes_reset(NES *nes)
 {
     cpu_reset(&(nes->cpu));
     ppu_reset(&(nes->ppu));
-    apu_reset(&(nes->ppu));
+    apu_reset(&(nes->apu));
 }
 
 #else
