@@ -76,26 +76,138 @@ flags.
 #define O_FLAG  (1 << 6)
 #define N_FLAG  (1 << 7)
 
+//++ basic ++//
 #define RAM         (cpu->cram)
 #define PC          (cpu->pc)
 #define SP          (cpu->sp)
 #define PS          (cpu->ps)
+#define AX          (cpu->ax)
+#define XI          (cpu->xi)
+#define YI          (cpu->yi)
 #define PUSH(v)     do { RAM[(SP--) + 0x100] = (v); } while (0)
-#define POP()       RAM[++SP + 0x100]
-#define SET_FLAG(v) do { PS |=  (v); } while (0)
-#define CLR_FLAG(v) do { PS &= ~(v); } while (0)
+#define POP()       (RAM[++SP + 0x100])
+
+#define ZN_TAB            (cpu->zntab)
+#define SET_FLAG(v)       do { PS |=  (v); } while (0)
+#define CLR_FLAG(v)       do { PS &= ~(v); } while (0)
+#define SET_ZN_FLAG(v)    do { PS &= ~(Z_FLAG | N_FLAG); PS |= ZN_TAB[v]; } while (0)
+#define TST_FLAG(c, v)    do { PS &= ~(v); if (c) PS |= (v); } while (0)
+#define CHK_FLAG(v)       (PS & (v))
+
 #define READB(byte, addr) do { bus_readb(cpu->cbus, addr, byte); } while (0)
 #define READW(word, addr) do { bus_readw(cpu->cbus, addr, word); } while (0)
 
-#define BRK() do { \
-                  PC++;                   \
-                  PUSH((PC >> 8) & 0xff); \
-                  PUSH((PC >> 0) & 0xff); \
-                  SET_FLAG(B_FLAG);       \
-                  PUSH(PS);               \
-                  SET_FLAG(I_FLAG);       \
-                  READW(&PC, IRQ_VECTOR); \
-              } while (0)
+#define ZPRDB(addr)       (RAM[(BYTE)(addr)])
+#define ZPRDW(addr)       (*(WORD*)(RAM + (addr)))
+#define ZPWRB(addr, byte) do { RAM[(BYTE)(addr)] = byte; } while (0)
+#define ZPWRW(addr, word) do { *(WORD*)(RAM + (addr)) = word; } while (0)
+//-- basic --//
+
+//++ addressing mode ++//
+#define MR_IM() \
+do {                    \
+    READB(&DT, PC++);   \
+} while (0)
+
+#define MR_ZP() \
+do {                    \
+    READB(&EA, PC++);   \
+    DT = ZPRDB(EA);     \
+} while (0)
+
+#define MR_ZX() \
+do {                        \
+    READB(&EA, PC++);       \
+    EA = (BYTE)(DT + XI);   \
+    DT = ZPRDB(EA);         \
+} while (0)
+
+#define MR_ZY() \
+do {                        \
+    READB(&EA, PC++);       \
+    EA = (BYTE)(DT + YI);   \
+    DT = ZPRDB(EA);         \
+} while (0)
+
+#define MR_AB() \
+do {                        \
+    READW(&EA, PC);         \
+    PC += 2;                \
+    READB(&DT, EA);         \
+} while (0)
+
+#define MR_AX() \
+do {                        \
+    READW(&EA, PC);         \
+    PC += 2;                \
+    READB(&DT, EA + XI);    \
+} while (0)
+
+#define MR_AY() \
+do {                        \
+    READW(&EA, PC);         \
+    PC += 2;                \
+    READB(&DT, EA + YI);    \
+} while (0)
+
+#define MR_IX() \
+do {                        \
+    READB(&DT, PC++);       \
+    EA = ZPRDW(DT + XI);    \
+    READB(&DT, EA);         \
+} while (0)
+
+#define MR_IY() \
+do {                        \
+    READB(&DT, PC++);       \
+    EA = ZPRDW(DT);         \
+    READB(&DT, EA + YI);    \
+} while (0)
+//-- addressing mode --//
+
+//++ instruction ++//
+#define ORA() \
+do {                        \
+    AX |= DT;               \
+    SET_ZN_FLAG(AX);        \
+} while (0)
+
+#define AND() \
+do {                        \
+    AX &= DT;               \
+    SET_ZN_FLAG(AX);        \
+} while (0)
+
+#define EOR() \
+do {                        \
+    AX ^= DT;               \
+    SET_ZN_FLAG(AX);        \
+} while (0)
+
+#define ADC() \
+do {                        \
+    WT = AX + DT + (PS & C_FLAG); \
+    TST_FLAG(WT > 0xFF, C_FLAG);  \
+    TST_FLAG(~(AX^DT) & (AX^WT) & 0x80, O_FLAG ); \
+    AX = (BYTE)WT;          \
+    SET_ZN_FLAG(AX);        \
+} while (0)
+
+#define STA() \
+do {                        \
+} while (0)
+//-- instruction --//
+
+#define BRK() \
+do {                        \
+    PC++;                   \
+    PUSH((PC >> 8) & 0xff); \
+    PUSH((PC >> 0) & 0xff); \
+    SET_FLAG(B_FLAG);       \
+    PUSH(PS);               \
+    SET_FLAG(I_FLAG);       \
+    READW(&PC, IRQ_VECTOR); \
+} while (0)
 
 #define JSR() do { \
               } while (0)
@@ -103,6 +215,8 @@ flags.
 // º¯ÊýÊµÏÖ
 void cpu_init(CPU *cpu)
 {
+    int i;
+
     NES *nes  = container_of(cpu, NES, cpu);
     cpu->cbus = nes->cbus;
     cpu->cram = nes->buf_cram;
@@ -115,6 +229,12 @@ void cpu_init(CPU *cpu)
     cpu->ps = I_FLAG | R_FLAG;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
+    
+    // init zntab
+    cpu->zntab[0] = Z_FLAG;
+    for (i=1; i<256; i++) {
+        cpu->zntab[i] = (i & 0x80) ? N_FLAG : 0;
+    }
 }
 
 void cpu_reset(CPU *cpu)
@@ -128,6 +248,9 @@ void cpu_reset(CPU *cpu)
 void cpu_run(CPU *cpu, int ncycle)
 {
     BYTE opcode = 0;
+    BYTE DT     = 0;
+    WORD EA     = 0;
+    WORD WT     = 0;
 
     cpu->cycles_emu  += ncycle;
     ncycle = cpu->cycles_emu - cpu->cycles_real;
@@ -141,30 +264,14 @@ void cpu_run(CPU *cpu, int ncycle)
         // addressing
         switch ((opcode >> 2) & 0x7)
         {
-        case 0:
-            // (indir,x)
-            break;
-        case 1:
-            // zeropage
-            break;
-        case 2:
-            // immediate
-            break;
-        case 3:
-            // absolute
-            break;
-        case 4:
-            // (indir),y
-            break;
-        case 5:
-            // zeropage,x
-            break;
-        case 6:
-            // absolute,y
-            break;
-        case 7:
-            // absolute,x
-            break;
+        case 0: MR_IX(); break; // (indir,x)
+        case 1: MR_ZP(); break; // zeropage
+        case 2: MR_IM(); break; // immediate
+        case 3: MR_AB(); break; // absolute
+        case 4: MR_IY(); break; // (indir),y
+        case 5: MR_ZX(); break; // zeropage,x
+        case 6: MR_AY(); break; // absolute,y
+        case 7: MR_AX(); break; // absolute,x
         }
 
         if ((opcode & 0x3) == 0x1 && opcode != 0x89)
@@ -172,22 +279,16 @@ void cpu_run(CPU *cpu, int ncycle)
             // excute
             switch (opcode >> 5)
             {
-            case 0x00: // ORA
-                break;
-            case 0x01: // AND
-                break;
-            case 0x02: // EOR
-                break;
-            case 0x03: // ADC
-                break;
-            case 0x04: // STA
-                break;
-            case 0x05: // LDA
-                break;
-            case 0x06: // CMP
-                break;
-            case 0x07: // SBC
-                break;
+            case 0x00: ORA(); break; // ORA
+            case 0x01: AND(); break; // AND
+            case 0x02: EOR(); break; // EOR
+            case 0x03: ADC(); break; // ADC
+            case 0x04: STA(); break; // STA
+/*
+            case 0x05: LDA(); break; // LDA
+            case 0x06: CMP(); break; // CMP
+            case 0x07: SBC(); break; // SBC
+*/
             }
         }
         else
