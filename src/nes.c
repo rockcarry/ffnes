@@ -96,25 +96,71 @@ BOOL nes_init(NES *nes, char *file)
     nes->pattab1.size = NES_PATTAB1_SIZE;
     nes->pattab1.data = nes->buf_pattab1;
 
-    // create vram0
-    nes->vram0.type = MEM_RAM;
-    nes->vram0.size = NES_VRAM0_SIZE;
-    nes->vram0.data = nes->buf_vram0;
+    if (cartridge_has_4screen(&(nes->cart))) {
+        // create vram0
+        nes->vram0.type = MEM_RAM;
+        nes->vram0.size = NES_VRAM0_SIZE;
+        nes->vram0.data = nes->buf_vram0;
 
-    // create vram1
-    nes->vram1.type = MEM_RAM;
-    nes->vram1.size = NES_VRAM1_SIZE;
-    nes->vram1.data = nes->buf_vram1;
+        // create vram1
+        nes->vram1.type = MEM_RAM;
+        nes->vram1.size = NES_VRAM1_SIZE;
+        nes->vram1.data = nes->buf_vram1;
 
-    // create vram2
-    nes->vram2.type = MEM_RAM;
-    nes->vram2.size = NES_VRAM2_SIZE;
-    nes->vram2.data = nes->buf_vram2;
+        // create vram2
+        nes->vram2.type = MEM_RAM;
+        nes->vram2.size = NES_VRAM2_SIZE;
+        nes->vram2.data = nes->buf_vram2;
 
-    // create vram3
-    nes->vram3.type = MEM_RAM;
-    nes->vram3.size = NES_VRAM2_SIZE;
-    nes->vram3.data = nes->buf_vram3;
+        // create vram3
+        nes->vram3.type = MEM_RAM;
+        nes->vram3.size = NES_VRAM3_SIZE;
+        nes->vram3.data = nes->buf_vram3;
+    }
+    else {
+        if (cartridge_get_hvmirroring(&(nes->cart))) {
+            // create vram0
+            nes->vram0.type = MEM_RAM;
+            nes->vram0.size = NES_VRAM0_SIZE;
+            nes->vram0.data = nes->buf_vram0;
+
+            // create vram1
+            nes->vram1.type = MEM_RAM;
+            nes->vram1.size = NES_VRAM1_SIZE;
+            nes->vram1.data = nes->buf_vram0;
+
+            // create vram2
+            nes->vram2.type = MEM_RAM;
+            nes->vram2.size = NES_VRAM2_SIZE;
+            nes->vram2.data = nes->buf_vram1;
+
+            // create vram3
+            nes->vram3.type = MEM_RAM;
+            nes->vram3.size = NES_VRAM3_SIZE;
+            nes->vram3.data = nes->buf_vram1;
+        }
+        else {
+            // create vram0
+            nes->vram0.type = MEM_RAM;
+            nes->vram0.size = NES_VRAM0_SIZE;
+            nes->vram0.data = nes->buf_vram0;
+
+            // create vram1
+            nes->vram1.type = MEM_RAM;
+            nes->vram1.size = NES_VRAM1_SIZE;
+            nes->vram1.data = nes->buf_vram1;
+
+            // create vram2
+            nes->vram2.type = MEM_RAM;
+            nes->vram2.size = NES_VRAM2_SIZE;
+            nes->vram2.data = nes->buf_vram0;
+
+            // create vram3
+            nes->vram3.type = MEM_RAM;
+            nes->vram3.size = NES_VRAM3_SIZE;
+            nes->vram3.data = nes->buf_vram1;
+        }
+    }
 
     // create color palette
     nes->palette.type = MEM_RAM;

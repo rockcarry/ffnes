@@ -10,10 +10,12 @@ typedef struct {
     BYTE sprram[256]; // sprite ram
 
     // 256-color bitmap for video rendering
-    #define PPU_IMAGE_WIDTH  256
-    #define PPU_IMAGE_HEIGHT 240
+    #define PPU_IMAGE_WIDTH  (256 * 2)
+    #define PPU_IMAGE_HEIGHT (240 * 2)
     BYTE  bmp_data[PPU_IMAGE_WIDTH * PPU_IMAGE_HEIGHT];
     BYTE *bmp_pal;
+    int   bmp_offx;
+    int   bmp_offy;
 } PPU;
 
 void ppu_reset (PPU *ppu);
