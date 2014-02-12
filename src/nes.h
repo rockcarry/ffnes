@@ -69,8 +69,9 @@ typedef struct {
 } NES;
 
 // º¯ÊıÉùÃ÷
-BOOL nes_init(NES *nes, char *file);
-void nes_free(NES *nes);
+BOOL nes_init (NES *nes, char *file);
+void nes_free (NES *nes);
+void nes_reset(NES *nes);
 
 #endif
 

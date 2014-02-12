@@ -9,5 +9,9 @@ typedef struct {
     BYTE reserved;
 } APU;
 
+// º¯ÊıÉùÃ÷
+void apu_init (APU *apu);
+void apu_reset(APU *apu);
+
 #endif
 

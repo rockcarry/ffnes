@@ -22,11 +22,13 @@ typedef struct {
         MEM *membank;
         WORD mirmask;
     };
-} BUS[NES_MAX_BUS_SIZE];
+} *BUS;
 
 // º¯ÊýÉùÃ÷
-void bus_read  (BUS bus, int baddr, BYTE *data);
-void bus_write (BUS bus, int baddr, BYTE  data);
+void bus_readb (BUS bus, int baddr, BYTE *byte);
+void bus_readw (BUS bus, int baddr, WORD *word);
+void bus_writeb(BUS bus, int baddr, BYTE  byte);
+void bus_writew(BUS bus, int baddr, WORD  word);
 void bus_setmem(BUS bus, int i, int start, int end, MEM *membank);
 void bus_setmir(BUS bus, int i, int start, int end, WORD mirmask);
 

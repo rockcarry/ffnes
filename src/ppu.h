@@ -18,6 +18,7 @@ typedef struct {
     int   bmp_offy;
 } PPU;
 
+void ppu_init  (PPU *ppu);
 void ppu_reset (PPU *ppu);
 void ppu_render(PPU *ppu);
 void DEF_PPU_REG_RBC(MEM *pm, int addr);

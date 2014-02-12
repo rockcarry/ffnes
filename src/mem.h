@@ -20,8 +20,10 @@ typedef struct tagMEM {
 } MEM;
 
 // º¯ÊýÉùÃ÷
-void mem_read (MEM *pm, int addr, BYTE *byte);
-void mem_write(MEM *pm, int addr, BYTE  byte);
+void mem_readb (MEM *pm, int addr, BYTE *byte);
+void mem_readw (MEM *pm, int addr, WORD *word);
+void mem_writeb(MEM *pm, int addr, BYTE  byte);
+void mem_writew(MEM *pm, int addr, WORD  word);
 
 #endif
 

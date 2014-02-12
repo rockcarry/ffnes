@@ -72,9 +72,15 @@ static BYTE DEF_PPU_PAL[64 * 3] =
 };
 
 // º¯ÊýÊµÏÖ
-void ppu_reset(PPU *ppu)
+void ppu_init(PPU *ppu)
 {
     ppu->bmp_pal = DEF_PPU_PAL;
+    memset(ppu->sprram  , 0, sizeof(ppu->sprram  ));
+    memset(ppu->bmp_data, 0, sizeof(ppu->bmp_data));
+}
+
+void ppu_reset(PPU *ppu)
+{
 }
 
 void ppu_render(PPU *ppu)

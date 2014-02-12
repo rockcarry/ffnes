@@ -10,7 +10,9 @@ OBJS = \
     mem.o \
     bus.o \
     nes.o \
+    cpu.o \
     ppu.o \
+    apu.o \
     cartridge.o \
 
 # 所有的可执行目标

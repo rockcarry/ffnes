@@ -186,6 +186,10 @@ BOOL nes_init(NES *nes, char *file)
     bus_setmem(nes->pbus, 9, 0x3F00, 0x3F1F, &(nes->palette));
     //-- pbus mem map --//
 
+    cpu_init(&(nes->cpu));
+    ppu_init(&(nes->ppu));
+    apu_init(&(nes->ppu));
+
     return TRUE;
 }
 
@@ -193,6 +197,13 @@ void nes_free(NES *nes)
 {
     // free cartridge
     cartridge_free(&(nes->cart));
+}
+
+void nes_reset(NES *nes)
+{
+    cpu_reset(&(nes->cpu));
+    ppu_reset(&(nes->ppu));
+    apu_reset(&(nes->ppu));
 }
 
 #else
