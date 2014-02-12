@@ -199,6 +199,18 @@ do {                        \
 #define STA() \
 do {                        \
 } while (0)
+
+#define LDA() \
+do {                        \
+} while (0)
+
+#define CMP() \
+do {                        \
+} while (0)
+
+#define SBC() \
+do {                        \
+} while (0)
 //-- instruction --//
 
 #define BRK() \
@@ -256,6 +268,20 @@ void cpu_run(CPU *cpu, int ncycle)
         // fetch opcode
         opcode = bus_readb(cpu->cbus, cpu->pc++);
 
+        switch (opcode & 0xE3)
+        {
+        case 0x80: // STY
+            continue;
+        case 0x81: // STA
+            continue;
+        case 0x82: // STX
+            continue;
+        case 0xc2: // DEC
+            continue;
+        case 0xe2: // INC
+            continue;
+        }
+
         // addressing
         switch ((opcode >> 2) & 0x7)
         {
@@ -269,7 +295,7 @@ void cpu_run(CPU *cpu, int ncycle)
         case 7: MR_AX(); break; // absolute,x
         }
 
-        if ((opcode & 0x3) == 0x1 && opcode != 0x89)
+        if ((opcode & 0x3) == 0x1)
         {
             // excute
             switch (opcode >> 5)
@@ -278,12 +304,9 @@ void cpu_run(CPU *cpu, int ncycle)
             case 0x01: AND(); break; // AND
             case 0x02: EOR(); break; // EOR
             case 0x03: ADC(); break; // ADC
-            case 0x04: STA(); break; // STA
-/*
             case 0x05: LDA(); break; // LDA
             case 0x06: CMP(); break; // CMP
             case 0x07: SBC(); break; // SBC
-*/
             }
         }
         else
@@ -382,10 +405,6 @@ void cpu_run(CPU *cpu, int ncycle)
             case 0x24: // BIT
             case 0x2c:
                 break;
-            case 0x84: // STY
-            case 0x8c:
-            case 0x94:
-                break;
             case 0x06: // ASL
             case 0x0a:
             case 0x0e:
@@ -409,21 +428,6 @@ void cpu_run(CPU *cpu, int ncycle)
             case 0x6e:
             case 0x76:
             case 0x7e:
-                break;
-            case 0x86: // STX
-            case 0x8e:
-                break;
-            case 0x96: // STX y)
-                break;
-            case 0xc6: // DEC
-            case 0xce:
-            case 0xd6:
-            case 0xde:
-                break;
-            case 0xe6: // INC
-            case 0xee:
-            case 0xf6:
-            case 0xfe:
                 break;
             case 0x08: // PHP
                 break;
