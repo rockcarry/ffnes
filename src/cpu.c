@@ -63,6 +63,9 @@ flags.
 
 
 // 常量定义
+#define FREQ_MCLK   26601712
+#define CPU_FREQ    (FREQ_MCLK / 15)
+
 #define NMI_VECTOR  0xfffa
 #define RST_VECTOR  0xfffc
 #define IRQ_VECTOR  0xfffe
