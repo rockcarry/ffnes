@@ -100,6 +100,9 @@ flags.
 #define READB(addr)       (bus_readb(cpu->cbus, addr))
 #define READW(addr)       (bus_readw(cpu->cbus, addr))
 
+#define WRITEB(addr, byte) (bus_writeb(cpu->cbus, addr, byte))
+#define WRITEW(addr, word) (bus_writew(cpu->cbus, addr, word))
+
 #define ZPRDB(addr)       (RAM[(BYTE)(addr)])
 #define ZPRDW(addr)       (*(WORD*)(RAM + (addr)))
 #define ZPWRB(addr, byte) do { RAM[(BYTE)(addr)] = byte; } while (0)
@@ -166,9 +169,66 @@ do {                        \
     EA = ZPRDW(DT);         \
     DT = READB(EA + YI);    \
 } while (0)
+
+#define EA_ZP() \
+do {                        \
+    EA = READB(PC++);       \
+} while (0)
+
+#define EA_ZX() \
+do {                        \
+    DT = READB(PC++);       \
+    EA = (BYTE)(DT + XI);   \
+} while (0)
+
+#define EA_ZY() \
+do {                        \
+    DT = READB(PC++);       \
+    EA = (BYTE)(DT + YI);   \
+} while (0)
+
+#define EA_AB() \
+do {                        \
+    EA  = READW(PC);        \
+    PC += 2;                \
+} while (0)
+
+#define EA_AX() \
+do {                        \
+    EA  = READW(PC);        \
+    PC += 2;                \
+    EA += XI;               \
+} while (0)
+
+#define EA_AY() \
+do {                        \
+    EA  = READW(PC);        \
+    PC += 2;                \
+    EA += YI;               \
+} while (0)
+
+#define EA_IX() \
+do {                        \
+    DT = READB(PC++);       \
+    EA = ZPRDW(DT + XI);    \
+} while (0)
+
+#define EA_IY() \
+do {                        \
+    DT  = READB(PC++);      \
+    EA  = ZPRDW( DT );      \
+    EA += YI;               \
+} while (0)
+
+#define MW_ZP()  do { ZPWRB(EA, DT);  } while (0)
+#define MW_EA()  do { WRITEB(EA, DT); } while (0)
 //-- addressing mode --//
 
 //++ instruction ++//
+#define NOP() \
+do {                        \
+} while (0)
+
 #define ORA() \
 do {                        \
     AX |= DT;               \
@@ -198,18 +258,29 @@ do {                        \
 
 #define STA() \
 do {                        \
+    DT = AX;                \
 } while (0)
 
 #define LDA() \
 do {                        \
+    AX = DT;                \
+    SET_ZN_FLAG(AX);        \
 } while (0)
 
 #define CMP() \
 do {                        \
+    WT = (WORD)AX - (WORD)DT; \
+    TST_FLAG((WT & 0x8000) == 0, C_FLAG); \
+    SET_ZN_FLAG((BYTE)WT);  \
 } while (0)
 
 #define SBC() \
 do {                        \
+    WT = AX - DT - (~PS & C_FLAG); \
+    TST_FLAG((AX^DT) & (AX^WT) & 0x80, O_FLAG ); \
+    TST_FLAG(WT < 0x100, C_FLAG ); \
+    AX = (BYTE)WT;          \
+    SET_ZN_FLAG(AX);        \
 } while (0)
 //-- instruction --//
 
@@ -225,7 +296,12 @@ do {                        \
 } while (0)
 
 #define JSR() do { \
-              } while (0)
+    EA = READW(PC);         \
+    PC++;                   \
+    PUSH((PC >> 8) & 0xff); \
+    PUSH((PC >> 0) & 0xff); \
+    PC = EA;                \
+} while (0)
 
 // º¯ÊýÊµÏÖ
 void cpu_init(CPU *cpu)
@@ -255,6 +331,8 @@ void cpu_reset(CPU *cpu)
 void cpu_run(CPU *cpu, int ncycle)
 {
     BYTE opcode = 0;
+    BYTE opptr  = 0;
+    BYTE opmat  = 0;
     BYTE DT     = 0;
     WORD EA     = 0;
     WORD WT     = 0;
@@ -267,262 +345,272 @@ void cpu_run(CPU *cpu, int ncycle)
     {
         // fetch opcode
         opcode = bus_readb(cpu->cbus, cpu->pc++);
+        opptr  = (opcode & 0xe3) >> 0;
+        opmat  = (opcode & 0x1c) >> 2;
 
-        switch (opcode & 0xE3)
+        //++ STA & 0x89 NOP ++//
+        if (opptr == 0x81) // STA
         {
-        case 0x80: // STY
-            continue;
-        case 0x81: // STA
-            continue;
-        case 0x82: // STX
-            continue;
-        case 0xc2: // DEC
-            continue;
-        case 0xe2: // INC
+            switch (opmat)
+            {
+            case 0: EA_IX(); STA(); MW_EA(); break;
+            case 1: EA_ZP(); STA(); MW_ZP(); break;
+            case 3: EA_AB(); STA(); MW_EA(); break;
+            case 4: EA_IY(); STA(); MW_EA(); break;
+            case 5: EA_ZX(); STA(); MW_ZP(); break;
+            case 6: EA_AY(); STA(); MW_ZP(); break;
+            case 7: EA_AX(); STA(); MW_ZP(); break;
+            case 2: NOP(); break; // 0x89 NOP
+            }
             continue;
         }
+        //-- STA & 0x89 NOP --//
 
-        // addressing
-        switch ((opcode >> 2) & 0x7)
-        {
-        case 0: MR_IX(); break; // (indir,x)
-        case 1: MR_ZP(); break; // zeropage
-        case 2: MR_IM(); break; // immediate
-        case 3: MR_AB(); break; // absolute
-        case 4: MR_IY(); break; // (indir),y
-        case 5: MR_ZX(); break; // zeropage,x
-        case 6: MR_AY(); break; // absolute,y
-        case 7: MR_AX(); break; // absolute,x
-        }
 
+        //++ ORA, AND, EOR, ADC, LDA, CMP, SBC ++//
         if ((opcode & 0x3) == 0x1)
         {
+            // addressing
+            switch (opmat)
+            {
+            case 0: MR_IX(); break; // (indir,x)
+            case 1: MR_ZP(); break; // zeropage
+            case 2: MR_IM(); break; // immediate
+            case 3: MR_AB(); break; // absolute
+            case 4: MR_IY(); break; // (indir),y
+            case 5: MR_ZX(); break; // zeropage,x
+            case 6: MR_AY(); break; // absolute,y
+            case 7: MR_AX(); break; // absolute,x
+            }
+
             // excute
             switch (opcode >> 5)
             {
-            case 0x00: ORA(); break; // ORA
-            case 0x01: AND(); break; // AND
-            case 0x02: EOR(); break; // EOR
-            case 0x03: ADC(); break; // ADC
-            case 0x05: LDA(); break; // LDA
-            case 0x06: CMP(); break; // CMP
-            case 0x07: SBC(); break; // SBC
+            case 0: ORA(); break; // ORA
+            case 1: AND(); break; // AND
+            case 2: EOR(); break; // EOR
+            case 3: ADC(); break; // ADC
+            case 4: LDA(); break; // LDA
+            case 5: CMP(); break; // CMP
+            case 6: SBC(); break; // SBC
             }
+            continue;
         }
-        else
+        //++ ORA, AND, EOR, ADC, LDA, CMP, SBC ++//
+
+        // others
+        switch (opcode)
         {
-            switch (opcode)
-            {
-            case 0x00: BRK(); break;
-            case 0x20: // JSR
-                break;
-            case 0x40: // RTI
-                break;
-            case 0x60: // RTS
-                break;
-            case 0xa0: // LDY
-            case 0xa4:
-            case 0xac:
-            case 0xb4:
-            case 0xbc:
-                break;
-            case 0xc0: // CPY
-            case 0xc4:
-            case 0xcc:
-                break;
-            case 0xe0: // CPX
-            case 0xe4:
-            case 0xec:
-                break;
-            case 0xa2: // LDX
-            case 0xa6:
-            case 0xae:
-                break;
-            case 0xb6: // LDX  y)
-            case 0xbe: // LDX  y)
-                break;
-            case 0x03: // SLO
-            case 0x07:
-            case 0x0f:
-            case 0x13:
-            case 0x17:
-            case 0x1f:
-                break;
-            case 0x23: // SLO
-            case 0x27:
-            case 0x2f:
-            case 0x33:
-            case 0x37:
-            case 0x3b:
-            case 0x3f:
-                break;
-            case 0x43: // SRE
-            case 0x47:
-            case 0x4f:
-            case 0x53:
-            case 0x57:
-            case 0x5b:
-            case 0x5f:
-                break;
-            case 0x63: // RRA
-            case 0x67:
-            case 0x6f:
-            case 0x73:
-            case 0x77:
-            case 0x7b:
-            case 0x7f:
-                break;
-            case 0x83: // SAX
-            case 0x87:
-            case 0x8f:
-                break;
-            case 0x97: // SAX y)
-                break;
-            case 0xa3: // LAX
-            case 0xa7:
-            case 0xaf:
-            case 0xb3:
-                break;
-            case 0xb7: // LAX y)
-            case 0xbf:
-                break;
-            case 0xc3: // DCP
-            case 0xc7:
-            case 0xcf:
-            case 0xd3:
-            case 0xd7:
-            case 0xdb:
-            case 0xdf:
-                break;
-            case 0xe3: // ISB
-            case 0xe7:
-            case 0xef:
-            case 0xf3:
-            case 0xf7:
-            case 0xfb:
-            case 0xff:
-                break;
-            case 0x24: // BIT
-            case 0x2c:
-                break;
-            case 0x06: // ASL
-            case 0x0a:
-            case 0x0e:
-            case 0x16:
-            case 0x1e:
-                break;
-            case 0x26: // ROL
-            case 0x2a:
-            case 0x2e:
-            case 0x36:
-            case 0x3e:
-                break;
-            case 0x46: // LSR
-            case 0x4a:
-            case 0x4e:
-            case 0x56:
-            case 0x5e:
-                break;
-            case 0x66: // ROR
-            case 0x6a:
-            case 0x6e:
-            case 0x76:
-            case 0x7e:
-                break;
-            case 0x08: // PHP
-                break;
-            case 0x28: // PLP
-                break;
-            case 0x48: // PHA
-                break;
-            case 0x68: // PLA
-                break;
-            case 0x88: // DEY
-                break;
-            case 0xa8: // TAY
-                break;
-            case 0xc8: // INY
-                break;
-            case 0xe8: // INX
-                break;
-            case 0x8a: // TXA
-                break;
-            case 0xaa: // TAX
-                break;
-            case 0xca: // DEX
-                break;
-            case 0xea: // NOP
-                break;
-            case 0x0b: // ANC
-            case 0x2b:
-                break;
-            case 0x4b: // ASR
-                break;
-            case 0x6b: // ARR
-                break;
-            case 0x8b: // ANE
-                break;
-            case 0xab: // LXA
-                break;
-            case 0xcb: // SBX
-                break;
-            case 0xeb: // SBC
-                break;
-            case 0x4c: // JMP
-                break;
-            case 0x6c: // JMP ()
-                break;
-            case 0x10: // BPL
-                break;
-            case 0x30: // BMI
-                break;
-            case 0x50: // BVC
-                break;
-            case 0x70: // BVS
-                break;
-            case 0x90: // BCC
-                break;
-            case 0xb0: // BCS
-                break;
-            case 0xd0: // BNE
-                break;
-            case 0xf0: // BEQ
-                break;
-            case 0x93: // SHA
-                break;
-            case 0x18: // CLC
-                break;
-            case 0x38: // SEC
-                break;
-            case 0x58: // CLI
-                break;
-            case 0x78: // SEI
-                break;
-            case 0x98: // TYA
-                break;
-            case 0xb8: // CLV
-                break;
-            case 0xd8: // CLD
-                break;
-            case 0xf8: // SED
-                break;
-            case 0x9a: // TXS
-                break;
-            case 0xba: // TSX
-                break;
-            case 0x9b: // SHS
-                break;
-            case 0xbb: // LAS
-                break;
-            case 0x9c: // SHY
-                break;
-            case 0x9e: // SHX y)
-                break;
-            case 0x9f: // SHA y)
-                break;
-            }
+        case 0x00: BRK(); break; // BRK
+        case 0x20: JSR(); break; // JSR
+            break;
+        case 0x40: // RTI
+            break;
+        case 0x60: // RTS
+            break;
+        case 0xa0: // LDY
+        case 0xa4:
+        case 0xac:
+        case 0xb4:
+        case 0xbc:
+            break;
+        case 0xc0: // CPY
+        case 0xc4:
+        case 0xcc:
+            break;
+        case 0xe0: // CPX
+        case 0xe4:
+        case 0xec:
+            break;
+        case 0xa2: // LDX
+        case 0xa6:
+        case 0xae:
+            break;
+        case 0xb6: // LDX  y)
+        case 0xbe: // LDX  y)
+            break;
+        case 0x03: // SLO
+        case 0x07:
+        case 0x0f:
+        case 0x13:
+        case 0x17:
+        case 0x1f:
+            break;
+        case 0x23: // SLO
+        case 0x27:
+        case 0x2f:
+        case 0x33:
+        case 0x37:
+        case 0x3b:
+        case 0x3f:
+            break;
+        case 0x43: // SRE
+        case 0x47:
+        case 0x4f:
+        case 0x53:
+        case 0x57:
+        case 0x5b:
+        case 0x5f:
+            break;
+        case 0x63: // RRA
+        case 0x67:
+        case 0x6f:
+        case 0x73:
+        case 0x77:
+        case 0x7b:
+        case 0x7f:
+            break;
+        case 0x83: // SAX
+        case 0x87:
+        case 0x8f:
+            break;
+        case 0x97: // SAX y)
+            break;
+        case 0xa3: // LAX
+        case 0xa7:
+        case 0xaf:
+        case 0xb3:
+            break;
+        case 0xb7: // LAX y)
+        case 0xbf:
+            break;
+        case 0xc3: // DCP
+        case 0xc7:
+        case 0xcf:
+        case 0xd3:
+        case 0xd7:
+        case 0xdb:
+        case 0xdf:
+            break;
+        case 0xe3: // ISB
+        case 0xe7:
+        case 0xef:
+        case 0xf3:
+        case 0xf7:
+        case 0xfb:
+        case 0xff:
+            break;
+        case 0x24: // BIT
+        case 0x2c:
+            break;
+        case 0x06: // ASL
+        case 0x0a:
+        case 0x0e:
+        case 0x16:
+        case 0x1e:
+            break;
+        case 0x26: // ROL
+        case 0x2a:
+        case 0x2e:
+        case 0x36:
+        case 0x3e:
+            break;
+        case 0x46: // LSR
+        case 0x4a:
+        case 0x4e:
+        case 0x56:
+        case 0x5e:
+            break;
+        case 0x66: // ROR
+        case 0x6a:
+        case 0x6e:
+        case 0x76:
+        case 0x7e:
+            break;
+        case 0x08: // PHP
+            break;
+        case 0x28: // PLP
+            break;
+        case 0x48: // PHA
+            break;
+        case 0x68: // PLA
+            break;
+        case 0x88: // DEY
+            break;
+        case 0xa8: // TAY
+            break;
+        case 0xc8: // INY
+            break;
+        case 0xe8: // INX
+            break;
+        case 0x8a: // TXA
+            break;
+        case 0xaa: // TAX
+            break;
+        case 0xca: // DEX
+            break;
+        case 0xea: // NOP
+            break;
+        case 0x0b: // ANC
+        case 0x2b:
+            break;
+        case 0x4b: // ASR
+            break;
+        case 0x6b: // ARR
+            break;
+        case 0x8b: // ANE
+            break;
+        case 0xab: // LXA
+            break;
+        case 0xcb: // SBX
+            break;
+        case 0xeb: // SBC
+            break;
+        case 0x4c: // JMP
+            break;
+        case 0x6c: // JMP ()
+            break;
+        case 0x10: // BPL
+            break;
+        case 0x30: // BMI
+            break;
+        case 0x50: // BVC
+            break;
+        case 0x70: // BVS
+            break;
+        case 0x90: // BCC
+            break;
+        case 0xb0: // BCS
+            break;
+        case 0xd0: // BNE
+            break;
+        case 0xf0: // BEQ
+            break;
+        case 0x93: // SHA
+            break;
+        case 0x18: // CLC
+            break;
+        case 0x38: // SEC
+            break;
+        case 0x58: // CLI
+            break;
+        case 0x78: // SEI
+            break;
+        case 0x98: // TYA
+            break;
+        case 0xb8: // CLV
+            break;
+        case 0xd8: // CLD
+            break;
+        case 0xf8: // SED
+            break;
+        case 0x9a: // TXS
+            break;
+        case 0xba: // TSX
+            break;
+        case 0x9b: // SHS
+            break;
+        case 0xbb: // LAS
+            break;
+        case 0x9c: // SHY
+            break;
+        case 0x9e: // SHX y)
+            break;
+        case 0x9f: // SHA y)
+            break;
         }
     }
+
     cpu->cycles_real -= ncycle;
 }
 
