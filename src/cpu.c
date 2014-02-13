@@ -97,8 +97,8 @@ flags.
 #define TST_FLAG(c, v)    do { PS &= ~(v); if (c) PS |= (v); } while (0)
 #define CHK_FLAG(v)       (PS & (v))
 
-#define READB(addr)       (bus_readb(cpu->cbus, addr))
-#define READW(addr)       (bus_readw(cpu->cbus, addr))
+#define READB(addr)        (bus_readb(cpu->cbus, addr))
+#define READW(addr)        (bus_readw(cpu->cbus, addr))
 
 #define WRITEB(addr, byte) (bus_writeb(cpu->cbus, addr, byte))
 #define WRITEW(addr, word) (bus_writew(cpu->cbus, addr, word))
@@ -303,6 +303,38 @@ do {                        \
     PC = EA;                \
 } while (0)
 
+#define RTI() do { \
+    PS  = POP() | R_FLAG;   \
+    PC  = POP() << 0;       \
+    PC |= POP() << 8;       \
+} while (0)
+
+#define RTS() do { \
+    PC  = POP();            \
+    PC |= POP() << 8;       \
+    PC++;                   \
+} while (0)
+
+static BYTE CPU_CYCLE_TAB[256] =
+{
+    7, 6, 0, 0, 0, 3, 5, 0, 3, 2, 2, 0, 0, 4, 6, 0,
+    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
+    6, 2, 0, 0, 3, 3, 5, 0, 4, 2, 2, 0, 4, 4, 6, 0,
+    2, 2, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
+    6, 6, 0, 0, 0, 3, 5, 0, 3, 2, 2, 0, 3, 4, 6, 0,
+    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
+    6, 6, 0, 0, 0, 3, 5, 0, 4, 2, 2, 0, 5, 4, 6, 0,
+    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
+    0, 6, 0, 0, 3, 3, 3, 0, 2, 0, 2, 0, 4, 4, 4, 0,
+    2, 6, 0, 0, 4, 4, 4, 0, 2, 5, 2, 0, 0, 5, 0, 0,
+    2, 6, 2, 0, 3, 3, 3, 0, 2, 2, 2, 0, 4, 4, 4, 0,
+    2, 5, 0, 0, 4, 4, 4, 0, 2, 4, 2, 0, 4, 4, 4, 0,
+    2, 6, 0, 0, 3, 3, 5, 0, 2, 2, 2, 0, 4, 4, 6, 0,
+    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
+    2, 6, 0, 0, 3, 3, 5, 0, 2, 2, 2, 0, 4, 4, 6, 0,
+    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0
+};
+
 // º¯ÊýÊµÏÖ
 void cpu_init(CPU *cpu)
 {
@@ -347,6 +379,9 @@ void cpu_run(CPU *cpu, int ncycle)
         opcode = bus_readb(cpu->cbus, cpu->pc++);
         opptr  = (opcode & 0xe3) >> 0;
         opmat  = (opcode & 0x1c) >> 2;
+
+        // calculate new ncycle
+        ncycle -= CPU_CYCLE_TAB[opptr];
 
         //++ STA & 0x89 NOP ++//
         if (opptr == 0x81) // STA
@@ -398,16 +433,14 @@ void cpu_run(CPU *cpu, int ncycle)
         }
         //++ ORA, AND, EOR, ADC, LDA, CMP, SBC ++//
 
+
         // others
         switch (opcode)
         {
         case 0x00: BRK(); break; // BRK
         case 0x20: JSR(); break; // JSR
-            break;
-        case 0x40: // RTI
-            break;
-        case 0x60: // RTS
-            break;
+        case 0x40: RTI(); break; // RTI
+        case 0x60: RTS(); break; // RTS
         case 0xa0: // LDY
         case 0xa4:
         case 0xac:
