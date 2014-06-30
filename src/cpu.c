@@ -335,7 +335,7 @@ static BYTE CPU_CYCLE_TAB[256] =
     2, 6, 0, 0, 3, 3, 5, 0, 2, 2, 2, 0, 4, 4, 6, 0,
     2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
     2, 6, 0, 0, 3, 3, 5, 0, 2, 2, 2, 0, 4, 4, 6, 0,
-    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0
+    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
 };
 
 // º¯ÊýÊµÏÖ
@@ -366,7 +366,6 @@ void cpu_reset(CPU *cpu)
 void cpu_run(CPU *cpu, int ncycle)
 {
     BYTE opcode = 0;
-    BYTE opptr  = 0;
     BYTE opmat  = 0;
     BYTE DT     = 0;
     WORD EA     = 0;
@@ -380,14 +379,13 @@ void cpu_run(CPU *cpu, int ncycle)
     {
         // fetch opcode
         opcode = bus_readb(cpu->cbus, cpu->pc++);
-        opptr  = (opcode & 0xe3) >> 0;
         opmat  = (opcode & 0x1c) >> 2;
 
         // calculate new ncycle
-        ncycle -= CPU_CYCLE_TAB[opptr];
+        ncycle -= CPU_CYCLE_TAB[opcode];
 
         //++ STA & 0x89 NOP ++//
-        if (opptr == 0x81) // STA
+        if ((opcode & 0xe3) == 0x81) // STA
         {
             switch (opmat)
             {
@@ -406,7 +404,7 @@ void cpu_run(CPU *cpu, int ncycle)
 
 
         //++ ORA, AND, EOR, ADC, LDA, CMP, SBC ++//
-        if ((opcode & 0x3) == 0x1)
+        if ((opcode & 0x3) == 0x01)
         {
             // addressing
             switch (opmat)
@@ -428,15 +426,112 @@ void cpu_run(CPU *cpu, int ncycle)
             case 1: AND(); break; // AND
             case 2: EOR(); break; // EOR
             case 3: ADC(); break; // ADC
-            case 4: LDA(); break; // LDA
-            case 5: CMP(); break; // CMP
-            case 6: SBC(); break; // SBC
+            case 5: LDA(); break; // LDA
+            case 6: CMP(); break; // CMP
+            case 7: SBC(); break; // SBC
             }
             continue;
         }
-        //++ ORA, AND, EOR, ADC, LDA, CMP, SBC ++//
+        //-- ORA, AND, EOR, ADC, LDA, CMP, SBC --//
 
 
+        //++ SLO, RLA, SRE, RRA ++//
+        if ((opcode & 0x83) == 0x03)
+        {
+            // addressing
+            switch (opmat)
+            {
+            case 0: MR_IX(); break; // (indir,x)
+            case 1: MR_ZP(); break; // zeropage
+            case 2: goto other_opcode_handler;
+            case 3: MR_AB(); break; // absolute
+            case 4: MR_IY(); break; // (indir),y
+            case 5: MR_ZX(); break; // zeropage,x
+            case 6: MR_AY(); break; // absolute,y
+            case 7: MR_AX(); break; // absolute,x
+            }
+
+            // excute
+            switch ((opcode >> 5) & 0x03)
+            {
+            case 0: SLO(); break; // SLO
+            case 1: RLA(); break; // RLA
+            case 2: SRE(); break; // SRE
+            case 3: RRA(); break; // RRA
+            }
+
+            // addressing
+            if (opmat == 1 || opmat == 5) MR_ZP();
+            else MW_EA();
+
+            continue;
+        }
+        //-- SLO, RLA, SRE, RRA --//
+
+
+        //++ ASL, ROL, LSR, ROR ++//
+        if ((opcode & 0x83) == 0x02)
+        {
+            // addressing
+            switch (opmat)
+            {
+            case 1: MR_ZP(); break; // zeropage
+            case 2: MR_IM(); break; // immediate
+            case 3: MR_AB(); break; // absolute
+            case 5: MR_ZX(); break; // zeropage,x
+            case 7: MR_AX(); break; // absolute,x
+            default: goto other_opcode_handler;
+            }
+
+            // excute
+            switch ((opcode >> 5) & 0x03)
+            {
+            case 0: ASL(); break; // ASL
+            case 1: ROL(); break; // ROL
+            case 2: LSR(); break; // LSR
+            case 3: ROR(); break; // ROR
+            }
+
+            // addressing
+            if (opmat == 1 || opmat == 5) MR_ZP();
+            else MW_EA();
+
+            continue;
+        }
+        //-- ASL, ROL, LSR, ROR --//
+
+        //++ DCP, ISB ++//
+        if ((opcode & 0xc3) == 0xc3)
+        {
+            // addressing
+            switch (opmat)
+            {
+            case 0: MR_IX(); break; // (indir,x)
+            case 1: MR_ZP(); break; // zeropage
+            case 2: goto other_opcode_handler;
+            case 3: MR_AB(); break; // absolute
+            case 4: MR_IY(); break; // (indir),y
+            case 5: MR_ZX(); break; // zeropage,x
+            case 6: MR_AY(); break; // absolute,y
+            case 7: MR_AX(); break; // absolute,x
+            }
+
+            // excute
+            switch ((opcode >> 5) & 0x01)
+            {
+            case 0: DCP(); break; // DCP
+            case 1: ISB(); break; // ISB
+            }
+
+            // addressing
+            if (opmat == 1 || opmat == 5) MR_ZP();
+            else MW_EA();
+
+            continue;
+        }
+        //-- DCP, ROL --//
+
+other_opcode_handler:
         // others
         switch (opcode)
         {
@@ -465,37 +560,6 @@ void cpu_run(CPU *cpu, int ncycle)
         case 0xb6: // LDX  y)
         case 0xbe: // LDX  y)
             break;
-        case 0x03: // SLO
-        case 0x07:
-        case 0x0f:
-        case 0x13:
-        case 0x17:
-        case 0x1f:
-            break;
-        case 0x23: // SLO
-        case 0x27:
-        case 0x2f:
-        case 0x33:
-        case 0x37:
-        case 0x3b:
-        case 0x3f:
-            break;
-        case 0x43: // SRE
-        case 0x47:
-        case 0x4f:
-        case 0x53:
-        case 0x57:
-        case 0x5b:
-        case 0x5f:
-            break;
-        case 0x63: // RRA
-        case 0x67:
-        case 0x6f:
-        case 0x73:
-        case 0x77:
-        case 0x7b:
-        case 0x7f:
-            break;
         case 0x83: // SAX
         case 0x87:
         case 0x8f:
@@ -510,48 +574,8 @@ void cpu_run(CPU *cpu, int ncycle)
         case 0xb7: // LAX y)
         case 0xbf:
             break;
-        case 0xc3: // DCP
-        case 0xc7:
-        case 0xcf:
-        case 0xd3:
-        case 0xd7:
-        case 0xdb:
-        case 0xdf:
-            break;
-        case 0xe3: // ISB
-        case 0xe7:
-        case 0xef:
-        case 0xf3:
-        case 0xf7:
-        case 0xfb:
-        case 0xff:
-            break;
         case 0x24: // BIT
         case 0x2c:
-            break;
-        case 0x06: // ASL
-        case 0x0a:
-        case 0x0e:
-        case 0x16:
-        case 0x1e:
-            break;
-        case 0x26: // ROL
-        case 0x2a:
-        case 0x2e:
-        case 0x36:
-        case 0x3e:
-            break;
-        case 0x46: // LSR
-        case 0x4a:
-        case 0x4e:
-        case 0x56:
-        case 0x5e:
-            break;
-        case 0x66: // ROR
-        case 0x6a:
-        case 0x6e:
-        case 0x76:
-        case 0x7e:
             break;
         case 0x08: // PHP
             break;
