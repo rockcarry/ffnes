@@ -61,7 +61,6 @@ instruction, except it does not store the result anywhere nor affects the
 flags.
 */
 
-
 // 常量定义
 #define FREQ_MCLK   26601712
 #define CPU_FREQ    (FREQ_MCLK / 15)
@@ -215,9 +214,6 @@ flags.
 //-- addressing mode --//
 
 //++ instruction ++//
-#define NOP() do { \
-} while (0)
-
 #define ORA() do { \
     AX |= DT;               \
     SET_ZN_FLAG(AX);        \
@@ -238,15 +234,6 @@ flags.
     TST_FLAG(WT > 0xFF, C_FLAG);  \
     TST_FLAG(~(AX^DT) & (AX^WT) & 0x80, O_FLAG); \
     AX = (BYTE)WT;          \
-    SET_ZN_FLAG(AX);        \
-} while (0)
-
-#define STA() do { \
-    DT = AX;                \
-} while (0)
-
-#define LDA() do { \
-    AX = DT;                \
     SET_ZN_FLAG(AX);        \
 } while (0)
 
@@ -276,7 +263,7 @@ flags.
         TST_FLAG(DT & 0x80, C_FLAG);\
         DT = (DT << 1) | 1; \
     } else {                \
-        TST_FLAG( DT&0x80, C_FLAG );\
+        TST_FLAG(DT & 0x80, C_FLAG);\
         DT <<= 1;           \
     }                       \
     AX &= DT;               \
@@ -344,8 +331,45 @@ flags.
     DT++;                   \
     SBC();                  \
 } while (0)
-
 //-- instruction --//
+
+#define NOP() do {} while (0)
+#define STA() do { DT = AX;      } while (0)
+#define STX() do { DT = XI;      } while (0)
+#define STY() do { DT = YI;      } while (0)
+#define SAX() do { DT = AX & XI; } while (0)
+
+#define LDA() do { AX = DT; SET_ZN_FLAG(AX); } while (0)
+#define LDX() do { XI = DT; SET_ZN_FLAG(XI); } while (0)
+#define LDY() do { YI = DT; SET_ZN_FLAG(YI); } while (0)
+
+#define LAX() do { \
+    AX = DT;                \
+    XI = AX;                \
+    SET_ZN_FLAG(AX);        \
+} while (0)
+
+#define LXA() do { \
+    AX = XI = ((AX|0xEE) & DT); \
+    SET_ZN_FLAG(AX);        \
+} while (0)
+
+#define LAS() do { \
+    AX = XI = SP = (SP & DT);   \
+    SET_ZN_FLAG(AX);            \
+} while (0)
+
+#define CPX() do { \
+    WT = (WORD)XI - (WORD)DT;   \
+    TST_FLAG((WT&0x8000)==0, C_FLAG);   \
+    SET_ZN_FLAG((BYTE)WT);      \
+} while (0)
+
+#define CPY() do { \
+    WT = (WORD)YI - (WORD)DT;   \
+    TST_FLAG((WT&0x8000)==0, C_FLAG);   \
+    SET_ZN_FLAG((BYTE)WT);      \
+} while (0)
 
 #define BRK() do { \
     PC++;                   \
@@ -377,21 +401,104 @@ flags.
     PC++;                   \
 } while (0)
 
-#define PHP() do { \
-    PUSH(PS | B_FLAG);      \
+#define PHP() do { PUSH(PS | B_FLAG);           } while (0)
+#define PLP() do { PS = POP() | R_FLAG;         } while (0)
+#define PHA() do { PUSH(AX);                    } while (0)
+#define PLA() do { AX = POP(); SET_ZN_FLAG(AX); } while (0)
+
+#define JMP_4C() do { \
+    PC = READW(PC);         \
 } while (0)
 
-#define PLP() do { \
-    PS = POP() | R_FLAG;    \
+#define JMP_6C() do { \
+    WT = READW(PC);         \
+    EA = READB(WT);         \
+    WT = (WT&0xFF00)|((WT+1)&0x00FF);   \
+    PC = EA + (READB(WT) << 8); \
 } while (0)
 
-#define PHA() do { \
-    PUSH(AX);               \
+#define REL_JUMP() do { \
+    EA = PC + (char)DT;     \
+    PC = EA;                \
 } while (0)
 
-#define PLA() do { \
-    AX = POP(); SET_ZN_FLAG(AX);    \
+#define BPL() do { if (!(PS & N_FLAG) ) REL_JUMP(); } while (0)
+#define BMI() do { if ( (PS & N_FLAG) ) REL_JUMP(); } while (0)
+#define BVC() do { if (!(PS & O_FLAG) ) REL_JUMP(); } while (0)
+#define BVS() do { if ( (PS & O_FLAG) ) REL_JUMP(); } while (0)
+#define BCC() do { if (!(PS & C_FLAG) ) REL_JUMP(); } while (0)
+#define BCS() do { if ( (PS & C_FLAG) ) REL_JUMP(); } while (0)
+#define BNE() do { if (!(PS & Z_FLAG) ) REL_JUMP(); } while (0)
+#define BEQ() do { if ( (PS & Z_FLAG) ) REL_JUMP(); } while (0)
+
+#define CLC() do { PS &= ~C_FLAG; } while (0)
+#define SEC() do { PS |=  C_FLAG; } while (0)
+#define CLI() do { PS &= ~I_FLAG; } while (0)
+#define SEI() do { PS |=  I_FLAG; } while (0)
+#define CLV() do { PS &= ~O_FLAG; } while (0)
+#define CLD() do { PS &= ~D_FLAG; } while (0)
+#define SED() do { PS |=  D_FLAG; } while (0)
+
+#define TXA() do { AX = XI; SET_ZN_FLAG(AX); } while (0)
+#define TAX() do { XI = AX; SET_ZN_FLAG(XI); } while (0)
+#define TYA() do { AX = YI; SET_ZN_FLAG(AX); } while (0)
+#define TAY() do { YI = AX; SET_ZN_FLAG(YI); } while (0)
+#define TXS() do { SP = XI;                  } while (0)
+#define TSX() do { XI = SP; SET_ZN_FLAG(XI); } while (0)
+
+#define INX() do { XI++; SET_ZN_FLAG(XI);    } while (0)
+#define INY() do { YI++; SET_ZN_FLAG(YI);    } while (0)
+#define DEX() do { XI--; SET_ZN_FLAG(XI);    } while (0)
+#define DEY() do { YI--; SET_ZN_FLAG(YI);    } while (0)
+
+#define BIT() do { \
+    TST_FLAG((DT & AX) == 0, Z_FLAG);   \
+    TST_FLAG( DT & 0x80, N_FLAG);       \
+    TST_FLAG( DT & 0x40, O_FLAG);       \
 } while (0)
+
+#define ANC() do { \
+    AX &= DT;               \
+    SET_ZN_FLAG(AX);        \
+    TST_FLAG(PS & N_FLAG, C_FLAG);  \
+} while (0)
+
+#define ASR() do { \
+    DT &= AX;               \
+    TST_FLAG(DT & 0x01, C_FLAG );   \
+    AX  = DT >> 1;          \
+    SET_ZN_FLAG(AX);        \
+} while (0)
+
+#define ARR() do { \
+    DT &= AX;               \
+    AX  = (DT >> 1)|((PS&C_FLAG) << 7); \
+    SET_ZN_FLAG(AX);        \
+    TST_FLAG(AX & 0x40, C_FLAG);        \
+    TST_FLAG((AX>>6)^(AX>>5), O_FLAG ); \
+} while (0)
+
+#define ANE() do { \
+    AX = (AX|0xEE) & XI & DT;   \
+    SET_ZN_FLAG(AX);        \
+} while (0)
+
+#define SBX() do { \
+    WT = (AX&XI) - DT;      \
+    TST_FLAG(WT < 0x100, C_FLAG);   \
+    XI = WT & 0xFF;         \
+    SET_ZN_FLAG(AX);        \
+} while (0)
+
+#define SHA() do { DT = AX & XI & (BYTE)((EA >> 8) + 1); } while (0)
+#define SHY() do { DT = YI & (BYTE)((EA>>8)+1);          } while (0)
+#define SHX() do { DT = XI & (BYTE)((EA>>8)+1);          } while (0)
+
+#define SHS() do { \
+    SP = AX & XI;               \
+    DT = SP & (BYTE)((EA>>8)+1);\
+} while (0)
+
 
 static BYTE CPU_CYCLE_TAB[256] =
 {
@@ -620,6 +727,35 @@ other_opcode_handler:
         // others
         switch (opcode)
         {
+        case 0xa3: MR_IX(); LAX(); break; // LAX
+        case 0xa7: MR_ZP(); LAX(); break; // LAX
+        case 0xaf: MR_AB(); LAX(); break; // LAX
+        case 0xb3: MR_IY(); LAX(); break; // LAX
+        case 0xb7: MR_ZY(); LAX(); break; // LAX
+        case 0xbf: MR_AY(); LAX(); break; // LAX
+
+        case 0xa2: MR_IM(); LDX(); break; // LDX
+        case 0xa6: MR_ZP(); LDX(); break; // LDX
+        case 0xae: MR_AB(); LDX(); break; // LDX
+        case 0xb6: MR_ZY(); LDX(); break; // LDX
+        case 0xbe: MR_AY(); LDX(); break; // LDX
+
+        case 0xa0: MR_IM(); LDY(); break; // LDY
+        case 0xa4: MR_ZP(); LDY(); break; // LDY
+        case 0xac: MR_AB(); LDY(); break; // LDY
+        case 0xb4: MR_ZX(); LDY(); break; // LDY
+        case 0xbc: MR_AX(); LDY(); break; // LDY
+
+        case 0xab: MR_IM(); LXA(); break; // LXA
+        case 0xbb: MR_AY(); LAS(); break; // LAS
+
+        case 0xc0: MR_IM(); CPY(); break; // CPY
+        case 0xc4: MR_ZP(); CPY(); break; // CPY
+        case 0xcc: MR_AB(); CPY(); break; // CPY
+        case 0xe0: MR_IM(); CPX(); break; // CPX
+        case 0xe4: MR_ZP(); CPX(); break; // CPX
+        case 0xec: MR_AB(); CPX(); break; // CPX
+
         case 0x00: BRK(); break; // BRK
         case 0x20: JSR(); break; // JSR
         case 0x40: RTI(); break; // RTI
@@ -628,127 +764,59 @@ other_opcode_handler:
         case 0x28: PLP(); break; // PLP
         case 0x48: PHA(); break; // PHA
         case 0x68: PLA(); break; // PLA
-        case 0xa0: // LDY
-        case 0xa4:
-        case 0xac:
-        case 0xb4:
-        case 0xbc:
-            break;
-        case 0xc0: // CPY
-        case 0xc4:
-        case 0xcc:
-            break;
-        case 0xe0: // CPX
-        case 0xe4:
-        case 0xec:
-            break;
-        case 0xa2: // LDX
-        case 0xa6:
-        case 0xae:
-            break;
-        case 0xb6: // LDX  y)
-        case 0xbe: // LDX  y)
-            break;
-        case 0x83: // SAX
-        case 0x87:
-        case 0x8f:
-            break;
-        case 0x97: // SAX y)
-            break;
-        case 0xa3: // LAX
-        case 0xa7:
-        case 0xaf:
-        case 0xb3:
-            break;
-        case 0xb7: // LAX y)
-        case 0xbf:
-            break;
-        case 0x24: // BIT
-        case 0x2c:
-            break;
-        case 0x88: // DEY
-            break;
-        case 0xa8: // TAY
-            break;
-        case 0xc8: // INY
-            break;
-        case 0xe8: // INX
-            break;
-        case 0x8a: // TXA
-            break;
-        case 0xaa: // TAX
-            break;
-        case 0xca: // DEX
-            break;
-        case 0xea: // NOP
-            break;
-        case 0x0b: // ANC
-        case 0x2b:
-            break;
-        case 0x4b: // ASR
-            break;
-        case 0x6b: // ARR
-            break;
-        case 0x8b: // ANE
-            break;
-        case 0xab: // LXA
-            break;
-        case 0xcb: // SBX
-            break;
-        case 0xeb: // SBC
-            break;
-        case 0x4c: // JMP
-            break;
-        case 0x6c: // JMP ()
-            break;
-        case 0x10: // BPL
-            break;
-        case 0x30: // BMI
-            break;
-        case 0x50: // BVC
-            break;
-        case 0x70: // BVS
-            break;
-        case 0x90: // BCC
-            break;
-        case 0xb0: // BCS
-            break;
-        case 0xd0: // BNE
-            break;
-        case 0xf0: // BEQ
-            break;
-        case 0x93: // SHA
-            break;
-        case 0x18: // CLC
-            break;
-        case 0x38: // SEC
-            break;
-        case 0x58: // CLI
-            break;
-        case 0x78: // SEI
-            break;
-        case 0x98: // TYA
-            break;
-        case 0xb8: // CLV
-            break;
-        case 0xd8: // CLD
-            break;
-        case 0xf8: // SED
-            break;
-        case 0x9a: // TXS
-            break;
-        case 0xba: // TSX
-            break;
-        case 0x9b: // SHS
-            break;
-        case 0xbb: // LAS
-            break;
-        case 0x9c: // SHY
-            break;
-        case 0x9e: // SHX y)
-            break;
-        case 0x9f: // SHA y)
-            break;
+
+        case 0x4c: JMP_4C(); break; // JMP
+        case 0x6c: JMP_6C(); break; // JMP ()
+
+        case 0x10: MR_IM(); BPL(); break; // BPL
+        case 0x30: MR_IM(); BMI(); break; // BMI
+        case 0x50: MR_IM(); BVC(); break; // BVC
+        case 0x70: MR_IM(); BVS(); break; // BVS
+        case 0x90: MR_IM(); BCC(); break; // BCC
+        case 0xb0: MR_IM(); BCS(); break; // BCS
+        case 0xd0: MR_IM(); BNE(); break; // BNE
+        case 0xf0: MR_IM(); BEQ(); break; // BEQ
+
+        case 0x18: CLC(); break; // CLC
+        case 0x38: SEC(); break; // SEC
+        case 0x58: CLI(); break; // CLI
+        case 0x78: SEI(); break; // SEI
+        case 0xb8: CLV(); break; // CLV
+        case 0xd8: CLD(); break; // CLD
+        case 0xf8: SED(); break; // SED
+
+        case 0x8a: TXA(); break; // TXA
+        case 0xaa: TAX(); break; // TAX
+        case 0x98: TYA(); break; // TYA
+        case 0xa8: TAY(); break; // TAY
+        case 0x9a: TXS(); break; // TXS
+        case 0xba: TSX(); break; // TSX
+
+        case 0xe8: INX(); break; // INX
+        case 0xc8: INY(); break; // INY
+        case 0xca: DEX(); break; // DEX
+        case 0x88: DEY(); break; // DEY
+        case 0xea: NOP(); break; // NOP
+
+        case 0x24: MR_ZP(); BIT(); break; // BIT
+        case 0x2c: MR_AB(); BIT(); break; // BIT
+
+        case 0x0b: MR_IM(); ANC(); break; // ANC
+        case 0x2b: MR_IM(); ANC(); break; // ANC
+        case 0x4b: MR_IM(); ASR(); break; // ASR
+        case 0x6b: MR_IM(); ARR(); break; // ARR
+        case 0x8b: MR_IM(); ANE(); break; // ANE
+
+        case 0xcb: MR_IM(); SBX(); break; // SBX
+        case 0x93: MR_IY(); SHA(); MW_EA(); break; // SHA
+        case 0x9f: MR_AY(); SHA(); MW_EA(); break; // SHA y)
+        case 0x9b: MR_AY(); SHS(); MW_EA(); break; // SHS
+        case 0x9c: MR_AX(); SHY(); MW_EA(); break; // SHY
+        case 0x9e: MR_AY(); SHX(); MW_EA(); break; // SHX y)
+        case 0x83: MR_IX(); SAX(); MW_EA(); break; // SAX
+        case 0x87: MR_ZP(); SAX(); MW_ZP(); break; // SAX
+        case 0x8f: MR_AB(); SAX(); MW_EA(); break; // SAX
+        case 0x97: MR_ZY(); SAX(); MW_ZP(); break; // SAX
         }
     }
 
