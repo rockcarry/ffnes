@@ -65,6 +65,9 @@ flags.
 #define FREQ_MCLK   26601712
 #define CPU_FREQ    (FREQ_MCLK / 15)
 
+#define IRQ_FLAG (1 << 0)
+#define NMI_FLAG (1 << 1)
+
 #define NMI_VECTOR  0xfffa
 #define RST_VECTOR  0xfffc
 #define IRQ_VECTOR  0xfffe
@@ -421,6 +424,7 @@ void cpu_init(CPU *cpu)
     cpu->xi = 0x00;
     cpu->yi = 0x00;
     cpu->ps = I_FLAG | R_FLAG;
+    cpu->intr_flag   = 0;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
 }
@@ -429,8 +433,14 @@ void cpu_reset(CPU *cpu)
 {
     cpu->pc  = bus_readw(cpu->cbus, RST_VECTOR);
     cpu->ps |= I_FLAG;
+    cpu->intr_flag   = 0;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
+}
+
+void cpu_nmi(CPU *cpu)
+{
+    cpu->intr_flag |= NMI_FLAG;
 }
 
 void cpu_run(CPU *cpu, int ncycle)
@@ -696,6 +706,16 @@ other_opcode_handler:
         case 0xcb: MR_IM(); SBX(); break; // SBX
         case 0xea: NOP(); break; // NOP
         default:   UDF(); break; // undefined
+        }
+
+        if (cpu->intr_flag & NMI_FLAG) {
+            cpu->intr_flag &= ~NMI_FLAG;
+            PUSH((PC >> 8) & 0xff);
+            PUSH((PC >> 0) & 0xff);
+            CLR_FLAG(B_FLAG);
+            PUSH(PS);
+            SET_FLAG(I_FLAG);
+            PC = READW(NMI_VECTOR);
         }
     }
 

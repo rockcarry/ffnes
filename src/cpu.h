@@ -13,6 +13,7 @@ typedef struct {
     BYTE xi;
     BYTE yi;
     BYTE ps;
+    BYTE intr_flag;
     long cycles_emu;
     long cycles_real;
 
@@ -24,6 +25,7 @@ typedef struct {
 // º¯ÊýÉùÃ÷
 void cpu_init (CPU *cpu);
 void cpu_reset(CPU *cpu);
+void cpu_nmi  (CPU *cpu);
 void cpu_run  (CPU *cpu, int cycle);
 
 #endif
