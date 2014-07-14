@@ -121,20 +121,23 @@ flags.
 #define MR_ZX() do { EA = READB(PC++); EA = (BYTE)(DT + XI); DT = ZPRDB(EA); } while (0)
 #define MR_ZY() do { EA = READB(PC++); EA = (BYTE)(DT + YI); DT = ZPRDB(EA); } while (0)
 #define MR_AB() do { EA = READW(PC); PC += 2; DT = READB(EA);      } while (0)
-#define MR_AX() do { EA = READW(PC); PC += 2; DT = READB(EA + XI); } while (0)
-#define MR_AY() do { EA = READW(PC); PC += 2; DT = READB(EA + YI); } while (0)
+#define MR_AX() do { ET = READW(PC); PC += 2; EA = ET + XI; DT = READB(EA); } while (0)
+#define MR_AY() do { ET = READW(PC); PC += 2; EA = ET + YI; DT = READB(EA); } while (0)
+
 #define MR_IX() do { DT = READB(PC++); EA = ZPRDW(DT + XI); DT = READB(EA); } while (0)
-#define MR_IY() do { DT = READB(PC++); EA = ZPRDW(DT); DT = READB(EA + YI); } while (0)
+#define MR_IY() do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI; DT = READB(EA); } while (0)
+
 #define EA_ZP() do { EA = READB(PC++); } while (0)
 #define EA_ZX() do { DT = READB(PC++); EA = (BYTE)(DT + XI); } while (0)
 #define EA_ZY() do { DT = READB(PC++); EA = (BYTE)(DT + YI); } while (0)
-#define EA_AB() do { EA = READW(PC); PC += 2;           } while (0)
-#define EA_AX() do { EA = READW(PC); PC += 2; EA += XI; } while (0)
-#define EA_AY() do { EA = READW(PC); PC += 2; EA += YI; } while (0)
-#define EA_IX() do { DT = READB(PC++); EA = ZPRDW(DT + XI);      } while (0)
-#define EA_IY() do { DT = READB(PC++); EA = ZPRDW(DT); EA += YI; } while (0)
+#define EA_AB() do { EA = READW(PC); PC += 2;                } while (0)
+#define EA_AX() do { ET = READW(PC); PC += 2; EA = ET + XI;  } while (0)
+#define EA_AY() do { ET = READW(PC); PC += 2; EA = ET + YI;  } while (0)
+#define EA_IX() do { DT = READB(PC++); EA = ZPRDW(DT + XI);  } while (0)
+#define EA_IY() do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI; } while (0)
 #define MW_ZP() do { ZPWRB(EA, DT);  } while (0)
 #define MW_EA() do { WRITEB(EA, DT); } while (0)
+#define	CHECK_EA() do { if ((ET & 0xFF00) != (EA & 0xFF00)) ncycle--; } while (0)
 //-- addressing mode --//
 
 //++ instruction ++//
@@ -327,8 +330,11 @@ flags.
 } while (0)
 
 #define REL_JUMP() do { \
+    ET = PC;                \
     EA = PC + (char)DT;     \
     PC = EA;                \
+    ncycle--;               \
+    CHECK_EA();             \
 } while (0)
 
 #define BPL() do { if (!(PS & N_FLAG) ) REL_JUMP(); } while (0)
@@ -393,22 +399,22 @@ flags.
 
 static BYTE CPU_CYCLE_TAB[256] =
 {
-    7, 6, 0, 0, 0, 3, 5, 0, 3, 2, 2, 0, 0, 4, 6, 0,
-    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
-    6, 2, 0, 0, 3, 3, 5, 0, 4, 2, 2, 0, 4, 4, 6, 0,
-    2, 2, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
-    6, 6, 0, 0, 0, 3, 5, 0, 3, 2, 2, 0, 3, 4, 6, 0,
-    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
-    6, 6, 0, 0, 0, 3, 5, 0, 4, 2, 2, 0, 5, 4, 6, 0,
-    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
-    0, 6, 0, 0, 3, 3, 3, 0, 2, 0, 2, 0, 4, 4, 4, 0,
-    2, 6, 0, 0, 4, 4, 4, 0, 2, 5, 2, 0, 0, 5, 0, 0,
-    2, 6, 2, 0, 3, 3, 3, 0, 2, 2, 2, 0, 4, 4, 4, 0,
-    2, 5, 0, 0, 4, 4, 4, 0, 2, 4, 2, 0, 4, 4, 4, 0,
-    2, 6, 0, 0, 3, 3, 5, 0, 2, 2, 2, 0, 4, 4, 6, 0,
-    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
-    2, 6, 0, 0, 3, 3, 5, 0, 2, 2, 2, 0, 4, 4, 6, 0,
-    2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
+    7, 6, 0, 0, 3, 3, 5, 0, 3, 2, 2, 0, 2, 4, 6, 0,
+    2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 2, 4, 7, 7,
+    6, 2, 0, 8, 3, 3, 5, 5, 4, 2, 2, 0, 4, 4, 6, 6,
+    2, 2, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 2, 4, 7, 7,
+    6, 6, 0, 8, 3, 3, 5, 5, 3, 2, 2, 0, 3, 4, 6, 6,
+    2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 2, 4, 7, 7,
+    6, 6, 0, 8, 3, 3, 5, 5, 4, 2, 2, 0, 5, 4, 6, 6,
+    2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 2, 4, 7, 7,
+    2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 0, 4, 4, 4, 4,
+    2, 6, 0, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5,
+    2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
+    2, 5, 0, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4,
+    2, 6, 2, 0, 3, 3, 5, 0, 2, 2, 2, 2, 4, 4, 6, 0,
+    2, 5, 0, 0, 4, 4, 6, 0, 2, 4, 2, 0, 2, 4, 7, 0,
+    2, 6, 2, 5, 3, 3, 5, 0, 2, 2, 2, 2, 4, 4, 6, 5,
+    2, 5, 0, 5, 4, 4, 6, 5, 2, 4, 2, 5, 2, 4, 7, 5,
 };
 
 // º¯ÊýÊµÏÖ
@@ -450,6 +456,7 @@ void cpu_run(CPU *cpu, int ncycle)
     BYTE opopt  = 0;
     BYTE DT     = 0;
     WORD EA     = 0;
+    WORD ET     = 0;
     WORD WT     = 0;
 
     cpu->cycles_emu  += ncycle;
@@ -476,10 +483,10 @@ void cpu_run(CPU *cpu, int ncycle)
             case 1: MR_ZP(); break; // zeropage
             case 2: MR_IM(); break; // immediate
             case 3: MR_AB(); break; // absolute
-            case 4: MR_IY(); break; // (indir),y
+            case 4: MR_IY(); CHECK_EA(); break; // (indir),y
             case 5: MR_ZX(); break; // zeropage,x
-            case 6: MR_AY(); break; // absolute,y
-            case 7: MR_AX(); break; // absolute,x
+            case 6: MR_AY(); CHECK_EA(); break; // absolute,y
+            case 7: MR_AX(); CHECK_EA(); break; // absolute,x
             }
 
             // excute
@@ -586,24 +593,24 @@ other_opcode_handler:
         case 0xa3: MR_IX(); LAX(); break; // LAX
         case 0xa7: MR_ZP(); LAX(); break; // LAX
         case 0xaf: MR_AB(); LAX(); break; // LAX
-        case 0xb3: MR_IY(); LAX(); break; // LAX
+        case 0xb3: MR_IY(); LAX(); CHECK_EA(); break; // LAX
         case 0xb7: MR_ZY(); LAX(); break; // LAX
-        case 0xbf: MR_AY(); LAX(); break; // LAX
+        case 0xbf: MR_AY(); LAX(); CHECK_EA(); break; // LAX
 
         case 0xa2: MR_IM(); LDX(); break; // LDX
         case 0xa6: MR_ZP(); LDX(); break; // LDX
         case 0xae: MR_AB(); LDX(); break; // LDX
         case 0xb6: MR_ZY(); LDX(); break; // LDX
-        case 0xbe: MR_AY(); LDX(); break; // LDX
+        case 0xbe: MR_AY(); LDX(); CHECK_EA(); break; // LDX
 
         case 0xa0: MR_IM(); LDY(); break; // LDY
         case 0xa4: MR_ZP(); LDY(); break; // LDY
         case 0xac: MR_AB(); LDY(); break; // LDY
         case 0xb4: MR_ZX(); LDY(); break; // LDY
-        case 0xbc: MR_AX(); LDY(); break; // LDY
+        case 0xbc: MR_AX(); LDY(); CHECK_EA(); break; // LDY
 
         case 0xab: MR_IM(); LXA(); break; // LXA
-        case 0xbb: MR_AY(); LAS(); break; // LAS
+        case 0xbb: MR_AY(); LAS(); CHECK_EA(); break; // LAS
 
         case 0x83: MR_IX(); SAX(); MW_EA(); break; // SAX
         case 0x87: MR_ZP(); SAX(); MW_ZP(); break; // SAX
