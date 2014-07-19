@@ -55,7 +55,7 @@ typedef struct {
     BYTE  buf_ppuregs[NES_PPUREGS_SIZE];
     BYTE  buf_apuregs[NES_APUREGS_SIZE];
     BYTE *buf_sram;     // in cartridge
-    BYTE  buf_erom   [NES_SRAM_SIZE   ];
+    BYTE  buf_erom   [NES_EROM_SIZE   ];
     BYTE *buf_prgrom0;  // in cartridge
     BYTE *buf_prgrom1;  // in cartridge
 

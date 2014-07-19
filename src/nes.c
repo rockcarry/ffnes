@@ -49,7 +49,7 @@ BOOL nes_init(NES *nes, char *file)
     nes->ppuregs.r_callback = DEF_PPU_REG_RCB;
     nes->ppuregs.w_callback = DEF_PPU_REG_WCB;
 
-    // create ppu regs
+    // create apu regs
     nes->apuregs.type = MEM_REG;
     nes->apuregs.size = NES_APUREGS_SIZE;
     nes->apuregs.data = nes->buf_apuregs;
@@ -167,7 +167,7 @@ BOOL nes_init(NES *nes, char *file)
     nes->palette.size = NES_PALETTE_SIZE;
     nes->palette.data = nes->buf_palette;
 
-    // init nes cbus
+    // init nes pbus
     bus_setmir(nes->pbus, 0, 0x4000, 0xFFFF, 0x3FFF);
     bus_setmir(nes->pbus, 1, 0x3000, 0x3EFF, 0x2EFF);
     bus_setmir(nes->pbus, 2, 0x3F00, 0x3FFF, 0x3F1F);
