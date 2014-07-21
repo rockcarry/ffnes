@@ -46,8 +46,8 @@ BOOL nes_init(NES *nes, char *file)
     nes->ppuregs.type = MEM_REG;
     nes->ppuregs.size = NES_PPUREGS_SIZE;
     nes->ppuregs.data = nes->buf_ppuregs;
-    nes->ppuregs.r_callback = DEF_PPU_REG_RCB;
-    nes->ppuregs.w_callback = DEF_PPU_REG_WCB;
+    nes->ppuregs.r_callback = NES_PPU_REG_RCB;
+    nes->ppuregs.w_callback = NES_PPU_REG_WCB;
 
     // create apu regs
     nes->apuregs.type = MEM_REG;
