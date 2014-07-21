@@ -1,6 +1,5 @@
 // 包含头文件
 #include "nes.h"
-#include "ppu.h"
 
 // 内部全局变量定义
 static BYTE DEF_PPU_PAL[64 * 3] =
