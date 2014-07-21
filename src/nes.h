@@ -9,10 +9,12 @@
 #include "bus.h"
 #include "mem.h"
 #include "cartridge.h"
+#include "joypad.h"
 
 #define NES_CRAM_SIZE     0x0800
 #define NES_PPUREGS_SIZE  0x0008
-#define NES_APUREGS_SIZE  0x0018
+#define NES_APUREGS_SIZE  0x0016
+#define NES_PADREGS_SIZE  0x0002
 #define NES_EROM_SIZE     0x1FE8
 #define NES_SRAM_SIZE     0x2000
 #define NES_PRGROM0_SIZE  0x4000
@@ -32,11 +34,13 @@ typedef struct {
     PPU ppu;  // 2c02
     APU apu;  // 2a03
     CARTRIDGE cart;
+    JOYPAD    pad ;
 
     BUS cbus;    // cpu bus
     MEM cram;    // cpu ram
     MEM ppuregs; // ppu regs
     MEM apuregs; // apu regs
+    MEM padregs; // pad regs
     MEM erom;    // expansion rom
     MEM sram;    // sram
     MEM prgrom0; // PRG-ROM 0
@@ -54,6 +58,7 @@ typedef struct {
     BYTE  buf_cram   [NES_CRAM_SIZE   ];
     BYTE  buf_ppuregs[NES_PPUREGS_SIZE];
     BYTE  buf_apuregs[NES_APUREGS_SIZE];
+    BYTE  buf_padregs[NES_PADREGS_SIZE];
     BYTE *buf_sram;     // in cartridge
     BYTE  buf_erom   [NES_EROM_SIZE   ];
     BYTE *buf_prgrom0;  // in cartridge

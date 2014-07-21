@@ -14,6 +14,7 @@ OBJS = \
     ppu.o \
     apu.o \
     cartridge.o \
+    joypad.o \
 
 # 所有的可执行目标
 EXES = \
