@@ -25,11 +25,11 @@
 typedef struct {
     DWORD  counter_4016;
     DWORD  counter_4017;
-    DWORD  pad0_data;
-    DWORD  pad1_data;
-    DWORD  pad2_data;
-    DWORD  pad3_data;
+    DWORD  pad_data[4];
     HANDLE hTurboThread;
+    HANDLE hTurboEvent;
+    BOOL   bTurboFlag;
+    BOOL   bExitThread;
 } JOYPAD;
 
 void joypad_init  (JOYPAD *jp);
