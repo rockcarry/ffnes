@@ -85,8 +85,8 @@ BOOL nes_init(NES *nes, char *file)
     bus_setmem(nes->cbus, 0, 0x0000, 0x1FFF, &(nes->cram   ));
     bus_setmem(nes->cbus, 1, 0x2000, 0x3FFF, &(nes->ppuregs));
     bus_setmem(nes->cbus, 2, 0x4000, 0x4015, &(nes->apuregs));
-    bus_setmem(nes->cbus, 3, 0x4016, 0x4017, &(nes->padregs));
-    bus_setmem(nes->cbus, 4, 0x4018, 0x5FFF, &(nes->erom   ));
+    bus_setmem(nes->cbus, 3, 0x4016, 0x401F, &(nes->padregs));
+    bus_setmem(nes->cbus, 4, 0x4020, 0x5FFF, &(nes->erom   ));
     bus_setmem(nes->cbus, 5, 0x6000, 0x7FFF, &(nes->sram   ));
     bus_setmem(nes->cbus, 6, 0x8000, 0xBFFF, &(nes->prgrom0));
     bus_setmem(nes->cbus, 7, 0xC000, 0xFFFF, &(nes->prgrom1));
