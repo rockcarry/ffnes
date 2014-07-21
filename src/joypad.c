@@ -12,6 +12,7 @@ static DWORD WINAPI turbokey_thread_proc(LPVOID lpParam)
     {
         WaitForSingleObject(jp->hTurboEvent, -1);
         if (jp->bExitThread) break;
+        if (jp->strobe     ) continue;
 
         for (i=0; i<4; i++)
         {
@@ -152,8 +153,12 @@ void NES_PAD_REG_WCB(MEM *pm, int addr)
     {
     case 0: // 4016
         if (pm->data[addr] & 0x1) {
+            pad->strobe       = 1;
             pad->counter_4016 = 0;
             pad->counter_4017 = 0;
+        }
+        else {
+            pad->strobe       = 0;
         }
         break;
     }
