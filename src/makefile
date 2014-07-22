@@ -16,6 +16,8 @@ OBJS = \
     mmc.o \
     cartridge.o \
     joypad.o \
+    adev.o \
+    vdev.o \
 
 # 所有的可执行目标
 EXES = \
