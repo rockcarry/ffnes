@@ -29,6 +29,8 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
     WNDCLASS wc   = {0};
     MSG      msg  = {0};
     HWND     hwnd = NULL;
+    RECT     rect = {0};
+    int      w, h, x, y;
 
     // 注册窗口
     wc.lpfnWndProc   = WndProc;
@@ -40,26 +42,30 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
     if (!RegisterClass(&wc)) return FALSE;
 
     // 创建窗口
-    int winwidth  = NES_WIDTH  + 64;
-    int winheight = NES_HEIGHT + 64;
-    int winxpos   = (SCREEN_WIDTH  - winwidth ) / 2;
-    int winypos   = (SCREEN_HEIGHT - winheight) / 2;
-    hwnd = CreateWindowEx(
-        0,
+    hwnd = CreateWindow(
         APP_CLASS_NAME,
         APP_WND_TITLE,
-        WS_OVERLAPPED | WS_SYSMENU,
-        winxpos,
-        winypos,
-        winwidth,
-        winheight,
+        WS_OVERLAPPED|WS_SYSMENU,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        NES_WIDTH,
+        NES_HEIGHT,
         NULL,
         NULL,
         hCurInst,
         NULL);
     if (!hwnd) return FALSE;
 
+    GetClientRect(hwnd, &rect);
+    w = NES_WIDTH  + (NES_WIDTH  - rect.right );
+    h = NES_HEIGHT + (NES_HEIGHT - rect.bottom);
+    x = (SCREEN_WIDTH  - w) / 2;
+    y = (SCREEN_HEIGHT - h) / 2;
+    x = x > 0 ? x : 0;
+    y = y > 0 ? y : 0;
+
     // 显示窗口
+    MoveWindow(hwnd, x, y, w, h, FALSE);
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
 
@@ -67,7 +73,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
     while (GetMessage(&msg, NULL, 0, 0))
     {
         TranslateMessage(&msg);
-        DispatchMessage(&msg);
+        DispatchMessage (&msg);
     }
 
     return TRUE;
