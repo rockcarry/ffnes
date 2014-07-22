@@ -18,10 +18,10 @@ OBJS = \
 
 # 所有的可执行目标
 EXES = \
-    nes.exe \
+    emulator.exe \
 
 # 输出的库文件
-DLL = nes.dll
+DLL = ffnes.dll
 
 # 编译规则
 all : $(DLL) $(EXES)
@@ -42,10 +42,10 @@ $(DLL) : $(OBJS)
 	$(CC) $(CCFLAGS) -o $@ $< -c
 
 %.exe : %.c %.h $(DLL)
-	$(CC) $(CCFLAGS) -o $@ $< $(DLL) -D_TEST_
+	$(CC) $(CCFLAGS) -o $@ $< $(DLL)
 
 %.exe : %.cpp %.h $(DLL)
-	$(CC) $(CCFLAGS) -o $@ $< $(DLL) -D_TEST_
+	$(CC) $(CCFLAGS) -o $@ $< $(DLL)
 
 clean :
 	-rm -f *.o

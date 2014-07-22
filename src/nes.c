@@ -1,5 +1,3 @@
-#ifndef _TEST_
-
 // 包含头文件
 #include "nes.h"
 
@@ -216,10 +214,3 @@ void nes_reset(NES *nes)
     joypad_reset(&(nes->pad));
 }
 
-#else
-#include <windows.h>
-int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
-{
-    return 0;
-}
-#endif
