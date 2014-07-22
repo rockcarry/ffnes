@@ -13,6 +13,7 @@ OBJS = \
     cpu.o \
     ppu.o \
     apu.o \
+    mmc.o \
     cartridge.o \
     joypad.o \
 
