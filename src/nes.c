@@ -2,7 +2,7 @@
 #include "nes.h"
 
 // º¯ÊýÊµÏÖ
-BOOL nes_init(NES *nes, char *file)
+BOOL nes_init(NES *nes, char *file, DWORD extra)
 {
     // clear it
     memset(nes, 0, sizeof(NES));
@@ -197,6 +197,8 @@ BOOL nes_init(NES *nes, char *file)
     apu_init   (&(nes->apu));
     joypad_init(&(nes->pad));
 
+    // extra data
+    nes->extra = extra;
     return TRUE;
 }
 

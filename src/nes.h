@@ -35,6 +35,7 @@ typedef struct {
     APU apu;  // 2a03
     CARTRIDGE cart;
     JOYPAD    pad ;
+    DWORD     extra;
 
     BUS cbus;    // cpu bus
     MEM cram;    // cpu ram
@@ -74,7 +75,7 @@ typedef struct {
 } NES;
 
 // º¯ÊýÉùÃ÷
-BOOL nes_init (NES *nes, char *file);
+BOOL nes_init (NES *nes, char *file, DWORD extra);
 void nes_free (NES *nes);
 void nes_reset(NES *nes);
 
