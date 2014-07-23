@@ -2,7 +2,7 @@
 #ifndef _STDEFINE_H_
 #define _STDEFINE_H_
 
-#if defined(__MINGW32__)
+#if defined(WIN32) || defined(__MINGW32__)
 #include <windows.h>
 #undef RGB // undef RGB
 #else

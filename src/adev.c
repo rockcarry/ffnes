@@ -90,7 +90,7 @@ void adev_audio_buf_request(void *ctxt, AUDIOBUF **ppab)
     if (dev == NULL) return;
 
     WaitForSingleObject(dev->bufsem, -1);
-    *ppab = &(dev->pWaveHdr[dev->tail]);
+    *ppab = (AUDIOBUF*)&(dev->pWaveHdr[dev->tail]);
 }
 
 void adev_audio_buf_post(void *ctxt, AUDIOBUF **ppab)

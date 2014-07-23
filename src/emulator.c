@@ -1,5 +1,6 @@
 // 包含头文件
 #include "emulator.h"
+#include "nes.h"
 
 // 内部常量定义
 #define SCREEN_WIDTH    GetSystemMetrics(SM_CXSCREEN)
@@ -31,6 +32,8 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
     HWND     hwnd = NULL;
     RECT     rect = {0};
     int      w, h, x, y;
+    NES      nes;
+    char    *file = "test.nes";
 
     // 注册窗口
     wc.lpfnWndProc   = WndProc;
@@ -69,6 +72,9 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
 
+    // init nes
+    nes_init(&nes, file, (DWORD)hwnd);
+
     // 进入消息循环
     while (GetMessage(&msg, NULL, 0, 0))
     {
@@ -76,5 +82,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
         DispatchMessage (&msg);
     }
 
+    // free nes
+    nes_free(&nes);
     return TRUE;
 }

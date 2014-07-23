@@ -102,7 +102,7 @@ void NES_PAD_REG_RCB(MEM *pm, int addr)
     if (pad->strobe) pm->data[addr] = 0;
     else
     {
-        BYTE conn = 0;
+        DWORD conn = 0;
         conn = (pad->pad_data[3] & NES_PAD_CONNECT) >> 26; conn <<= 1;
         conn = (pad->pad_data[2] & NES_PAD_CONNECT) >> 26; conn <<= 1;
         conn = (pad->pad_data[1] & NES_PAD_CONNECT) >> 26; conn <<= 1;
@@ -112,13 +112,13 @@ void NES_PAD_REG_RCB(MEM *pm, int addr)
         {
         case 0: // 4016
             if (pad->counter_4016 < 8) {
-                pm->data[addr] = (pad->pad_data[0] >> (pad->counter_4016 - 0)) & 0x1;
+                pm->data[addr] = (BYTE)(pad->pad_data[0] >> (pad->counter_4016 - 0)) & 0x1;
             }
             else if (pad->counter_4016 < 16) {
-                pm->data[addr] = (pad->pad_data[2] >> (pad->counter_4016 - 8)) & 0x1;
+                pm->data[addr] = (BYTE)(pad->pad_data[2] >> (pad->counter_4016 - 8)) & 0x1;
             }
             else if (pad->counter_4016 < 20) {
-                pm->data[addr] = conn >> (pad->counter_4016 - 16) & 0x1;
+                pm->data[addr] = (BYTE)(conn >> (pad->counter_4016 - 16)) & 0x1;
             }
             else {
                 pm->data[addr] = 0;
@@ -127,13 +127,13 @@ void NES_PAD_REG_RCB(MEM *pm, int addr)
             break;
         case 1: // 4017
             if (pad->counter_4017 < 8) {
-                pm->data[addr] = (pad->pad_data[1] >> (pad->counter_4017 - 0)) & 0x1;
+                pm->data[addr] = (BYTE)(pad->pad_data[1] >> (pad->counter_4017 - 0)) & 0x1;
             }
             else if (pad->counter_4017 < 16) {
-                pm->data[addr] = (pad->pad_data[3] >> (pad->counter_4017 - 8)) & 0x1;
+                pm->data[addr] = (BYTE)(pad->pad_data[3] >> (pad->counter_4017 - 8)) & 0x1;
             }
             else if (pad->counter_4017 < 20) {
-                pm->data[addr] = conn >> (pad->counter_4017 - 16) & 0x1;
+                pm->data[addr] = (BYTE)(conn >> (pad->counter_4017 - 16)) & 0x1;
             }
             else {
                 pm->data[addr] = 0;
