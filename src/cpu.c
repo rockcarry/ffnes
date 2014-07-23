@@ -434,7 +434,8 @@ void cpu_init(CPU *cpu)
     cpu->xi = 0x00;
     cpu->yi = 0x00;
     cpu->ps = I_FLAG | R_FLAG;
-    cpu->intr_flag   = 0;
+    cpu->nmi_last    = 1;
+    cpu->nmi_cur     = 1;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
 }
@@ -443,14 +444,15 @@ void cpu_reset(CPU *cpu)
 {
     cpu->pc  = bus_readw(cpu->cbus, RST_VECTOR);
     cpu->ps |= I_FLAG;
-    cpu->intr_flag   = 0;
+    cpu->nmi_last    = 1;
+    cpu->nmi_cur     = 1;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
 }
 
-void cpu_nmi(CPU *cpu)
+void cpu_nmi(CPU *cpu, int nmi)
 {
-    cpu->intr_flag |= NMI_FLAG;
+    cpu->nmi_cur = nmi;
 }
 
 void cpu_run(CPU *cpu, int ncycle)
@@ -719,14 +721,16 @@ other_opcode_handler:
         default:   UDF(); break; // undefined
         }
 
-        if (cpu->intr_flag & NMI_FLAG) {
-            cpu->intr_flag &= ~NMI_FLAG;
-            PUSH((PC >> 8) & 0xff);
-            PUSH((PC >> 0) & 0xff);
-            CLR_FLAG(B_FLAG);
-            PUSH(PS);
-            SET_FLAG(I_FLAG);
-            PC = READW(NMI_VECTOR);
+        if (cpu->nmi_last != cpu->nmi_cur) {
+            cpu->nmi_last  = cpu->nmi_cur;
+            if (cpu->nmi_cur == 0) { // negative edge
+                PUSH((PC >> 8) & 0xff);
+                PUSH((PC >> 0) & 0xff);
+                CLR_FLAG(B_FLAG);
+                PUSH(PS);
+                SET_FLAG(I_FLAG);
+                PC = READW(NMI_VECTOR);
+            }
         }
     }
 
