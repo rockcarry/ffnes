@@ -22,7 +22,7 @@ typedef struct {
         MEM *membank;
         WORD mirmask;
     };
-} *BUS;
+} *BUS, BUSITEM;
 
 // º¯ÊıÉùÃ÷
 BYTE bus_readb (BUS bus, int baddr);

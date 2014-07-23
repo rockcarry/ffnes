@@ -37,7 +37,8 @@ typedef struct {
     JOYPAD    pad ;
     DWORD     extra;
 
-    BUS cbus;    // cpu bus
+    // cpu bus
+    BUSITEM cbus[NES_MAX_BUS_SIZE];
     MEM cram;    // cpu ram
     MEM ppuregs; // ppu regs
     MEM apuregs; // apu regs
@@ -47,7 +48,8 @@ typedef struct {
     MEM prgrom0; // PRG-ROM 0
     MEM prgrom1; // PRG-ROM 1
 
-    BUS pbus;    // ppu bus
+    // ppu bus
+    BUSITEM pbus[NES_MAX_BUS_SIZE];
     MEM pattab0; // pattern table #0
     MEM pattab1; // pattern table #1
     MEM vram0;   // vram0 1KB, in ppu
