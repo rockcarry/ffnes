@@ -6,9 +6,9 @@ typedef struct
 {
     HWAVEOUT hWaveOut;
     WAVEHDR *pWaveHdr;
+    HANDLE   bufsem;
     int      bufnum;
     int      buflen;
-    HANDLE   bufsem;
     long     head;
     long     tail;
 } ADEV;
@@ -37,26 +37,26 @@ void* adev_create(int bufnum, int buflen)
         BYTE        *pwavbuf;
         int          i;
 
-        // create semaphore
-        dev->bufsem = CreateSemaphore(NULL, bufnum, bufnum, NULL);
+        dev->bufnum   = bufnum;
+        dev->buflen   = buflen;
+        dev->head     = 0;
+        dev->tail     = 0;
+        dev->pWaveHdr = (WAVEHDR*)malloc(bufnum * (sizeof(WAVEHDR) + buflen));
+        dev->bufsem   = CreateSemaphore(NULL, bufnum, bufnum, NULL);
 
         // init for audio
         wfx.cbSize          = sizeof(wfx);
         wfx.wFormatTag      = WAVE_FORMAT_PCM;
         wfx.wBitsPerSample  = 16;    // 16bit
-        wfx.nSamplesPerSec  = 44100; // 44.1k
+//      wfx.nSamplesPerSec  = 44100; // 44.1k
+        wfx.nSamplesPerSec  = 48000; // 48.0k
         wfx.nChannels       = 2;     // stereo
         wfx.nBlockAlign     = wfx.nChannels * wfx.wBitsPerSample / 8;
         wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
         waveOutOpen(&(dev->hWaveOut), WAVE_MAPPER, &wfx, (DWORD_PTR)waveOutProc, (DWORD)dev, CALLBACK_FUNCTION);
 
-        dev->bufnum   = bufnum;
-        dev->buflen   = buflen;
-        dev->pWaveHdr = (WAVEHDR*)malloc(bufnum * (sizeof(WAVEHDR) + buflen));
-        dev->head     = 0;
-        dev->tail     = 0;
-
-        // init
+        // init wavebuf
+        memset(dev->pWaveHdr, 0, bufnum * sizeof(WAVEHDR));
         pwavbuf = (BYTE*)(dev->pWaveHdr + bufnum);
         for (i=0; i<bufnum; i++) {
             dev->pWaveHdr[i].lpData         = (LPSTR)(pwavbuf + i * buflen);
@@ -93,12 +93,12 @@ void adev_audio_buf_request(void *ctxt, AUDIOBUF **ppab)
     *ppab = (AUDIOBUF*)&(dev->pWaveHdr[dev->tail]);
 }
 
-void adev_audio_buf_post(void *ctxt, AUDIOBUF **ppab)
+void adev_audio_buf_post(void *ctxt, AUDIOBUF *pab)
 {
     ADEV *dev = (ADEV*)ctxt;
     if (dev == NULL) return;
 
-    waveOutWrite(dev->hWaveOut, (LPWAVEHDR)*ppab, sizeof(WAVEHDR));
+    waveOutWrite(dev->hWaveOut, (LPWAVEHDR)pab, sizeof(WAVEHDR));
     if (++dev->tail == dev->bufnum) dev->tail = 0;
 }
 

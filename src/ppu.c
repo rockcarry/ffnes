@@ -1,5 +1,10 @@
 // 包含头文件
 #include "nes.h"
+#include "vdev.h"
+
+// 内部常量定义
+#define PPU_IMAGE_WIDTH  256
+#define PPU_IMAGE_HEIGHT 240
 
 // 内部全局变量定义
 static BYTE DEF_PPU_PAL[64 * 3] =
@@ -71,11 +76,15 @@ static BYTE DEF_PPU_PAL[64 * 3] =
 };
 
 // 函数实现
-void ppu_init(PPU *ppu)
+void ppu_init(PPU *ppu, DWORD extra)
 {
-    ppu->bmp_pal = DEF_PPU_PAL;
-    memset(ppu->sprram  , 0, sizeof(ppu->sprram  ));
-    memset(ppu->bmp_data, 0, sizeof(ppu->bmp_data));
+    memset(ppu->sprram, 0, sizeof(ppu->sprram));
+    ppu->vdevctxt = vdev_create(PPU_IMAGE_WIDTH, PPU_IMAGE_HEIGHT, 8, extra);
+}
+
+void ppu_free(PPU *ppu)
+{
+    vdev_destroy(ppu->vdevctxt);
 }
 
 void ppu_reset(PPU *ppu)

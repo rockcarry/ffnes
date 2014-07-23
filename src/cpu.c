@@ -422,11 +422,10 @@ static BYTE CPU_CYCLE_TAB[256] =
 };
 
 // º¯ÊýÊµÏÖ
-void cpu_init(CPU *cpu)
+void cpu_init(CPU *cpu, BUS cbus)
 {
-    NES *nes  = container_of(cpu, NES, cpu);
-    cpu->cbus = nes->cbus;
-    cpu->cram = nes->buf_cram;
+    cpu->cbus = cbus;
+    cpu->cram = cbus->membank->data;
 
     cpu->pc = bus_readw(cpu->cbus, RST_VECTOR);
     cpu->sp = 0xff;

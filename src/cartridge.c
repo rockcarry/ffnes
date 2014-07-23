@@ -28,11 +28,18 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
     }
 
     // read prom & crom
-    pcart->buf_prom = malloc(pcart->prom_count * 16 * 1024);
-    pcart->buf_crom = malloc(pcart->crom_count * 8  * 1024);
-    if (!pcart->buf_prom || !pcart->buf_crom) goto done;
-    fread(pcart->buf_prom, pcart->prom_count * 16 * 1024, 1, fp);
-    fread(pcart->buf_crom, pcart->crom_count * 8  * 1024, 1, fp);
+    if (pcart->prom_count > 0)
+    {
+        pcart->buf_prom = malloc(pcart->prom_count * 16 * 1024);
+        if (!pcart->buf_prom) goto done;
+        fread(pcart->buf_prom, pcart->prom_count * 16 * 1024, 1, fp);
+    }
+    if (pcart->crom_count > 0)
+    {
+        pcart->buf_crom = malloc(pcart->crom_count * 8  * 1024);
+        if (!pcart->buf_crom) goto done;
+        fread(pcart->buf_crom, pcart->crom_count * 8  * 1024, 1, fp);
+    }
     bret = TRUE;
 
 done:
@@ -70,10 +77,10 @@ done:
 
 void cartridge_free(CARTRIDGE *pcart)
 {
-    free(pcart->buf_trainer);
-    free(pcart->buf_sram);
-    free(pcart->buf_prom);
-    free(pcart->buf_crom);
+    if (pcart->buf_trainer) free(pcart->buf_trainer);
+    if (pcart->buf_sram   ) free(pcart->buf_sram   );
+    if (pcart->buf_prom   ) free(pcart->buf_prom   );
+    if (pcart->buf_crom   ) free(pcart->buf_crom   );
     memset(pcart, 0, sizeof(CARTRIDGE));
 }
 

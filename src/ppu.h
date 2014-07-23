@@ -7,19 +7,13 @@
 
 // 类型定义
 typedef struct {
-    BYTE sprram[256]; // sprite ram
-
-    // 256-color bitmap for video rendering
-    #define PPU_IMAGE_WIDTH  (256 * 2)
-    #define PPU_IMAGE_HEIGHT (240 * 2)
-    BYTE  bmp_data[PPU_IMAGE_WIDTH * PPU_IMAGE_HEIGHT];
-    BYTE *bmp_pal;
-    int   bmp_offx;
-    int   bmp_offy;
+    void *vdevctxt;
+    BYTE  sprram[256]; // sprite ram
 } PPU;
 
 // 函数声明
-void ppu_init  (PPU *ppu);
+void ppu_init  (PPU *ppu, DWORD extra);
+void ppu_free  (PPU *ppu);
 void ppu_reset (PPU *ppu);
 void ppu_render(PPU *ppu);
 void NES_PPU_REG_RCB(MEM *pm, int addr);

@@ -14,6 +14,6 @@ typedef struct {
 void* adev_create (int bufnum, int buflen);
 void  adev_destroy(void *ctxt);
 void  adev_audio_buf_request(void *ctxt, AUDIOBUF **ppab);
-void  adev_audio_buf_post   (void *ctxt, AUDIOBUF **ppab);
+void  adev_audio_buf_post   (void *ctxt, AUDIOBUF  * pab);
 
 #endif

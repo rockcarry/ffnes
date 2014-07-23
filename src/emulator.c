@@ -74,6 +74,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
 
     // init nes
     nes_init(&nes, file, (DWORD)hwnd);
+    nes_run (&nes);
 
     // 进入消息循环
     while (GetMessage(&msg, NULL, 0, 0))

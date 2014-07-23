@@ -1,6 +1,33 @@
 // 包含头文件
 #include "nes.h"
 
+// debug trace
+void TRACE(LPCSTR lpszFormat, ...)
+{
+    va_list  args;
+    char buf[512];
+
+    va_start(args, lpszFormat);
+    _vsnprintf(buf, sizeof(buf), lpszFormat, args);
+    OutputDebugStringA(buf);
+    va_end(args);
+}
+
+// 内部函数实现
+static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
+{
+    NES *nes = (NES*)lpParam;
+
+    while (1)
+    {
+        WaitForSingleObject(nes->hNesEvent, -1);
+        if (nes->bExitThread) break;
+
+        apu_render_frame(&(nes->apu));
+    }
+    return 0;
+}
+
 // 函数实现
 BOOL nes_init(NES *nes, char *file, DWORD extra)
 {
@@ -192,18 +219,31 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     bus_setmem(nes->pbus, 9, 0x3F00, 0x3F1F, &(nes->palette));
     //-- pbus mem map --//
 
-    cpu_init   (&(nes->cpu));
-    ppu_init   (&(nes->ppu));
-    apu_init   (&(nes->apu));
+    cpu_init   (&(nes->cpu), nes->cbus );
+    ppu_init   (&(nes->ppu), nes->extra);
+    apu_init   (&(nes->apu), nes->extra);
     joypad_init(&(nes->pad));
 
     // extra data
     nes->extra = extra;
+
+    // create nes event & thread
+    nes->hNesEvent  = CreateEvent (NULL, TRUE, FALSE, NULL);
+    nes->hNesThread = CreateThread(NULL, 0, nes_thread_proc, (LPVOID)nes, 0, 0);
     return TRUE;
 }
 
 void nes_free(NES *nes)
 {
+    // destroy nes event & thread
+    nes->bExitThread = TRUE;
+    SetEvent(nes->hNesEvent);
+    WaitForSingleObject(nes->hNesThread, -1);
+    CloseHandle(nes->hNesEvent );
+    CloseHandle(nes->hNesThread);
+
+    ppu_free      (&(nes->ppu));
+    apu_free      (&(nes->apu));
     joypad_free   (&(nes->pad )); // free joypad
     cartridge_free(&(nes->cart)); // free cartridge
 }
@@ -215,4 +255,7 @@ void nes_reset(NES *nes)
     apu_reset   (&(nes->apu));
     joypad_reset(&(nes->pad));
 }
+
+void nes_run  (NES *nes) {   SetEvent(nes->hNesEvent); }
+void nes_pause(NES *nes) { ResetEvent(nes->hNesEvent); }
 

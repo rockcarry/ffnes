@@ -74,12 +74,19 @@ typedef struct {
     BYTE  buf_vram2  [NES_VRAM2_SIZE  ];
     BYTE  buf_vram3  [NES_VRAM3_SIZE  ];
     BYTE  buf_palette[NES_PALETTE_SIZE];
+
+    // nes thread
+    HANDLE hNesThread;
+    HANDLE hNesEvent;
+    BOOL   bExitThread;
 } NES;
 
 // º¯ÊýÉùÃ÷
 BOOL nes_init (NES *nes, char *file, DWORD extra);
 void nes_free (NES *nes);
 void nes_reset(NES *nes);
+void nes_run  (NES *nes);
+void nes_pause(NES *nes);
 
 #endif
 
