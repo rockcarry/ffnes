@@ -30,7 +30,7 @@ DLL = ffnes.dll
 all : $(DLL) $(EXES)
 
 $(DLL) : $(OBJS)
-	$(CC) $(CCFLAGS) -o $@ $(OBJS) --share
+	$(CC) $(CCFLAGS) -o $@ $(OBJS) --share -lwinmm
 
 %.o : %.c %.h stdefine.h
 	$(CC) $(CCFLAGS) -o $@ $< -c
