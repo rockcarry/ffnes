@@ -245,6 +245,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     cpu_init   (&(nes->cpu), nes->cbus );
     ppu_init   (&(nes->ppu), nes->extra);
     apu_init   (&(nes->apu), nes->extra);
+    mmc_init   (&(nes->mmc), &(nes->cart), nes->cbus, nes->pbus);
     joypad_init(&(nes->pad));
 
     // extra data
@@ -267,6 +268,7 @@ void nes_free(NES *nes)
 
     ppu_free      (&(nes->ppu));
     apu_free      (&(nes->apu));
+    mmc_free      (&(nes->mmc));
     joypad_free   (&(nes->pad )); // free joypad
     cartridge_free(&(nes->cart)); // free cartridge
 }
@@ -276,6 +278,7 @@ void nes_reset(NES *nes)
     cpu_reset   (&(nes->cpu));
     ppu_reset   (&(nes->ppu));
     apu_reset   (&(nes->apu));
+    mmc_reset   (&(nes->mmc));
     joypad_reset(&(nes->pad));
 }
 

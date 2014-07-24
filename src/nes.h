@@ -6,6 +6,7 @@
 #include "cpu.h"
 #include "ppu.h"
 #include "apu.h"
+#include "mmc.h"
 #include "bus.h"
 #include "mem.h"
 #include "cartridge.h"
@@ -33,6 +34,7 @@ typedef struct {
     CPU cpu;  // 6502
     PPU ppu;  // 2c02
     APU apu;  // 2a03
+    MMC mmc;  // mmc
     CARTRIDGE cart;
     JOYPAD    pad ;
     DWORD     extra;
