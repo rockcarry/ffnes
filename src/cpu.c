@@ -62,15 +62,8 @@ flags.
 */
 
 // 常量定义
-#define FREQ_MCLK       21477272
-#define FREQ_CPU       (FREQ_MCLK / 12)
-#define FREQ_PPU       (FREQ_MCLK / 4 )
-#define NTSC_HTOTAL     341
-#define NTSC_VTOTAL     262
-#define NTSC_FRAMERATE (FREQ_PPU / (NTSC_HTOTAL*NTSC_VTOTAL))
-
-#define IRQ_FLAG (1 << 0)
-#define NMI_FLAG (1 << 1)
+#define IRQ_FLAG  (1 << 0)
+#define NMI_FLAG  (1 << 1)
 
 #define NMI_VECTOR  0xfffa
 #define RST_VECTOR  0xfffc

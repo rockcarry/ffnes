@@ -91,8 +91,13 @@ void ppu_reset(PPU *ppu)
 {
 }
 
-void ppu_render(PPU *ppu)
+void ppu_run(PPU *ppu, int scanline)
 {
+}
+
+int ppu_getvbl(PPU *ppu)
+{
+    return 1;
 }
 
 void NES_PPU_REG_RCB(MEM *pm, int addr)

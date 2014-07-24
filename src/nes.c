@@ -1,6 +1,14 @@
 // 包含头文件
 #include "nes.h"
 
+// 内部常量定义
+#define NES_FREQ_MCLK   21477272
+#define NES_FREQ_CPU   (FREQ_MCLK / 12)
+#define NES_FREQ_PPU   (FREQ_MCLK / 4 )
+#define NES_HTOTAL      341
+#define NES_VTOTAL      262
+#define NES_FRAMERATE  (FREQ_PPU / (NTSC_HTOTAL*NTSC_VTOTAL))
+
 // 内部函数实现
 static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
 {
@@ -9,19 +17,28 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
     DWORD dwTickCur   = 0;
     DWORD dwTickDiff  = 0;
     DWORD dwTickSleep = 0;
+    int   scanline;
 
     while (1)
     {
         WaitForSingleObject(nes->hNesEvent, -1);
         if (nes->bExitThread) break;
 
+        // run cpu & ppu
+        for (scanline=0; scanline<NES_VTOTAL; scanline++)
+        {
+            cpu_run(&(nes->cpu), NES_HTOTAL / 3);
+            ppu_run(&(nes->ppu), scanline);
+            cpu_nmi(&(nes->cpu), ppu_getvbl(&(nes->ppu)));
+        }
+
         // apu render frame
         apu_render_frame(&(nes->apu));
 
+        //++ framerate control ++//
         dwTickCur  = GetTickCount();
         dwTickDiff = dwTickCur - dwTickLast;
         dwTickLast = dwTickCur;
-
         if (dwTickDiff > 16) {
             if (dwTickSleep > 0) dwTickSleep--;
         }
@@ -29,6 +46,7 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
             dwTickSleep++;
         }
         if (dwTickSleep) Sleep(dwTickSleep);
+        //-- framerate control --//
     }
     return 0;
 }
