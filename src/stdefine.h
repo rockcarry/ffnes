@@ -2,12 +2,9 @@
 #ifndef _STDEFINE_H_
 #define _STDEFINE_H_
 
-#if defined(WIN32) || defined(__MINGW32__)
+#if defined(WIN32)
 #include <windows.h>
 #undef RGB // undef RGB
-#pragma warning(disable:4311)
-#pragma warning(disable:4312)
-#pragma warning(disable:4996)
 #else
 
 /* 常量定义 */
