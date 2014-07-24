@@ -1,29 +1,34 @@
 // 包含头文件
 #include "nes.h"
 
-// debug trace
-void TRACE(LPCSTR lpszFormat, ...)
-{
-    va_list  args;
-    char buf[512];
-
-    va_start(args, lpszFormat);
-    _vsnprintf(buf, sizeof(buf), lpszFormat, args);
-    OutputDebugStringA(buf);
-    va_end(args);
-}
-
 // 内部函数实现
 static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
 {
     NES *nes = (NES*)lpParam;
+    DWORD dwTickLast  = 0;
+    DWORD dwTickCur   = 0;
+    DWORD dwTickDiff  = 0;
+    DWORD dwTickSleep = 0;
 
     while (1)
     {
         WaitForSingleObject(nes->hNesEvent, -1);
         if (nes->bExitThread) break;
 
+        // apu render frame
         apu_render_frame(&(nes->apu));
+
+        dwTickCur  = GetTickCount();
+        dwTickDiff = dwTickCur - dwTickLast;
+        dwTickLast = dwTickCur;
+
+        if (dwTickDiff > 16) {
+            if (dwTickSleep > 0) dwTickSleep--;
+        }
+        else if (dwTickDiff < 16) {
+            dwTickSleep++;
+        }
+        if (dwTickSleep) Sleep(dwTickSleep);
     }
     return 0;
 }
