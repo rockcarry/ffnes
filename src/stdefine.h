@@ -4,7 +4,6 @@
 
 #if defined(WIN32)
 #include <windows.h>
-#undef RGB // undef RGB
 #else
 
 /* 常量定义 */
