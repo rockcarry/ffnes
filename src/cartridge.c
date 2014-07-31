@@ -106,6 +106,6 @@ int cartridge_get_hvmirroring(CARTRIDGE *pcart)
 
 BYTE cartridge_get_mappercode(CARTRIDGE *pcart)
 {
-    return (((pcart->romctrl_byte1 & 0xf0) << 0) | ((pcart->romctrl_byte2 & 0xf0) << 4));
+    return (((pcart->romctrl_byte1 & 0xf0) >> 4) | ((pcart->romctrl_byte2 & 0xf0) >> 0));
 }
 

@@ -1,5 +1,6 @@
 // 包含头文件
-#include "mmc.h"
+#include "nes.h"
+#include "log.h"
 
 // 内部类型定义
 typedef struct
@@ -7,29 +8,55 @@ typedef struct
     void (*init )(MMC *mmc);
     void (*free )(MMC *mmc);
     void (*reset)(MMC *mmc);
-    void (*rcb  )(MEM *pm, int addr);
-    void (*wcb  )(MEM *pm, int addr);
+    void (*wcb0 )(MEM *pm, int addr, BYTE byte);
+    void (*wcb1 )(MEM *pm, int addr, BYTE byte);
 } MAPPER;
 
 //++ mapper002 实现 ++//
+static void mapper002_reset(MMC *mmc)
+{
+    // prom0 - first back & prom1 - last bank
+    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 16384 * 0;
+    mmc->cbus[7].membank->data = mmc->cart->buf_prom + 16384 * (mmc->cart->prom_count - 1);
+}
+
+static void mapper002_wcb0(MEM *pm, int addr, BYTE byte)
+{
+    NES *nes = container_of(pm, NES, prgrom0);
+    MMC *mmc = &(nes->mmc);
+    mmc->cbus[6].membank->data = mmc->cart->buf_prom + (byte & (mmc->cart->prom_count - 1));
+}
+
+static void mapper002_wcb1(MEM *pm, int addr, BYTE byte)
+{
+    NES *nes = container_of(pm, NES, prgrom1);
+    MMC *mmc = &(nes->mmc);
+    mmc->cbus[6].membank->data = mmc->cart->buf_prom + (byte & (mmc->cart->prom_count - 1));
+}
+
 static void mapper002_init(MMC *mmc)
 {
+    // allocate memory for 8KB ram
+    mmc->pram = (BYTE*)malloc(8192);
+    if (!mmc->pram) {
+        log_printf("mapper002_init, malloc failed !\n");
+    }
+
+    // register bus memory callback
+    mmc->cbus[6].membank->w_callback = mapper002_wcb0;
+    mmc->cbus[7].membank->w_callback = mapper002_wcb1;
+
+    // reset mapper002
+    mapper002_reset(mmc);
 }
 
 static void mapper002_free(MMC *mmc)
 {
-}
-
-static void mapper002_reset(MMC *mmc)
-{
-}
-
-static void mapper002_rcb(MEM *pm, int addr)
-{
-}
-
-static void mapper002_wcb(MEM *pm, int addr)
-{
+    // free memory
+    if (mmc->pram) {
+        free(mmc->pram);
+        mmc->pram = NULL;
+    }
 }
 
 static MAPPER mapper002 =
@@ -37,8 +64,8 @@ static MAPPER mapper002 =
     mapper002_init,
     mapper002_free,
     mapper002_reset,
-    mapper002_rcb,
-    mapper002_wcb,
+    mapper002_wcb0,
+    mapper002_wcb1,
 };
 //-- mapper02 实现 --//
 

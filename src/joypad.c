@@ -144,7 +144,7 @@ void NES_PAD_REG_RCB(MEM *pm, int addr)
     }
 }
 
-void NES_PAD_REG_WCB(MEM *pm, int addr)
+void NES_PAD_REG_WCB(MEM *pm, int addr, BYTE byte)
 {
     NES    *nes = container_of(pm, NES, ppuregs);
     JOYPAD *pad = &(nes->pad);
@@ -152,7 +152,7 @@ void NES_PAD_REG_WCB(MEM *pm, int addr)
     switch (addr)
     {
     case 0: // 4016
-        if (pm->data[addr] & 0x1) {
+        if (byte & 0x1) {
             pad->strobe       = 1;
             pad->counter_4016 = 0;
             pad->counter_4017 = 0;

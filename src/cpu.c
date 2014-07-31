@@ -1,5 +1,5 @@
 // 包含头文件
-#include "nes.h"
+#include "cpu.h"
 
 /*
 6510 Instructions by Addressing Modes
@@ -430,6 +430,11 @@ void cpu_init(CPU *cpu, BUS cbus)
     cpu->nmi_cur     = 1;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
+}
+
+void cpu_free(CPU *cpu)
+{
+    // todo..
 }
 
 void cpu_reset(CPU *cpu)

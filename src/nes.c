@@ -61,6 +61,9 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     // clear it
     memset(nes, 0, sizeof(NES));
 
+    // extra data
+    nes->extra = extra;
+
     // load cartridge first
     if (cartridge_load(&(nes->cart), file)) {
         // sram
@@ -246,14 +249,11 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     bus_setmem(nes->pbus, 9, 0x3F00, 0x3F1F, &(nes->palette));
     //-- pbus mem map --//
 
+    joypad_init(&(nes->pad));
+    mmc_init   (&(nes->mmc), &(nes->cart), nes->cbus, nes->pbus);
     cpu_init   (&(nes->cpu), nes->cbus );
     ppu_init   (&(nes->ppu), nes->extra);
     apu_init   (&(nes->apu), nes->extra);
-    mmc_init   (&(nes->mmc), &(nes->cart), nes->cbus, nes->pbus);
-    joypad_init(&(nes->pad));
-
-    // extra data
-    nes->extra = extra;
 
     // create nes event & thread
     nes->hNesEvent  = CreateEvent (NULL, TRUE, FALSE, NULL);
@@ -272,6 +272,7 @@ void nes_free(NES *nes)
 
     ppu_free      (&(nes->ppu));
     apu_free      (&(nes->apu));
+    cpu_free      (&(nes->cpu));
     mmc_free      (&(nes->mmc));
     joypad_free   (&(nes->pad )); // free joypad
     cartridge_free(&(nes->cart)); // free cartridge
@@ -281,11 +282,11 @@ void nes_free(NES *nes)
 
 void nes_reset(NES *nes)
 {
+    joypad_reset(&(nes->pad));
+    mmc_reset   (&(nes->mmc));
     cpu_reset   (&(nes->cpu));
     ppu_reset   (&(nes->ppu));
     apu_reset   (&(nes->apu));
-    mmc_reset   (&(nes->mmc));
-    joypad_reset(&(nes->pad));
 }
 
 void nes_run  (NES *nes) {   SetEvent(nes->hNesEvent); }

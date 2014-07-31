@@ -25,6 +25,7 @@ typedef struct {
 
 // º¯ÊýÉùÃ÷
 void cpu_init (CPU *cpu, BUS cbus);
+void cpu_free (CPU *cpu);
 void cpu_reset(CPU *cpu);
 void cpu_nmi  (CPU *cpu, int nmi);
 void cpu_run  (CPU *cpu, int cycle);

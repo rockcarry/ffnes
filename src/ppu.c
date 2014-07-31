@@ -111,7 +111,7 @@ void NES_PPU_REG_RCB(MEM *pm, int addr)
     }
 }
 
-void NES_PPU_REG_WCB(MEM *pm, int addr)
+void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, ppuregs);
     switch (addr)
