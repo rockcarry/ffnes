@@ -12,7 +12,7 @@ typedef struct {
     BUS        cbus;
     BUS        pbus;
     int      number;
-    BYTE   reserved;
+    BYTE      *pram;
 } MMC;
 
 // º¯ÊıÉùÃ÷

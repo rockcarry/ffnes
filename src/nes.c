@@ -1,5 +1,6 @@
 // 包含头文件
 #include "nes.h"
+#include "log.h"
 
 // 内部常量定义
 #define NES_FREQ_MCLK   21477272
@@ -47,6 +48,7 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
         }
         if (dwTickSleep) Sleep(dwTickSleep);
         //-- framerate control --//
+        log_printf("%d, %d\n", dwTickDiff, dwTickSleep);
     }
     return 0;
 }
@@ -54,6 +56,8 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
 // 函数实现
 BOOL nes_init(NES *nes, char *file, DWORD extra)
 {
+    log_init("DEBUGER");
+
     // clear it
     memset(nes, 0, sizeof(NES));
 
@@ -271,6 +275,8 @@ void nes_free(NES *nes)
     mmc_free      (&(nes->mmc));
     joypad_free   (&(nes->pad )); // free joypad
     cartridge_free(&(nes->cart)); // free cartridge
+
+    log_done();
 }
 
 void nes_reset(NES *nes)

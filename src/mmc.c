@@ -11,34 +11,34 @@ typedef struct
     void (*wcb  )(MEM *pm, int addr);
 } MAPPER;
 
-//++ mapper02 实现 ++//
-static void mapper02_init(MMC *mmc)
+//++ mapper002 实现 ++//
+static void mapper002_init(MMC *mmc)
 {
 }
 
-static void mapper02_free(MMC *mmc)
+static void mapper002_free(MMC *mmc)
 {
 }
 
-static void mapper02_reset(MMC *mmc)
+static void mapper002_reset(MMC *mmc)
 {
 }
 
-static void mapper02_rcb(MEM *pm, int addr)
+static void mapper002_rcb(MEM *pm, int addr)
 {
 }
 
-static void mapper02_wcb(MEM *pm, int addr)
+static void mapper002_wcb(MEM *pm, int addr)
 {
 }
 
-static MAPPER mapper02 =
+static MAPPER mapper002 =
 {
-    mapper02_init,
-    mapper02_free,
-    mapper02_reset,
-    mapper02_rcb,
-    mapper02_wcb,
+    mapper002_init,
+    mapper002_free,
+    mapper002_reset,
+    mapper002_rcb,
+    mapper002_wcb,
 };
 //-- mapper02 实现 --//
 
@@ -47,7 +47,7 @@ static MAPPER *g_mapper_list[256] =
 {
     NULL,
     NULL,
-    &mapper02,
+    &mapper002,
     NULL,
 };
 //-- mapper list --//

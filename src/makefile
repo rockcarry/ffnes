@@ -7,6 +7,7 @@ CCFLAGS = -mwindows -Wall
 
 # 所有的目标文件
 OBJS = \
+    log.o \
     mem.o \
     bus.o \
     nes.o \
