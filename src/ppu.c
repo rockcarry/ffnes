@@ -78,7 +78,6 @@ static BYTE DEF_PPU_PAL[64 * 3] =
 // º¯ÊýÊµÏÖ
 void ppu_init(PPU *ppu, DWORD extra)
 {
-    memset(ppu->sprram, 0, sizeof(ppu->sprram));
     ppu->vdevctxt = vdev_create(PPU_IMAGE_WIDTH, PPU_IMAGE_HEIGHT, 8, extra);
 }
 
@@ -93,6 +92,7 @@ void ppu_reset(PPU *ppu)
 
 void ppu_run(PPU *ppu, int scanline)
 {
+    ppu->scanline = scanline;
 }
 
 int ppu_getvbl(PPU *ppu)

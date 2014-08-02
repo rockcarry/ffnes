@@ -81,7 +81,6 @@ void cartridge_free(CARTRIDGE *pcart)
     if (pcart->buf_sram   ) free(pcart->buf_sram   );
     if (pcart->buf_prom   ) free(pcart->buf_prom   );
     if (pcart->buf_crom   ) free(pcart->buf_crom   );
-    memset(pcart, 0, sizeof(CARTRIDGE));
 }
 
 BOOL cartridge_has_sram(CARTRIDGE *pcart)

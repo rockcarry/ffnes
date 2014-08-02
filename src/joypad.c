@@ -29,7 +29,6 @@ static DWORD WINAPI turbokey_thread_proc(LPVOID lpParam)
 // º¯ÊýÊµÏÖ
 void joypad_init(JOYPAD *jp)
 {
-    memset(jp, 0, sizeof(JOYPAD)); // clear it first
     jp->hTurboEvent  = CreateEvent (NULL, TRUE, FALSE, NULL);
     jp->hTurboThread = CreateThread(NULL, 0, turbokey_thread_proc, (LPVOID)jp, 0, 0);
 }

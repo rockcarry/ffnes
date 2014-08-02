@@ -56,7 +56,7 @@ void* adev_create(int bufnum, int buflen)
         waveOutOpen(&(dev->hWaveOut), WAVE_MAPPER, &wfx, (DWORD_PTR)waveOutProc, (DWORD)dev, CALLBACK_FUNCTION);
 
         // init wavebuf
-        memset(dev->pWaveHdr, 0, bufnum * sizeof(WAVEHDR));
+        memset(dev->pWaveHdr, 0, bufnum * (sizeof(WAVEHDR) + buflen));
         pwavbuf = (BYTE*)(dev->pWaveHdr + bufnum);
         for (i=0; i<bufnum; i++) {
             dev->pWaveHdr[i].lpData         = (LPSTR)(pwavbuf + i * buflen);

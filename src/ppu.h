@@ -8,6 +8,7 @@
 // 类型定义
 typedef struct {
     void *vdevctxt;
+    int   scanline;
     BYTE  sprram[256]; // sprite ram
 } PPU;
 
