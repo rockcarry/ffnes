@@ -41,6 +41,13 @@ static void mapper002_init(MMC *mmc)
     if (!mmc->pram) {
         log_printf("mapper002_init, malloc failed !\n");
     }
+    else
+    {
+        mmc->pbus[3].membank->type = MEM_RAM;
+        mmc->pbus[3].membank->data = mmc->pram + 4096 * 0;
+        mmc->pbus[4].membank->type = MEM_RAM;
+        mmc->pbus[4].membank->data = mmc->pram + 4096 * 0;
+    }
 
     // register bus memory callback
     mmc->cbus[6].membank->w_callback = mapper002_wcb0;
