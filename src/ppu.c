@@ -109,11 +109,6 @@ void ppu_run(PPU *ppu, int scanline)
     }
 }
 
-int ppu_getvbl(PPU *ppu)
-{
-    return ppu->pin_vbl;
-}
-
 void NES_PPU_REG_RCB(MEM *pm, int addr)
 {
     NES *nes = container_of(pm, NES, ppuregs);

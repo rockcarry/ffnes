@@ -30,7 +30,7 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
         {
             cpu_run(&(nes->cpu), NES_HTOTAL / 3);
             ppu_run(&(nes->ppu), scanline);
-            cpu_nmi(&(nes->cpu), ppu_getvbl(&(nes->ppu)));
+            cpu_nmi(&(nes->cpu), nes->ppu.pin_vbl);
         }
 
         // apu render frame
