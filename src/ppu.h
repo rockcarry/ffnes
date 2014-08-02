@@ -9,6 +9,7 @@
 typedef struct {
     void *vdevctxt;
     int   scanline;
+    int   pin_vbl;
     BYTE  sprram[256]; // sprite ram
 } PPU;
 

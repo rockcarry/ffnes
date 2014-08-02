@@ -92,12 +92,26 @@ void ppu_reset(PPU *ppu)
 
 void ppu_run(PPU *ppu, int scanline)
 {
+    NES *nes = container_of(ppu, NES, ppu);
+
     ppu->scanline = scanline;
+    if (scanline >= 241 && scanline <= 260)
+    {
+        nes->buf_ppuregs[0x0002] |=  (1 << 7);
+        if (nes->buf_ppuregs[0x0000] & (1 << 7)) {
+            ppu->pin_vbl = 0;
+        }
+    }
+    else
+    {
+        nes->buf_ppuregs[0x0002] &= ~(1 << 7);
+        ppu->pin_vbl = 1;
+    }
 }
 
 int ppu_getvbl(PPU *ppu)
 {
-    return 1;
+    return ppu->pin_vbl;
 }
 
 void NES_PPU_REG_RCB(MEM *pm, int addr)
