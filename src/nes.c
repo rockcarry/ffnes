@@ -18,7 +18,9 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
     DWORD dwTickCur   = 0;
     DWORD dwTickDiff  = 0;
     DWORD dwTickSleep = 0;
-    int   scanline;
+    int   scanline    = 0;
+    int   clkremain   = 0;
+    int   clkcpurun   = 0;
 
     while (1)
     {
@@ -28,8 +30,19 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
         // run cpu & ppu
         for (scanline=0; scanline<NES_VTOTAL; scanline++)
         {
-            cpu_run(&(nes->cpu), NES_HTOTAL / 3);
-            ppu_run(&(nes->ppu), scanline);
+            //++ 更精确的 cpu & ppu 时钟控制 ++//
+            #define CPUCLK_PER_SCANLINE_ROUGH  (NES_HTOTAL / 3)
+            #define CPUCLK_PER_SCANLINE_PDIFF  (NES_HTOTAL - NES_HTOTAL / 3 * 3)
+            clkcpurun  = CPUCLK_PER_SCANLINE_ROUGH;
+            clkremain += CPUCLK_PER_SCANLINE_PDIFF;
+            if (clkremain >= 3) {
+                clkremain -= 3;
+                clkcpurun++;
+            }
+            //-- 更精确的 cpu & ppu 时钟控制 --//
+
+            cpu_run(&(nes->cpu), clkcpurun);
+            ppu_run(&(nes->ppu), scanline );
             cpu_nmi(&(nes->cpu), nes->ppu.pin_vbl);
         }
 
