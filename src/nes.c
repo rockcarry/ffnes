@@ -121,6 +121,8 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     nes->apuregs.type = MEM_REG;
     nes->apuregs.size = NES_APUREGS_SIZE;
     nes->apuregs.data = nes->buf_apuregs;
+    nes->apuregs.r_callback = NES_APU_REG_RCB;
+    nes->apuregs.w_callback = NES_APU_REG_WCB;
 
     // create pad regs
     nes->padregs.type = MEM_REG;

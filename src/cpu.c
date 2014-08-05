@@ -430,6 +430,7 @@ void cpu_init(CPU *cpu, BUS cbus)
     cpu->nmi_cur     = 1;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
+    cpu->cycles_dma  = 0;
 }
 
 void cpu_free(CPU *cpu)
@@ -445,6 +446,7 @@ void cpu_reset(CPU *cpu)
     cpu->nmi_cur     = 1;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
+    cpu->cycles_dma  = 0;
 }
 
 void cpu_nmi(CPU *cpu, int nmi)
@@ -468,6 +470,23 @@ void cpu_run(CPU *cpu, int ncycle)
 
     while (ncycle > 0)
     {
+        //++ dma cycles counting ++//
+        if (cpu->cycles_dma > 0)
+        {
+            if (ncycle > cpu->cycles_dma)
+            {
+                ncycle -= cpu->cycles_dma;
+                cpu->cycles_dma = 0;
+            }
+            else
+            {
+                cpu->cycles_dma -= ncycle;
+                ncycle = 0;
+                break;
+            }
+        }
+        //-- dma cycles counting --//
+
         // fetch opcode
         opcode = bus_readb(cpu->cbus, cpu->pc++);
         opmat  = (opcode & 0x1c) >> 2;

@@ -17,6 +17,7 @@ typedef struct {
     int  nmi_cur;
     long cycles_emu;
     long cycles_real;
+    long cycles_dma;
 
 // private:
     BUS   cbus; // cpu bus

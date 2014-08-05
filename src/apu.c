@@ -1,5 +1,5 @@
 // 包含头文件
-#include "apu.h"
+#include "nes.h"
 #include "adev.h"
 
 // 内部常量定义
@@ -27,3 +27,25 @@ void apu_render_frame(APU *apu)
     adev_audio_buf_request(apu->adevctxt, &paudiobuf);
     adev_audio_buf_post   (apu->adevctxt,  paudiobuf);
 }
+
+void NES_APU_REG_RCB(MEM *pm, int addr)
+{
+    NES *nes = container_of(pm, NES, apuregs);
+    // todo...
+}
+
+void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
+{
+    int  i;
+    NES *nes = container_of(pm, NES, apuregs);
+    switch (addr)
+    {
+    case 0x0014:
+        for (i=0; i<256; i++) {
+            nes->ppu.sprram[i] = bus_readb(nes->cbus, byte * 256 + i);
+        }
+        nes->cpu.cycles_dma += 512;
+        break;
+    }
+}
+
