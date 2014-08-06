@@ -41,8 +41,8 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
             }
             //-- 更精确的 cpu & ppu 时钟控制 --//
 
-            cpu_run(&(nes->cpu), clkcpurun);
             ppu_run(&(nes->ppu), scanline );
+            cpu_run(&(nes->cpu), clkcpurun);
             cpu_nmi(&(nes->cpu), nes->ppu.pin_vbl);
         }
 

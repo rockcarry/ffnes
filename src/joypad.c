@@ -93,7 +93,7 @@ void joypad_setkey(JOYPAD *jp, int pad, int key, int value)
     //-- handle turbo keys --//
 }
 
-void NES_PAD_REG_RCB(MEM *pm, int addr)
+BYTE NES_PAD_REG_RCB(MEM *pm, int addr)
 {
     NES    *nes = container_of(pm, NES, ppuregs);
     JOYPAD *pad = &(nes->pad);
@@ -141,6 +141,7 @@ void NES_PAD_REG_RCB(MEM *pm, int addr)
             break;
         }
     }
+    return pm->data[addr];
 }
 
 void NES_PAD_REG_WCB(MEM *pm, int addr, BYTE byte)

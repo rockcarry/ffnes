@@ -28,10 +28,9 @@ void apu_render_frame(APU *apu)
     adev_audio_buf_post   (apu->adevctxt,  paudiobuf);
 }
 
-void NES_APU_REG_RCB(MEM *pm, int addr)
+BYTE NES_APU_REG_RCB(MEM *pm, int addr)
 {
-    NES *nes = container_of(pm, NES, apuregs);
-    // todo...
+    return pm->data[addr];
 }
 
 void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)

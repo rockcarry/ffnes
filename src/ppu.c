@@ -95,29 +95,35 @@ void ppu_run(PPU *ppu, int scanline)
     NES *nes = container_of(ppu, NES, ppu);
 
     ppu->scanline = scanline;
-    if (scanline >= 241 && scanline <= 260)
+    // [0, 239] render picture, 240 dummy scanline, [241, 260] vblank, 261 dummy scanline
+    if (scanline >= 0 && scanline <= 239)
     {
-        nes->buf_ppuregs[0x0002] |=  (1 << 7);
+        // render picture
+        // todo...
+    }
+    else if (scanline == 241) // vblank start
+    {
+        nes->buf_ppuregs[0x0002] |= (1 << 7);
         if (nes->buf_ppuregs[0x0000] & (1 << 7)) {
             ppu->pin_vbl = 0;
         }
     }
-    else
+    else if (scanline == 260) // vblank end
     {
         nes->buf_ppuregs[0x0002] &= ~(1 << 7);
         ppu->pin_vbl = 1;
     }
 }
 
-void NES_PPU_REG_RCB(MEM *pm, int addr)
+BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
 {
-    NES *nes = container_of(pm, NES, ppuregs);
     switch (addr)
     {
-    case 0x0004:
-        nes->ppu.sprram[nes->buf_ppuregs[0x0003]] = nes->buf_ppuregs[0x0004];
+    case 0x0002:
+        pm->data[0x0002] &= ~(1 << 7);
         break;
     }
+    return pm->data[addr];
 }
 
 void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
@@ -126,7 +132,7 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
     switch (addr)
     {
     case 0x0004:
-        nes->buf_ppuregs[0x0004] = nes->ppu.sprram[nes->buf_ppuregs[0x0003]];
+        nes->ppu.sprram[pm->data[0x0003]] = pm->data[0x0004];
         break;
     }
 }

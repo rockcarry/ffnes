@@ -5,22 +5,23 @@
 BYTE mem_readb(MEM *pm, int addr)
 {
     // memory read callback
-    if (pm->r_callback) pm->r_callback(pm, addr);
-
-    if (pm->data) return pm->data[addr % pm->size];
-    else return 0;
+    if (pm->r_callback) return pm->r_callback(pm, addr);
+    if (pm->data      ) return pm->data[addr % pm->size];
+    return 0;
 }
 
 WORD mem_readw(MEM *pm, int addr)
 {
     // memory read callback
     if (pm->r_callback) {
-        pm->r_callback(pm, addr + 0);
-        pm->r_callback(pm, addr + 1);
+        WORD word;
+        word  = pm->r_callback(pm, addr + 0) << 0;
+        word |= pm->r_callback(pm, addr + 1) << 8;
+        return word;
     }
 
     if (pm->data) return *(WORD*)(pm->data + addr % pm->size);
-    else return 0;
+    return 0;
 }
 
 void mem_writeb(MEM *pm, int addr, BYTE byte)

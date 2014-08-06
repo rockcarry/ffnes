@@ -15,7 +15,7 @@ typedef struct tagMEM {
     int   type;
     int   size;
     BYTE *data;
-    void (*r_callback)(struct tagMEM *pm, int addr);
+    BYTE (*r_callback)(struct tagMEM *pm, int addr);
     void (*w_callback)(struct tagMEM *pm, int addr, BYTE data);
 } MEM;
 
