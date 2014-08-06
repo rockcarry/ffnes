@@ -158,70 +158,55 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
         nes->pattab1.data += NES_PATTAB0_SIZE;
     }
 
-    if (cartridge_has_4screen(&(nes->cart))) {
-        // create vram0
-        nes->vram0.type = MEM_RAM;
-        nes->vram0.size = NES_VRAM0_SIZE;
-        nes->vram0.data = nes->buf_vram0;
+    // create vram0
+    nes->vram0.type = MEM_RAM;
+    nes->vram0.size = NES_VRAM0_SIZE;
+    nes->vram0.data = nes->buf_vram0;
 
-        // create vram1
+    // create vram1 & vram2 & vram3
+    if (cartridge_has_4screen(&(nes->cart))) {
+        // vram1
         nes->vram1.type = MEM_RAM;
         nes->vram1.size = NES_VRAM1_SIZE;
         nes->vram1.data = nes->buf_vram1;
 
-        // create vram2
+        // vram2
         nes->vram2.type = MEM_RAM;
         nes->vram2.size = NES_VRAM2_SIZE;
         nes->vram2.data = nes->buf_vram2;
 
-        // create vram3
+        // vram3
         nes->vram3.type = MEM_RAM;
         nes->vram3.size = NES_VRAM3_SIZE;
         nes->vram3.data = nes->buf_vram3;
     }
     else {
         if (cartridge_get_hvmirroring(&(nes->cart))) {
-            // create vram0
-            nes->vram0.type = MEM_RAM;
-            nes->vram0.size = NES_VRAM0_SIZE;
-            nes->vram0.data = nes->buf_vram0;
-
-            // create vram1
+            // vram1
             nes->vram1.type = MEM_RAM;
             nes->vram1.size = NES_VRAM1_SIZE;
             nes->vram1.data = nes->buf_vram0;
 
-            // create vram2
+            // vram2
             nes->vram2.type = MEM_RAM;
             nes->vram2.size = NES_VRAM2_SIZE;
             nes->vram2.data = nes->buf_vram1;
-
-            // create vram3
-            nes->vram3.type = MEM_RAM;
-            nes->vram3.size = NES_VRAM3_SIZE;
-            nes->vram3.data = nes->buf_vram1;
         }
         else {
-            // create vram0
-            nes->vram0.type = MEM_RAM;
-            nes->vram0.size = NES_VRAM0_SIZE;
-            nes->vram0.data = nes->buf_vram0;
-
-            // create vram1
+            // vram1
             nes->vram1.type = MEM_RAM;
             nes->vram1.size = NES_VRAM1_SIZE;
             nes->vram1.data = nes->buf_vram1;
 
-            // create vram2
+            // vram2
             nes->vram2.type = MEM_RAM;
             nes->vram2.size = NES_VRAM2_SIZE;
             nes->vram2.data = nes->buf_vram0;
-
-            // create vram3
-            nes->vram3.type = MEM_RAM;
-            nes->vram3.size = NES_VRAM3_SIZE;
-            nes->vram3.data = nes->buf_vram1;
         }
+        // vram3
+        nes->vram3.type = MEM_RAM;
+        nes->vram3.size = NES_VRAM3_SIZE;
+        nes->vram3.data = nes->buf_vram1;
     }
 
     // create color palette
@@ -246,6 +231,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     // 0x3F10 - 0x3F1F: sprite palette
     // 0x3F00, 0x3F04, 0x3F08, 0x3F0C, 0x3F10, 0x3F14, 0x3F18, 0x3F1C mirring and store the background color
     bus_setmem(nes->pbus, 9, 0x3F00, 0x3F1F, &(nes->palette));
+    bus_setmem(nes->pbus,10, 0x0000, 0x0000, NULL           );
     //-- pbus mem map --//
 
     joypad_init(&(nes->pad));
