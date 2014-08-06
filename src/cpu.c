@@ -746,6 +746,7 @@ other_opcode_handler:
                 PUSH(PS);
                 SET_FLAG(I_FLAG);
                 PC = READW(NMI_VECTOR);
+                ncycle -= 7;
             }
         }
     }
