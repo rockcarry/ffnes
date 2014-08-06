@@ -20,8 +20,8 @@ typedef struct {
     long cycles_dma;
 
 // private:
-    BUS   cbus; // cpu bus
-    BYTE *cram; // cpu ram
+    BUS  cbus;       // cpu bus
+    BYTE cram[2048]; // cpu ram, 2KB
 } CPU;
 
 // º¯ÊýÉùÃ÷

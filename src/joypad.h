@@ -20,6 +20,9 @@
 
 // 类型定义
 typedef struct {
+    BYTE   regs[2];
+
+// private:
     BOOL   strobe;
     DWORD  counter_4016;
     DWORD  counter_4017;

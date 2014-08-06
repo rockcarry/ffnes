@@ -78,56 +78,34 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     nes->extra = extra;
 
     // load cartridge first
-    if (cartridge_load(&(nes->cart), file)) {
-        // sram
-        nes->buf_sram = nes->cart.buf_sram;
-
-        // prom
-        if (nes->cart.prom_count <= 1) {
-            nes->buf_prgrom0 = nes->cart.buf_prom;
-            nes->buf_prgrom1 = nes->cart.buf_prom;
-        }
-        else {
-            nes->buf_prgrom0 = nes->cart.buf_prom;
-            nes->buf_prgrom1 = nes->cart.buf_prom + NES_PRGROM0_SIZE;
-        }
-
-        // crom
-        if (nes->cart.crom_count <= 1) {
-            nes->buf_pattab0 = nes->cart.buf_crom;
-            nes->buf_pattab1 = nes->cart.buf_crom;
-        }
-        else {
-            nes->buf_pattab0 = nes->cart.buf_crom;
-            nes->buf_pattab1 = nes->cart.buf_crom + NES_PRGROM0_SIZE;
-        }
+    if (!cartridge_load(&(nes->cart), file)) {
+        return FALSE;
     }
-    else return FALSE;
 
     //++ cbus mem map ++//
     // create cpu ram
     nes->cram.type = MEM_RAM;
     nes->cram.size = NES_CRAM_SIZE;
-    nes->cram.data = nes->buf_cram;
+    nes->cram.data = nes->cpu.cram;
 
     // create ppu regs
     nes->ppuregs.type = MEM_REG;
     nes->ppuregs.size = NES_PPUREGS_SIZE;
-    nes->ppuregs.data = nes->buf_ppuregs;
+    nes->ppuregs.data = nes->ppu.regs;
     nes->ppuregs.r_callback = NES_PPU_REG_RCB;
     nes->ppuregs.w_callback = NES_PPU_REG_WCB;
 
     // create apu regs
     nes->apuregs.type = MEM_REG;
     nes->apuregs.size = NES_APUREGS_SIZE;
-    nes->apuregs.data = nes->buf_apuregs;
+    nes->apuregs.data = nes->apu.regs;
     nes->apuregs.r_callback = NES_APU_REG_RCB;
     nes->apuregs.w_callback = NES_APU_REG_WCB;
 
     // create pad regs
     nes->padregs.type = MEM_REG;
     nes->padregs.size = NES_PADREGS_SIZE;
-    nes->padregs.data = nes->buf_padregs;
+    nes->padregs.data = nes->pad.regs;
     nes->padregs.r_callback = NES_PAD_REG_RCB;
     nes->padregs.w_callback = NES_PAD_REG_WCB;
 
@@ -139,17 +117,20 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     // create sram
     nes->sram.type = MEM_RAM;
     nes->sram.size = NES_SRAM_SIZE;
-    nes->sram.data = nes->buf_sram;
+    nes->sram.data = nes->cart.buf_sram;
 
     // create PRG-ROM 0
     nes->prgrom0.type = MEM_ROM;
     nes->prgrom0.size = NES_PRGROM0_SIZE;
-    nes->prgrom0.data = nes->buf_prgrom0;
+    nes->prgrom0.data = nes->cart.buf_prom;
 
     // create PRG-ROM 1
     nes->prgrom1.type = MEM_ROM;
     nes->prgrom1.size = NES_PRGROM1_SIZE;
-    nes->prgrom1.data = nes->buf_prgrom1;
+    nes->prgrom1.data = nes->cart.buf_prom;
+    if (nes->cart.prom_count > 1) {
+        nes->prgrom1.data += NES_PRGROM0_SIZE;
+    }
 
     // init nes cbus
     bus_setmem(nes->cbus, 0, 0x0000, 0x1FFF, &(nes->cram   ));
@@ -167,12 +148,15 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     // create pattern table #0
     nes->pattab0.type = MEM_ROM;
     nes->pattab0.size = NES_PATTAB0_SIZE;
-    nes->pattab0.data = nes->buf_pattab0;
+    nes->pattab0.data = nes->cart.buf_crom;
 
     // create pattern table #1
     nes->pattab1.type = MEM_ROM;
     nes->pattab1.size = NES_PATTAB1_SIZE;
-    nes->pattab1.data = nes->buf_pattab1;
+    nes->pattab1.data = nes->cart.buf_crom;
+    if (nes->cart.crom_count > 1) {
+        nes->pattab1.data += NES_PATTAB0_SIZE;
+    }
 
     if (cartridge_has_4screen(&(nes->cart))) {
         // create vram0
@@ -243,7 +227,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     // create color palette
     nes->palette.type = MEM_RAM;
     nes->palette.size = NES_PALETTE_SIZE;
-    nes->palette.data = nes->buf_palette;
+    nes->palette.data = nes->ppu.palette;
 
     // init nes pbus
     bus_setmir(nes->pbus, 0, 0x4000, 0xFFFF, 0x3FFF);
@@ -266,9 +250,9 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
 
     joypad_init(&(nes->pad));
     mmc_init   (&(nes->mmc), &(nes->cart), nes->cbus, nes->pbus);
-    cpu_init   (&(nes->cpu), nes->cbus );
     ppu_init   (&(nes->ppu), nes->extra);
     apu_init   (&(nes->apu), nes->extra);
+    cpu_init   (&(nes->cpu), nes->cbus );
 
     // create nes event & thread
     nes->hNesEvent  = CreateEvent (NULL, TRUE, FALSE, NULL);
@@ -285,9 +269,9 @@ void nes_free(NES *nes)
     CloseHandle(nes->hNesEvent );
     CloseHandle(nes->hNesThread);
 
+    cpu_free      (&(nes->cpu));
     ppu_free      (&(nes->ppu));
     apu_free      (&(nes->apu));
-    cpu_free      (&(nes->cpu));
     mmc_free      (&(nes->mmc));
     joypad_free   (&(nes->pad )); // free joypad
     cartridge_free(&(nes->cart)); // free cartridge
@@ -299,9 +283,9 @@ void nes_reset(NES *nes)
 {
     joypad_reset(&(nes->pad));
     mmc_reset   (&(nes->mmc));
-    cpu_reset   (&(nes->cpu));
     ppu_reset   (&(nes->ppu));
     apu_reset   (&(nes->apu));
+    cpu_reset   (&(nes->cpu));
 }
 
 void nes_run  (NES *nes) {   SetEvent(nes->hNesEvent); }

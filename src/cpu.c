@@ -418,14 +418,12 @@ static BYTE CPU_CYCLE_TAB[256] =
 void cpu_init(CPU *cpu, BUS cbus)
 {
     cpu->cbus = cbus;
-    cpu->cram = cbus->membank->data;
-
-    cpu->pc = bus_readw(cpu->cbus, RST_VECTOR);
-    cpu->sp = 0xff;
-    cpu->ax = 0x00;
-    cpu->xi = 0x00;
-    cpu->yi = 0x00;
-    cpu->ps = I_FLAG | R_FLAG;
+    cpu->pc   = bus_readw(cpu->cbus, RST_VECTOR);
+    cpu->sp   = 0xff;
+    cpu->ax   = 0x00;
+    cpu->xi   = 0x00;
+    cpu->yi   = 0x00;
+    cpu->ps   = I_FLAG | R_FLAG;
     cpu->nmi_last    = 1;
     cpu->nmi_cur     = 1;
     cpu->cycles_emu  = 0;

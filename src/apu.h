@@ -7,8 +7,10 @@
 
 // 类型定义
 typedef struct {
+    BYTE  regs[22];
+
+// private:
     void *adevctxt;
-    BYTE  reserved;
 } APU;
 
 // 函数声明

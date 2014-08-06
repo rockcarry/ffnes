@@ -60,22 +60,11 @@ typedef struct {
     MEM vram3;   // vram3 1KB, in cart
     MEM palette; // color palette in ppu
 
-    BYTE  buf_cram   [NES_CRAM_SIZE   ];
-    BYTE  buf_ppuregs[NES_PPUREGS_SIZE];
-    BYTE  buf_apuregs[NES_APUREGS_SIZE];
-    BYTE  buf_padregs[NES_PADREGS_SIZE];
-    BYTE *buf_sram;     // in cartridge
-    BYTE  buf_erom   [NES_EROM_SIZE   ];
-    BYTE *buf_prgrom0;  // in cartridge
-    BYTE *buf_prgrom1;  // in cartridge
-
-    BYTE *buf_pattab0;  // in cartridge
-    BYTE *buf_pattab1;  // in cartridge
-    BYTE  buf_vram0  [NES_VRAM0_SIZE  ];
-    BYTE  buf_vram1  [NES_VRAM1_SIZE  ];
-    BYTE  buf_vram2  [NES_VRAM2_SIZE  ];
-    BYTE  buf_vram3  [NES_VRAM3_SIZE  ];
-    BYTE  buf_palette[NES_PALETTE_SIZE];
+    BYTE  buf_erom [NES_EROM_SIZE ];
+    BYTE  buf_vram0[NES_VRAM0_SIZE];
+    BYTE  buf_vram1[NES_VRAM1_SIZE];
+    BYTE  buf_vram2[NES_VRAM2_SIZE];
+    BYTE  buf_vram3[NES_VRAM3_SIZE];
 
     // nes thread
     HANDLE hNesThread;

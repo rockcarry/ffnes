@@ -7,10 +7,14 @@
 
 // 类型定义
 typedef struct {
+    BYTE  regs   [8  ]; // ppu regs
+    BYTE  sprram [256]; // sprite ram
+    BYTE  palette[32 ]; // palette
+
+// private:
     void *vdevctxt;
     int   scanline;
-    int   pin_vbl;
-    BYTE  sprram[256]; // sprite ram
+    int   pin_vbl;  
 } PPU;
 
 // 函数声明
