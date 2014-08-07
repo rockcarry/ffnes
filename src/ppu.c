@@ -121,6 +121,9 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
     case 0x0002:
         pm->data[0x0002] &= ~(1 << 7);
         break;
+    case 0x0004:
+        pm->data[0x0004] = nes->ppu.sprram[pm->data[0x0003]];
+        break;
     }
     return pm->data[addr];
 }
