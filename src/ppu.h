@@ -13,8 +13,9 @@ typedef struct {
 
 // private:
     void *vdevctxt;
-    int   scanline;
-    int   pin_vbl;  
+    int   pin_vbl;
+    WORD _2006_addr;
+    int  _2006_flag;
 } PPU;
 
 // º¯ÊıÉùÃ÷
