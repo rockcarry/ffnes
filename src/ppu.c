@@ -1,6 +1,7 @@
 // 包含头文件
 #include "nes.h"
 #include "vdev.h"
+#include "log.h"
 
 // 内部常量定义
 #define PPU_IMAGE_WIDTH  256
@@ -75,14 +76,56 @@ static BYTE DEF_PPU_PAL[64 * 3] =
     0x00, 0x00, 0x00,
 };
 
+// 内部函数实现
+static void ppu_set_vdev_pal(int flag)
+{
+    BYTE  pal[256 * 4];
+    BYTE *psrc = DEF_PPU_PAL;
+    BYTE *pend = psrc + 64 * 3;
+    BYTE *pdst = pal;
+    int   gray, i;
+
+    if (flag)
+    {
+        for (i=0; i<256; i++)
+        {
+            gray    = (psrc[0] + psrc[1] + psrc[2]) / 3;
+            *pdst++ = (BYTE)gray;
+            *pdst++ = (BYTE)gray;
+            *pdst++ = (BYTE)gray;
+            *pdst++ = 0;
+            psrc   += 3;
+            if (psrc == pend) {
+                psrc = DEF_PPU_PAL;
+            }
+        }
+    }
+    else
+    {
+        for (i=0; i<256; i++)
+        {
+            *pdst++ = *psrc++;
+            *pdst++ = *psrc++;
+            *pdst++ = *psrc++;
+            *pdst++ = 0;
+            if (psrc == pend) {
+                psrc = DEF_PPU_PAL;
+            }
+        }
+    }
+}
+
 // 函数实现
 void ppu_init(PPU *ppu, DWORD extra)
 {
-    DO_USE_VAR(DEF_PPU_PAL[0]);
-    ppu->vdevctxt   = vdev_create(PPU_IMAGE_WIDTH, PPU_IMAGE_HEIGHT, 8, extra);
+    ppu->vdevctxt = vdev_create(PPU_IMAGE_WIDTH, PPU_IMAGE_HEIGHT, 8, extra);
+    if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
+
     ppu->pin_vbl    = 1;
     ppu->_2006_addr = 0;
     ppu->_2006_flag = 0;
+    ppu->color_flag = 0;
+    ppu_set_vdev_pal(0);
 }
 
 void ppu_free(PPU *ppu)
@@ -95,6 +138,8 @@ void ppu_reset(PPU *ppu)
     ppu->pin_vbl    = 1;
     ppu->_2006_addr = 0;
     ppu->_2006_flag = 0;
+    ppu->color_flag = 0;
+    ppu_set_vdev_pal(0);
 }
 
 void ppu_run(PPU *ppu, int scanline)
@@ -151,6 +196,13 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
     NES *nes = container_of(pm, NES, ppuregs);
     switch (addr)
     {
+    case 0x0001:
+        if (nes->ppu.color_flag != (pm->data[0x0001] & (1 << 0))) {
+            nes->ppu.color_flag = pm->data[0x0001] & (1 << 0);
+            ppu_set_vdev_pal(nes->ppu.color_flag);
+        }
+        break;
+
     case 0x0004:
         nes->ppu.sprram[pm->data[0x0003]] = pm->data[0x0004];
         break;

@@ -16,6 +16,7 @@ typedef struct {
     int   pin_vbl;
     WORD _2006_addr;
     int  _2006_flag;
+    int   color_flag;
 } PPU;
 
 // º¯ÊıÉùÃ÷
