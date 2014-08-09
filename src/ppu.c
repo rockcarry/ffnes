@@ -118,14 +118,12 @@ static void ppu_set_vdev_pal(int flag)
 // º¯ÊýÊµÏÖ
 void ppu_init(PPU *ppu, DWORD extra)
 {
+    // create vdev for ppu
     ppu->vdevctxt = vdev_create(PPU_IMAGE_WIDTH, PPU_IMAGE_HEIGHT, 8, extra);
     if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
 
-    ppu->pin_vbl    = 1;
-    ppu->_2006_addr = 0;
-    ppu->_2006_flag = 0;
-    ppu->color_flag = 0;
-    ppu_set_vdev_pal(0);
+    // reset ppu
+    ppu_reset(ppu);
 }
 
 void ppu_free(PPU *ppu)
@@ -135,10 +133,16 @@ void ppu_free(PPU *ppu)
 
 void ppu_reset(PPU *ppu)
 {
-    ppu->pin_vbl    = 1;
-    ppu->_2006_addr = 0;
-    ppu->_2006_flag = 0;
-    ppu->color_flag = 0;
+    ppu->pin_vbl      = 1;
+    ppu->color_flag   = 0;
+    ppu->_2005_toggle = 0;
+    ppu->_2006_toggle = 0;
+    ppu->pio_addr     = 0;
+    ppu->ntabn        = 0;
+    ppu->tilex        = 0;
+    ppu->tiley        = 0;
+    ppu->finex        = 0;
+    ppu->finey        = 0;
     ppu_set_vdev_pal(0);
 }
 
@@ -175,20 +179,21 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
     switch (addr)
     {
     case 0x0002:
-        pm->data[0x0002]   &= ~(1 << 7);  // after a read occurs, D7 is set to 0 
-        nes->ppu._2006_flag = 0;          // after a read occurs, $2006 is reset
+        pm->data[0x0002] &= ~(1 << 7);  // after a read occurs, D7 is set to 0 
+        nes->ppu._2005_toggle = 0;      // after a read occurs, $2005 toggle is reset
+        nes->ppu._2006_toggle = 0;      // after a read occurs, $2006 toggle is reset
         break;
 
     case 0x0004:
-        pm->data[0x0004] = nes->ppu.sprram[pm->data[0x0003]];
+        byte = nes->ppu.sprram[pm->data[0x0003]];
         break;
 
     case 0x0007:
-        byte = bus_readb(nes->pbus, nes->ppu._2006_addr);
+        byte = bus_readb(nes->pbus, nes->ppu.pio_addr);
         if (pm->data[0x0000] & (1 << 2)) {
-            nes->ppu._2006_addr += 32;
+            nes->ppu.pio_addr += 32;
         }
-        else nes->ppu._2006_addr++;
+        else nes->ppu.pio_addr++;
         break;
     }
     return byte;
@@ -199,31 +204,64 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
     NES *nes = container_of(pm, NES, ppuregs);
     switch (addr)
     {
+    case 0x0000:
+        nes->ppu.ntabn = (byte & 0x3);
+        break;
+
     case 0x0001:
-        if (nes->ppu.color_flag != (pm->data[0x0001] & (1 << 0))) {
-            nes->ppu.color_flag = pm->data[0x0001] & (1 << 0);
+        if (nes->ppu.color_flag != (byte & (1 << 0)))
+        {
+            nes->ppu.color_flag = byte & (1 << 0);
             ppu_set_vdev_pal(nes->ppu.color_flag);
         }
         break;
 
     case 0x0004:
-        nes->ppu.sprram[pm->data[0x0003]] = pm->data[0x0004];
+        nes->ppu.sprram[pm->data[0x0003]] = byte;
+        break;
+
+    case 0x0005:
+        nes->ppu._2005_toggle = !nes->ppu._2005_toggle;
+        if (nes->ppu._2005_toggle)
+        {
+            nes->ppu.tilex =  (byte >> 3 );
+            nes->ppu.finex =  (byte & 0x7);
+        }
+        else
+        {
+            nes->ppu.tiley =  (byte >> 3 );
+            nes->ppu.finey =  (byte & 0x7);
+        }
         break;
 
     case 0x0006:
-        nes->ppu._2006_flag = !nes->ppu._2006_flag;
-        if (nes->ppu._2006_flag) {
-            nes->ppu._2006_addr = addr << 8;
+        nes->ppu._2006_toggle = !nes->ppu._2006_toggle;
+        if (nes->ppu._2006_toggle)
+        {
+            nes->ppu.ntabn    = (byte >>  2) & 0x3;
+            nes->ppu.finey    = (byte >>  4) & 0x3;
+            nes->ppu.tiley   &=~(0x3  <<  3);
+            nes->ppu.tiley   |= (byte & 0x3) << 3;
         }
-        else nes->ppu._2006_addr |= addr;
+        else
+        {
+            nes->ppu.tilex    = (byte & 0x1f);
+            nes->ppu.tiley   &=~(0x7  << 0);
+            nes->ppu.tiley   |= (byte >> 5);
+
+            nes->ppu.pio_addr = (nes->ppu.finey << 12)
+                              | (nes->ppu.ntabn << 10)
+                              | (nes->ppu.tiley << 5 )
+                              | (nes->ppu.tilex << 0 );
+        }
         break;
 
     case 0x0007:
-        bus_writeb(nes->pbus, nes->ppu._2006_addr, byte);
+        bus_writeb(nes->pbus, nes->ppu.pio_addr, byte);
         if (pm->data[0x0000] & (1 << 2)) {
-            nes->ppu._2006_addr += 32;
+            nes->ppu.pio_addr += 32;
         }
-        else nes->ppu._2006_addr++;
+        else nes->ppu.pio_addr++;
         break;
     }
 }

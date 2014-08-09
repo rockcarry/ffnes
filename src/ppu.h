@@ -14,8 +14,14 @@ typedef struct {
 // private:
     void *vdevctxt;
     int   pin_vbl;
-    WORD _2006_addr;
-    int  _2006_flag;
+    int  _2005_toggle;
+    int  _2006_toggle;
+    WORD  pio_addr; // for 2006 & 2007, vram read & write IO addr
+    int   ntabn;
+    int   tilex;
+    int   tiley;
+    int   finex;
+    int   finey;
     int   color_flag;
 } PPU;
 
