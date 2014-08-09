@@ -144,23 +144,26 @@ void ppu_reset(PPU *ppu)
 
 void ppu_run(PPU *ppu, int scanline)
 {
-    // [0, 239] render picture, 240 dummy scanline, [241, 260] vblank, 261 dummy scanline
-    if (scanline >= 0 && scanline <= 239)
-    {
-        // render picture
-        // todo...
-    }
-    else if (scanline == 241) // vblank start
-    {
-        ppu->regs[0x0002] |= (1 << 7);
-        if (ppu->regs[0x0000] & (1 << 7)) {
-            ppu->pin_vbl = 0;
-        }
-    }
-    else if (scanline == 260) // vblank end
+    // scanline 0, junk/refresh
+    if (scanline == 0)
     {
         ppu->regs[0x0002] &= ~(1 << 7);
-        ppu->pin_vbl = 1;
+        ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 0);
+    }
+    // renders the screen for 240 lines
+    else if (scanline >=1 && scanline <= 240)
+    {
+    }
+    // scanline 242: dead/junk
+    else if (scanline == 241)
+    {
+        ppu->regs[0x0002] |=  (1 << 7);
+        ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 0);
+    }
+    // line 243 - 262(NTSC) - 312(PAL): vblank
+    else if (scanline >= 242 && scanline <= 261)
+    {
+        ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 0);
     }
 }
 
