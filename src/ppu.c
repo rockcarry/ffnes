@@ -197,7 +197,9 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
 
 void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
 {
-    NES *nes = container_of(pm, NES, ppuregs);
+    NES *nes       = container_of(pm, NES, ppuregs);
+    int  pbus_addr = nes->ppu.pio_addr;
+
     switch (addr)
     {
     case 0x0000:
@@ -253,7 +255,16 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         break;
 
     case 0x0007:
-        bus_writeb(nes->pbus, nes->ppu.pio_addr, byte);
+        if (pbus_addr >= 0x3f00 && pbus_addr <= 0x3fff)
+        {
+            // for palette mirrors
+            if ((pbus_addr & 0x0003) == 0x0000) {
+                pbus_addr = 0x3f00;
+            }
+            byte &= 0x3f; // only 6bits is valid for palette
+        }
+
+        bus_writeb(nes->pbus, pbus_addr, byte);
         if (pm->data[0x0000] & (1 << 2)) {
             nes->ppu.pio_addr += 32;
         }
