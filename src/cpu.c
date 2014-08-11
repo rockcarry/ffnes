@@ -452,6 +452,11 @@ void cpu_nmi(CPU *cpu, int nmi)
     cpu->nmi_cur = nmi;
 }
 
+void cpu_irq(CPU *cpu, int irq)
+{
+    cpu->irq_flag = irq;
+}
+
 void cpu_run(CPU *cpu, int ncycle)
 {
     BYTE opcode = 0;
@@ -484,6 +489,34 @@ void cpu_run(CPU *cpu, int ncycle)
             }
         }
         //-- dma cycles counting --//
+
+        //++ handle nmi interrupt ++//
+        if (cpu->nmi_last != cpu->nmi_cur) {
+            cpu->nmi_last  = cpu->nmi_cur;
+            if (cpu->nmi_cur == 0) { // negative edge
+                PUSH((PC >> 8) & 0xff);
+                PUSH((PC >> 0) & 0xff);
+                CLR_FLAG(B_FLAG);
+                PUSH(PS);
+                SET_FLAG(I_FLAG);
+                PC = READW(NMI_VECTOR);
+                ncycle -= 7;
+            }
+        }
+        //-- handle nmi interrupt --//
+
+        //++ handle irq interrupt ++//
+        if (!cpu->irq_flag && !(cpu->ps & I_FLAG))
+        {
+            PUSH((PC >> 8) & 0xff);
+            PUSH((PC >> 0) & 0xff);
+            CLR_FLAG(B_FLAG);
+            PUSH(PS);
+            SET_FLAG(I_FLAG);
+            PC = READW(IRQ_VECTOR);
+            ncycle -= 7;
+        }
+        //-- handle irq interrupt --//
 
         // fetch opcode
         opcode = bus_readb(cpu->cbus, cpu->pc++);
@@ -733,19 +766,6 @@ other_opcode_handler:
         case 0xcb: MR_IM(); SBX(); break; // SBX
         case 0xea: NOP(); break; // NOP
         default:   UDF(); break; // undefined
-        }
-
-        if (cpu->nmi_last != cpu->nmi_cur) {
-            cpu->nmi_last  = cpu->nmi_cur;
-            if (cpu->nmi_cur == 0) { // negative edge
-                PUSH((PC >> 8) & 0xff);
-                PUSH((PC >> 0) & 0xff);
-                CLR_FLAG(B_FLAG);
-                PUSH(PS);
-                SET_FLAG(I_FLAG);
-                PC = READW(NMI_VECTOR);
-                ncycle -= 7;
-            }
         }
     }
 

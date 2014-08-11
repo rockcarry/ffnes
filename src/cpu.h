@@ -15,6 +15,7 @@ typedef struct {
     BYTE ps;
     int  nmi_last;
     int  nmi_cur;
+    int  irq_flag;
     long cycles_emu;
     long cycles_real;
     long cycles_dma;
@@ -29,6 +30,7 @@ void cpu_init (CPU *cpu, BUS cbus);
 void cpu_free (CPU *cpu);
 void cpu_reset(CPU *cpu);
 void cpu_nmi  (CPU *cpu, int nmi);
+void cpu_irq  (CPU *cpu, int irq);
 void cpu_run  (CPU *cpu, int cycle);
 
 #endif
