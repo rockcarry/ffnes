@@ -10,6 +10,7 @@
 // 内部全局变量定义
 static BYTE DEF_PPU_PAL[64 * 3] =
 {
+//  R     G     B
     0x75, 0x75, 0x75,
     0x27, 0x1B, 0x8F,
     0x00, 0x00, 0xAB,
@@ -76,17 +77,39 @@ static BYTE DEF_PPU_PAL[64 * 3] =
     0x00, 0x00, 0x00,
 };
 
+/*
+001   R: 123.9%   G: 091.5%   B: 074.3%
+010   R: 079.4%   G: 108.6%   B: 088.2%
+011   R: 101.9%   G: 098.0%   B: 065.3%
+100   R: 090.5%   G: 102.6%   B: 127.7%
+101   R: 102.3%   G: 090.8%   B: 097.9%
+110   R: 074.1%   G: 098.7%   B: 100.1%
+111   R: 075.0%   G: 075.0%   B: 075.0%
+*/
+static int color_emphasis_factor[8][3] =
+{
+    { 256, 256, 256 },
+    { 317, 234, 190 },
+    { 203, 278, 225 },
+    { 261, 251, 167 },
+    { 232, 263, 327 },
+    { 262, 232, 251 },
+    { 190, 253, 256 },
+    { 192, 192, 192 },
+};
+
 // 内部函数实现
-static void ppu_set_vdev_pal(int flag)
+static void ppu_set_vdev_pal(void *ctxt, int flags)
 {
     BYTE  pal[256 * 4];
     BYTE *psrc = DEF_PPU_PAL;
     BYTE *pend = psrc + 64 * 3;
     BYTE *pdst = pal;
-    int   gray, i;
+    int   r, g, b, gray;
+    int   factor, i;
 
-    if (flag)
-    {
+    if (flags & (1 << 0))
+    {   // monochrome
         for (i=0; i<256; i++)
         {
             gray    = (psrc[0] + psrc[1] + psrc[2]) / 3;
@@ -99,20 +122,35 @@ static void ppu_set_vdev_pal(int flag)
                 psrc = DEF_PPU_PAL;
             }
         }
+        //++ for 2001.5-7 ++//
+        pal[255 * 4 + 0] = flags & (1 << 7) ? 255 : 0;
+        pal[255 * 4 + 1] = flags & (1 << 6) ? 255 : 0;
+        pal[255 * 4 + 2] = flags & (1 << 5) ? 255 : 0;
+        //-- for 2001.5-7 --//
     }
     else
-    {
+    {   // colorized
+        factor = flags >> 5;
         for (i=0; i<256; i++)
         {
-            *pdst++ = *psrc++;
-            *pdst++ = *psrc++;
-            *pdst++ = *psrc++;
-            *pdst++ = 0;
+            r = (*psrc++ * color_emphasis_factor[factor][0]) >> 8;
+            g = (*psrc++ * color_emphasis_factor[factor][1]) >> 8;
+            b = (*psrc++ * color_emphasis_factor[factor][2]) >> 8;
+            r = (r < 255) ? r : 255;
+            g = (g < 255) ? g : 255;
+            b = (b < 255) ? b : 255;
+            *pdst++ = (BYTE)b;
+            *pdst++ = (BYTE)g;
+            *pdst++ = (BYTE)r;
+            *pdst++ = (BYTE)0;
             if (psrc == pend) {
                 psrc = DEF_PPU_PAL;
             }
         }
     }
+
+    // set vdev palette
+    vdev_setpal(ctxt, 0, 256, pal);
 }
 
 // 函数实现
@@ -134,7 +172,7 @@ void ppu_free(PPU *ppu)
 void ppu_reset(PPU *ppu)
 {
     ppu->pin_vbl      = 1;
-    ppu->color_flag   = 0;
+    ppu->color_flags  = 0;
     ppu->_2005_toggle = 0;
     ppu->_2006_toggle = 0;
     ppu->pio_addr     = 0;
@@ -143,7 +181,7 @@ void ppu_reset(PPU *ppu)
     ppu->tiley        = 0;
     ppu->finex        = 0;
     ppu->finey        = 0;
-    ppu_set_vdev_pal(0);
+    ppu_set_vdev_pal(ppu->vdevctxt, 0);
 }
 
 void ppu_run(PPU *ppu, int scanline)
@@ -207,10 +245,10 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         break;
 
     case 0x0001:
-        if (nes->ppu.color_flag != (byte & (1 << 0)))
+        if (nes->ppu.color_flags != (byte & 0xe1))
         {
-            nes->ppu.color_flag = byte & (1 << 0);
-            ppu_set_vdev_pal(nes->ppu.color_flag);
+            nes->ppu.color_flags = byte & 0xe1;
+            ppu_set_vdev_pal(nes->ppu.vdevctxt, nes->ppu.color_flags);
         }
         break;
 

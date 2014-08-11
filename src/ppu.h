@@ -22,7 +22,7 @@ typedef struct {
     int   tiley;
     int   finex;
     int   finey;
-    int   color_flag;
+    int   color_flags;
 } PPU;
 
 // º¯ÊıÉùÃ÷
