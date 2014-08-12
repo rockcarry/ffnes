@@ -175,21 +175,32 @@ void ppu_reset(PPU *ppu)
 
 void ppu_run(PPU *ppu, int scanline)
 {
+    BYTE *pbuf;
+    int   i;
+
     // scanline 0, junk/refresh
     if (scanline == 0)
     {
         ppu->regs[0x0002] &= ~(1 << 7);
         ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 0);
+
+        // lock video device, obtain draw buffer address & stride
+        vdev_lock(ppu->vdevctxt, &(ppu->draw_buffer), &(ppu->draw_stride));
     }
     // renders the screen for 240 lines
     else if (scanline >=1 && scanline <= 240)
     {
+        pbuf = ppu->draw_buffer + ppu->draw_stride * (scanline - 1);
+        for (i=0; i<256; i++) pbuf[i] = rand() & 0xff;
     }
     // scanline 242: dead/junk
     else if (scanline == 241)
     {
         ppu->regs[0x0002] |=  (1 << 7);
         ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 0);
+
+        // unlock video device
+        vdev_unlock(ppu->vdevctxt);
     }
     // line 243 - 262(NTSC) - 312(PAL): vblank
     else if (scanline >= 242 && scanline <= 261)

@@ -23,6 +23,8 @@ typedef struct {
     int   finex;
     int   finey;
     int   color_flags;
+    BYTE *draw_buffer;
+    int   draw_stride;
 } PPU;
 
 // º¯ÊıÉùÃ÷
