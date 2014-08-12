@@ -102,50 +102,39 @@ static int color_emphasis_factor[8][3] =
 static void ppu_set_vdev_pal(void *ctxt, int flags)
 {
     BYTE  pal[256 * 4];
-    BYTE *psrc = DEF_PPU_PAL;
-    BYTE *pend = psrc + 64 * 3;
-    BYTE *pdst = pal;
-    int   r, g, b, gray;
-    int   factor, i;
+    BYTE *psrc   = DEF_PPU_PAL;
+    BYTE *pend   = psrc + 64 * 3;
+    BYTE *pdst   = pal;
+    int   factor = flags >> 5;
+    int   r, g, b, i;
 
-    if (flags & (1 << 0))
-    {   // monochrome
-        for (i=0; i<256; i++)
-        {
-            gray    = (psrc[0] + psrc[1] + psrc[2]) / 3;
-            *pdst++ = (BYTE)gray;
-            *pdst++ = (BYTE)gray;
-            *pdst++ = (BYTE)gray;
-            *pdst++ = 0;
-            psrc   += 3;
-            if (psrc == pend) {
-                psrc = DEF_PPU_PAL;
-            }
+    for (i=0; i<256; i++)
+    {
+        if (flags & (1 << 0))
+        {   // monochrome
+            // how to convert rgb color to gray ?
+            // gray = R*0.299 + G*0.587 + B*0.114
+            r = g = b = (psrc[0]*77 + psrc[1]*150 + psrc[2]*29) >> 8;
+            psrc += 3;
         }
-        //++ for 2001.5-7 ++//
-        pal[255 * 4 + 0] = flags & (1 << 7) ? 255 : 0;
-        pal[255 * 4 + 1] = flags & (1 << 6) ? 255 : 0;
-        pal[255 * 4 + 2] = flags & (1 << 5) ? 255 : 0;
-        //-- for 2001.5-7 --//
-    }
-    else
-    {   // colorized
-        factor = flags >> 5;
-        for (i=0; i<256; i++)
-        {
-            r = (*psrc++ * color_emphasis_factor[factor][0]) >> 8;
-            g = (*psrc++ * color_emphasis_factor[factor][1]) >> 8;
-            b = (*psrc++ * color_emphasis_factor[factor][2]) >> 8;
-            r = (r < 255) ? r : 255;
-            g = (g < 255) ? g : 255;
-            b = (b < 255) ? b : 255;
-            *pdst++ = (BYTE)b;
-            *pdst++ = (BYTE)g;
-            *pdst++ = (BYTE)r;
-            *pdst++ = (BYTE)0;
-            if (psrc == pend) {
-                psrc = DEF_PPU_PAL;
-            }
+        else
+        {   // colorized
+            r = *psrc++;
+            g = *psrc++;
+            b = *psrc++;
+        }
+        r = (r * color_emphasis_factor[factor][0]) >> 8;
+        g = (g * color_emphasis_factor[factor][1]) >> 8;
+        b = (b * color_emphasis_factor[factor][2]) >> 8;
+        r = (r < 255) ? r : 255;
+        g = (g < 255) ? g : 255;
+        b = (b < 255) ? b : 255;
+        *pdst++ = (BYTE)r;
+        *pdst++ = (BYTE)g;
+        *pdst++ = (BYTE)b;
+        *pdst++ = (BYTE)0;
+        if (psrc == pend) {
+            psrc = DEF_PPU_PAL;
         }
     }
 
