@@ -179,14 +179,14 @@ void ppu_reset(PPU *ppu)
 
 void ppu_run(PPU *ppu, int scanline)
 {
-    BYTE *pbuf;
-    int   i;
-
     // scanline 0, junk/refresh
     if (scanline == 0)
     {
         ppu->regs[0x0002] &= ~(1 << 7);
         ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 0);
+
+        ppu->regs[0x0002] &= ~(3 << 5);
+        memset(ppu->sprram, 0, 256);
 
         // lock video device, obtain draw buffer address & stride
         vdev_lock(ppu->vdevctxt, &(ppu->draw_buffer), &(ppu->draw_stride));
@@ -194,8 +194,52 @@ void ppu_run(PPU *ppu, int scanline)
     // renders the screen for 240 lines
     else if (scanline >=1 && scanline <= 240)
     {
-        pbuf = ppu->draw_buffer + ppu->draw_stride * (scanline - 1);
-        for (i=0; i<256; i++) pbuf[i] = rand() & 0xff;
+        NES  *nes    = container_of(ppu, NES, ppu);
+        BYTE  ntabn  = ppu->ntabn & (1 << 0);
+        BYTE  ntile, chdatal, chdatah, atdata, atoffs, pixell, pixelh, pixelf;
+        int   ctflag = 1;   // flag for tile change
+        int   total  = 256; // total pixel number in a scanline
+
+        do {
+            if (ctflag)
+            {
+                ntile   = nes->vram[ntabn].data[ppu->tiley * 32 + ppu->tilex];
+                chdatal = ppu->chrom_bkg[ntile * 16 + 8 * 0 + ppu->finey];
+                chdatah = ppu->chrom_bkg[ntile * 16 + 8 * 1 + ppu->finey];
+                atdata  = (nes->vram[ntabn].data + 960)[(ppu->tiley >> 2) * 8 + (ppu->tilex >> 2)];
+                atoffs  = ((ppu->tiley & (1 << 1)) << 1) | ((ppu->tilex & (1 << 1)) << 0);
+                pixelh  = (atdata >> atoffs) & 0x3;
+            }
+
+            pixell = ((chdatal & (1 << ppu->finex)) << 0) | ((chdatah & (1 << ppu->finex)) << 1);
+            pixelf = ppu->palette[(pixelh << 2) | (pixell << 0)];
+            *ppu->draw_buffer++ = pixelf;
+
+            if (++ppu->finex == 8) {
+                ppu->finex = 0;
+                ppu->tilex++;
+
+                if (ppu->tilex == 32) {
+                    ppu->tilex = 0;
+                    ntabn ^= (1 << 0);
+                }
+
+                ctflag = 1; // tile is changed
+            }
+            else ctflag = 0; // tile not change
+        } while (--total > 0);
+
+        if (++ppu->finey == 8) {
+            ppu->finey = 0;
+            ppu->tiley++;
+        }
+        if (ppu->tiley == 30) {
+            ppu->tiley = 0;
+            ntabn ^= (1 << 1);
+        }
+
+        ppu->draw_buffer -= 256;
+        ppu->draw_buffer += ppu->draw_stride;
     }
     // scanline 242: dead/junk
     else if (scanline == 241)
@@ -275,6 +319,7 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         {
             ppu->tiley = (byte >> 3 );
             ppu->finey = (byte & 0x7);
+            if (ppu->tiley > 29) ppu->tiley = 0;
         }
         break;
 
