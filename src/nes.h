@@ -23,10 +23,7 @@
 
 #define NES_PATTAB0_SIZE  0x1000
 #define NES_PATTAB1_SIZE  0x1000
-#define NES_VRAM0_SIZE    0x0400
-#define NES_VRAM1_SIZE    0x0400
-#define NES_VRAM2_SIZE    0x0400
-#define NES_VRAM3_SIZE    0x0400
+#define NES_VRAM_SIZE     0x0400
 #define NES_PALETTE_SIZE  0x0020
 
 // 类型定义
@@ -54,17 +51,11 @@ typedef struct {
     BUSITEM pbus[NES_MAX_BUS_SIZE];
     MEM pattab0; // pattern table #0
     MEM pattab1; // pattern table #1
-    MEM vram0;   // vram0 1KB, in ppu
-    MEM vram1;   // vram1 1KB, in ppu
-    MEM vram2;   // vram2 1KB, in cart
-    MEM vram3;   // vram3 1KB, in cart
+    MEM vram[4]; // vram0 1KB * 4 vram, in ppu/cart
     MEM palette; // color palette in ppu
 
-    BYTE  buf_erom [NES_EROM_SIZE ];
-    BYTE  buf_vram0[NES_VRAM0_SIZE];
-    BYTE  buf_vram1[NES_VRAM1_SIZE];
-    BYTE  buf_vram2[NES_VRAM2_SIZE];
-    BYTE  buf_vram3[NES_VRAM3_SIZE];
+    BYTE buf_erom   [NES_EROM_SIZE]; // erom buffer on cbus
+    BYTE buf_vram[4][NES_VRAM_SIZE]; // vram buffer on pbus
 
     // nes thread
     HANDLE hNesThread;

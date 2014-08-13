@@ -31,10 +31,9 @@ void cartridge_free(CARTRIDGE *pcart);
 
 BOOL cartridge_has_sram   (CARTRIDGE *pcart);
 BOOL cartridge_has_trainer(CARTRIDGE *pcart);
-BOOL cartridge_has_4screen(CARTRIDGE *pcart);
 
-int  cartridge_get_hvmirroring(CARTRIDGE *pcart);
-BYTE cartridge_get_mappercode (CARTRIDGE *pcart);
+int* cartridge_get_vram_mirroring(CARTRIDGE *pcart);
+int  cartridge_get_mappercode    (CARTRIDGE *pcart);
 
 #endif
 

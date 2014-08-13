@@ -93,17 +93,20 @@ BOOL cartridge_has_trainer(CARTRIDGE *pcart)
     return (pcart->romctrl_byte1 & (1 << 2));
 }
 
-BOOL cartridge_has_4screen(CARTRIDGE *pcart)
+static int vram_mirroring_map[4][4] =
 {
-    return (pcart->romctrl_byte1 & (1 << 3));
+    {1, 1, 2, 2},
+    {1, 2, 1, 2},
+    {1, 2, 3, 4},
+    {1, 1, 1, 1},
+};
+int* cartridge_get_vram_mirroring(CARTRIDGE *pcart)
+{
+    int mirroring = ((pcart->romctrl_byte1 & (1 << 3)) >> 2) | (pcart->romctrl_byte1 & (1 << 0));
+    return vram_mirroring_map[mirroring];
 }
 
-int cartridge_get_hvmirroring(CARTRIDGE *pcart)
-{
-    return (pcart->romctrl_byte1 & (1 << 0));
-}
-
-BYTE cartridge_get_mappercode(CARTRIDGE *pcart)
+int  cartridge_get_mappercode(CARTRIDGE *pcart)
 {
     return (((pcart->romctrl_byte1 & 0xf0) >> 4) | ((pcart->romctrl_byte2 & 0xf0) >> 0));
 }

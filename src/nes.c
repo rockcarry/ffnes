@@ -69,6 +69,9 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
 // º¯ÊýÊµÏÖ
 BOOL nes_init(NES *nes, char *file, DWORD extra)
 {
+    int *mirroring = NULL;
+    int  i         = 0;
+
     log_init("DEBUGER");
 
     // clear it
@@ -158,55 +161,13 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
         nes->pattab1.data += NES_PATTAB0_SIZE;
     }
 
-    // create vram0
-    nes->vram0.type = MEM_RAM;
-    nes->vram0.size = NES_VRAM0_SIZE;
-    nes->vram0.data = nes->buf_vram0;
-
-    // create vram1 & vram2 & vram3
-    if (cartridge_has_4screen(&(nes->cart))) {
-        // vram1
-        nes->vram1.type = MEM_RAM;
-        nes->vram1.size = NES_VRAM1_SIZE;
-        nes->vram1.data = nes->buf_vram1;
-
-        // vram2
-        nes->vram2.type = MEM_RAM;
-        nes->vram2.size = NES_VRAM2_SIZE;
-        nes->vram2.data = nes->buf_vram2;
-
-        // vram3
-        nes->vram3.type = MEM_RAM;
-        nes->vram3.size = NES_VRAM3_SIZE;
-        nes->vram3.data = nes->buf_vram3;
-    }
-    else {
-        if (cartridge_get_hvmirroring(&(nes->cart))) {
-            // vram1
-            nes->vram1.type = MEM_RAM;
-            nes->vram1.size = NES_VRAM1_SIZE;
-            nes->vram1.data = nes->buf_vram0;
-
-            // vram2
-            nes->vram2.type = MEM_RAM;
-            nes->vram2.size = NES_VRAM2_SIZE;
-            nes->vram2.data = nes->buf_vram1;
-        }
-        else {
-            // vram1
-            nes->vram1.type = MEM_RAM;
-            nes->vram1.size = NES_VRAM1_SIZE;
-            nes->vram1.data = nes->buf_vram1;
-
-            // vram2
-            nes->vram2.type = MEM_RAM;
-            nes->vram2.size = NES_VRAM2_SIZE;
-            nes->vram2.data = nes->buf_vram0;
-        }
-        // vram3
-        nes->vram3.type = MEM_RAM;
-        nes->vram3.size = NES_VRAM3_SIZE;
-        nes->vram3.data = nes->buf_vram1;
+    // create vram
+    mirroring = cartridge_get_vram_mirroring(&(nes->cart));
+    for (i=0; i<4; i++)
+    {
+        nes->vram[i].type = MEM_RAM;
+        nes->vram[i].size = NES_VRAM_SIZE;
+        nes->vram[i].data = nes->buf_vram[mirroring[i]];
     }
 
     // create color palette
@@ -221,10 +182,10 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
 
     bus_setmem(nes->pbus, 3, 0x0000, 0x0FFF, &(nes->pattab0));
     bus_setmem(nes->pbus, 4, 0x1000, 0x1FFF, &(nes->pattab1));
-    bus_setmem(nes->pbus, 5, 0x2000, 0x23FF, &(nes->vram0  ));
-    bus_setmem(nes->pbus, 6, 0x2400, 0x27FF, &(nes->vram1  ));
-    bus_setmem(nes->pbus, 7, 0x2800, 0x2BFF, &(nes->vram2  ));
-    bus_setmem(nes->pbus, 8, 0x2C00, 0x2FFF, &(nes->vram3  ));
+    bus_setmem(nes->pbus, 5, 0x2000, 0x23FF, &(nes->vram[0]));
+    bus_setmem(nes->pbus, 6, 0x2400, 0x27FF, &(nes->vram[1]));
+    bus_setmem(nes->pbus, 7, 0x2800, 0x2BFF, &(nes->vram[2]));
+    bus_setmem(nes->pbus, 8, 0x2C00, 0x2FFF, &(nes->vram[3]));
 
     // palette
     // 0x3F00 - 0x3F0F: image palette
