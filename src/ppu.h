@@ -25,6 +25,8 @@ typedef struct {
     int   color_flags;
     BYTE *draw_buffer;
     int   draw_stride;
+    BYTE *chrom_bkg;
+    BYTE *chrom_spr;
 } PPU;
 
 // º¯ÊıÉùÃ÷
