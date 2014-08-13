@@ -142,6 +142,61 @@ static void ppu_set_vdev_pal(void *ctxt, int flags)
     vdev_setpal(ctxt, 0, 256, pal);
 }
 
+static ppu_render_scanline_bkg(PPU *ppu, int scanline)
+{
+    NES  *nes    = container_of(ppu, NES, ppu);
+    BYTE  ntabn  = ppu->ntabn & (1 << 0);
+    BYTE  ntile, chdatal, chdatah, atdata, atoffs, pixell, pixelh;
+    int   ctflag = 1;   // flag for tile change
+    int   total  = 256; // total pixel number in a scanline
+
+    do {
+        if (ctflag)
+        {
+            ntile   = nes->vram[ntabn].data[ppu->tiley * 32 + ppu->tilex];
+            chdatal = ppu->chrom_bkg[ntile * 16 + 8 * 0 + ppu->finey] << ppu->finex;
+            chdatah = ppu->chrom_bkg[ntile * 16 + 8 * 1 + ppu->finey] << ppu->finex;
+            atdata  = (nes->vram[ntabn].data + 960)[(ppu->tiley >> 2) * 8 + (ppu->tilex >> 2)];
+            atoffs  = ((ppu->tiley & (1 << 1)) << 1) | ((ppu->tilex & (1 << 1)) << 0);
+            pixelh  = ((atdata >> atoffs) & 0x3) << 2;
+        }
+
+        pixell = ((chdatal >> 7) << 0) | ((chdatah >> 7) << 1);
+        chdatal <<= 1; chdatah <<= 1;
+        *ppu->draw_buffer++ = ppu->palette[pixelh|pixell];
+
+        if (++ppu->finex == 8) {
+            ppu->finex = 0;
+            ppu->tilex++;
+
+            if (ppu->tilex == 32) {
+                ppu->tilex = 0;
+                ntabn ^= (1 << 0);
+            }
+
+            ctflag = 1; // tile is changed
+        }
+        else ctflag = 0; // tile not change
+    } while (--total > 0);
+
+    if (++ppu->finey == 8) {
+        ppu->finey = 0;
+        ppu->tiley++;
+    }
+    if (ppu->tiley == 30) {
+        ppu->tiley = 0;
+        ntabn ^= (1 << 1);
+    }
+
+    ppu->draw_buffer -= 256;
+    ppu->draw_buffer += ppu->draw_stride;
+}
+
+static ppu_render_scanline_spr(PPU *ppu, int scanline)
+{
+    // todo..
+}
+
 // º¯ÊýÊµÏÖ
 void ppu_init(PPU *ppu, DWORD extra)
 {
@@ -194,52 +249,8 @@ void ppu_run(PPU *ppu, int scanline)
     // renders the screen for 240 lines
     else if (scanline >=1 && scanline <= 240)
     {
-        NES  *nes    = container_of(ppu, NES, ppu);
-        BYTE  ntabn  = ppu->ntabn & (1 << 0);
-        BYTE  ntile, chdatal, chdatah, atdata, atoffs, pixell, pixelh;
-        int   ctflag = 1;   // flag for tile change
-        int   total  = 256; // total pixel number in a scanline
-
-        do {
-            if (ctflag)
-            {
-                ntile   = nes->vram[ntabn].data[ppu->tiley * 32 + ppu->tilex];
-                chdatal = ppu->chrom_bkg[ntile * 16 + 8 * 0 + ppu->finey] << ppu->finex;
-                chdatah = ppu->chrom_bkg[ntile * 16 + 8 * 1 + ppu->finey] << ppu->finex;
-                atdata  = (nes->vram[ntabn].data + 960)[(ppu->tiley >> 2) * 8 + (ppu->tilex >> 2)];
-                atoffs  = ((ppu->tiley & (1 << 1)) << 1) | ((ppu->tilex & (1 << 1)) << 0);
-                pixelh  = ((atdata >> atoffs) & 0x3) << 2;
-            }
-
-            pixell = ((chdatal >> 7) << 0) | ((chdatah >> 7) << 1);
-            chdatal <<= 1; chdatah <<= 1;
-            *ppu->draw_buffer++ = ppu->palette[pixelh|pixell];
-
-            if (++ppu->finex == 8) {
-                ppu->finex = 0;
-                ppu->tilex++;
-
-                if (ppu->tilex == 32) {
-                    ppu->tilex = 0;
-                    ntabn ^= (1 << 0);
-                }
-
-                ctflag = 1; // tile is changed
-            }
-            else ctflag = 0; // tile not change
-        } while (--total > 0);
-
-        if (++ppu->finey == 8) {
-            ppu->finey = 0;
-            ppu->tiley++;
-        }
-        if (ppu->tiley == 30) {
-            ppu->tiley = 0;
-            ntabn ^= (1 << 1);
-        }
-
-        ppu->draw_buffer -= 256;
-        ppu->draw_buffer += ppu->draw_stride;
+        if (ppu->regs[0x0001] & (1 << 3)) ppu_render_scanline_bkg(ppu, scanline);
+        if (ppu->regs[0x0001] & (1 << 4)) ppu_render_scanline_spr(ppu, scanline);
     }
     // scanline 242: dead/junk
     else if (scanline == 241)
