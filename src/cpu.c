@@ -1,5 +1,10 @@
 // 包含头文件
+#include <stdio.h>
 #include "cpu.h"
+#include "log.h"
+
+// enable cpu debug log or not
+#define ENABLE_CPU_DEBUG_LOG  TRUE
 
 /*
 6510 Instructions by Addressing Modes
@@ -414,6 +419,91 @@ static BYTE CPU_CYCLE_TAB[256] =
     2, 5, 0, 5, 4, 4, 6, 5, 2, 4, 2, 5, 2, 4, 7, 5,
 };
 
+//++ for cpu debugging ++//
+static char *s_opcode_strs[256] =
+{
+    "BRK", "ORA", " t ", "SLO", "NOP", "ORA", "ASL", "SLO", "PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
+    "BPL", "ORA", " t ", "SLO", "NOP", "ORA", "ASL", "SLO", "CLC", "ORA", "NOP", "SLO", "NOP", "ORA", "ASL", "SLO",
+    "JSR", "AND", " t ", "RLA", "BIT", "AND", "ROL", "RLA", "PLP", "AND", "ROL", "ANC", "BIT", "AND", "ROL", "RLA",
+    "BMI", "AND", " t ", "RLA", "NOP", "AND", "ROL", "RLA", "SEC", "AND", "NOP", "RLA", "NOP", "AND", "ROL", "RLA",
+    "RTI", "EOR", " t ", "SRE", "NOP", "EOR", "LSR", "SRE", "PHA", "EOR", "LSR", "ASR", "JMP", "EOR", "LSR", "SRE",
+    "BVC", "EOR", " t ", "SRE", "NOP", "EOR", "LSR", "SRE", "CLI", "EOR", "NOP", "SRE", "NOP", "EOR", "LSR", "SRE",
+    "RTS", "ADC", " t ", "RRA", "NOP", "ADC", "ROR", "RRA", "PLA", "ADC", "ROR", "ARR", "JMP", "ADC", "ROR", "RRA",
+    "BVS", "ADC", " t ", "RRA", "NOP", "ADC", "ROR", "RRA", "SEI", "ADC", "NOP", "RRA", "NOP", "ADC", "ROR", "RRA",
+    "NOP", "STA", "NOP", "SAX", "STY", "STA", "STX", "SAX", "DEY", "NOP", "TXA", "ANE", "STY", "STA", "STX", "SAX",
+    "BCC", "STA", " t ", "SHA", "STY", "STA", "STX", "SAX", "TYA", "STA", "TXS", "SHS", "SHY", "STA", "SHX", "SHA",
+    "LDY", "LDA", "LDX", "LAX", "LDY", "LDA", "LDX", "LAX", "TAY", "LDA", "TAX", "LXA", "LDY", "LDA", "LDX", "LAX",
+    "BCS", "LDA", " t ", "LAX", "LDY", "LDA", "LDX", "LAX", "CLV", "LDA", "TSX", "LAS", "LDY", "LDA", "LDX", "LAX",
+    "CPY", "CMP", "NOP", "DCP", "CPY", "CMP", "DEC", "DCP", "INY", "CMP", "DEX", "SBX", "CPY", "CMP", "DEC", "DCP",
+    "BNE", "CMP", " t ", "DCP", "NOP", "CMP", "DEC", "DCP", "CLD", "CMP", "NOP", "DCP", "NOP", "CMP", "DEC", "DCP",
+    "CPX", "SBC", "NOP", "ISB", "CPX", "SBC", "INC", "ISB", "INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISB",
+    "BEQ", "SBC", " t ", "ISB", "NOP", "SBC", "INC", "ISB", "SED", "SBC", "NOP", "ISB", "NOP", "SBC", "INC", "ISB",
+};
+static char psflag_chars[8] = {'C', 'Z', 'I', 'D', 'B', '-', 'V', 'N'};
+static void make_ps_flag_str(char *str, BYTE ps)
+{
+    int i;
+    for (i=7; i>=0; i--)
+    {
+        if (ps & (1 << i)) *str++ = psflag_chars[i];
+        else               *str++ = '-';
+    }
+    *str++ = '\0';
+}
+static void make_instruction(char *str, BYTE byte0, BYTE byte1, BYTE byte2, BYTE byte3)
+{
+    int admode = (byte0 & 0x1c) >> 2;
+
+    strcpy(str, s_opcode_strs[byte0]);
+    switch (admode)
+    {
+    case 0: sprintf(str, "%s ($%02X, X)"  , s_opcode_strs[byte0], byte1       ); break; // (indir,x)
+    case 1: sprintf(str, "%s $%02X"       , s_opcode_strs[byte0], byte1       ); break; // zeropage
+    case 2: sprintf(str, "%s #%02X"       , s_opcode_strs[byte0], byte1       ); break; // immediate
+    case 3: sprintf(str, "%s $%02X%02X"   , s_opcode_strs[byte0], byte2, byte1); break; // absolute
+    case 4: sprintf(str, "%s ($%02X), Y"  , s_opcode_strs[byte0], byte1       ); break; // (indir),y
+    case 5: sprintf(str, "%s $%02X, X"    , s_opcode_strs[byte0], byte1       ); break; // zeropage,x
+    case 6: sprintf(str, "%s $%02X%02X, Y", s_opcode_strs[byte0], byte2, byte1); break; // absolute,y
+    case 7: sprintf(str, "%s $%02X%02X, X", s_opcode_strs[byte0], byte2, byte1); break; // absolute,x
+    }
+
+    switch (byte0)
+    {
+    case 0x78:
+    case 0xd8:
+        str[3] = '\0';
+        break;
+    }
+}
+static void cpu_debug_log(CPU *cpu)
+{
+    char ps_flag_str[9 ];
+    char instruction[64];
+
+    // get bytes for cbus
+    BYTE byte0 = bus_readb(cpu->cbus, cpu->pc + 0);
+    BYTE byte1 = bus_readb(cpu->cbus, cpu->pc + 1);
+    BYTE byte2 = bus_readb(cpu->cbus, cpu->pc + 2);
+    BYTE byte3 = bus_readb(cpu->cbus, cpu->pc + 3);
+
+    // make ps flag string
+    make_ps_flag_str(ps_flag_str, cpu->ps);
+
+    // make instruction string
+    make_instruction(instruction, byte0, byte1, byte2, byte3);
+
+    // print log
+    log_printf("+----+----+----+----+----------+\n");
+    log_printf("| sp | ax | xi | yi |    ps    |\n");
+    log_printf("+----+----+----+----+----------+\n");
+    log_printf("| %02X | %02X | %02X | %02X | %s |\n",
+        cpu->sp, cpu->ax, cpu->xi, cpu->yi, ps_flag_str);
+    log_printf("+----+----+----+----+----------+\n");
+    log_printf("%04X | %02X %02X %02X %02X | %s\n\n",
+        cpu->pc, byte0, byte1, byte2, byte3, instruction);
+}
+//++ for cpu debugging ++//
+
 // 函数实现
 void cpu_init(CPU *cpu, BUS cbus)
 {
@@ -474,6 +564,11 @@ void cpu_run(CPU *cpu, int ncycle)
 
     while (ncycle > 0)
     {
+#if ENABLE_CPU_DEBUG_LOG
+        // for cpu debugging
+        cpu_debug_log(cpu);
+#endif
+
         //++ dma cycles counting ++//
         if (cpu->cycles_dma > 0)
         {
