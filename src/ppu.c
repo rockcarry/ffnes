@@ -183,7 +183,7 @@ void ppu_run(PPU *ppu, int scanline)
     if (scanline == 0)
     {
         ppu->regs[0x0002] &= ~(1 << 7);
-        ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 0);
+        ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
 
         ppu->regs[0x0002] &= ~(3 << 5);
         memset(ppu->sprram, 0, 256);
@@ -211,9 +211,9 @@ void ppu_run(PPU *ppu, int scanline)
                 pixelh  = (atdata >> atoffs) & 0x3;
             }
 
-            pixell = ((chdatal & (1 << ppu->finex)) << 0) | ((chdatah & (1 << ppu->finex)) << 1);
-            pixelf = ppu->palette[(pixelh << 2) | (pixell << 0)];
-            *ppu->draw_buffer++ = pixelf;
+            pixell = (((chdatal >> ppu->finex) & 0x1) << 0) | (((chdatah >> ppu->finex) & 0x1) << 1);
+            pixelf = (pixelh << 2) | (pixell << 0);
+            *ppu->draw_buffer++ = ppu->palette[pixelf];
 
             if (++ppu->finex == 8) {
                 ppu->finex = 0;
@@ -244,8 +244,8 @@ void ppu_run(PPU *ppu, int scanline)
     // scanline 242: dead/junk
     else if (scanline == 241)
     {
-        ppu->regs[0x0002] |=  (1 << 7);
-        ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 0);
+        ppu->regs[0x0002] |= (1 << 7);
+        ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
 
         // unlock video device
         vdev_unlock(ppu->vdevctxt);
@@ -253,7 +253,7 @@ void ppu_run(PPU *ppu, int scanline)
     // line 243 - 262(NTSC) - 312(PAL): vblank
     else if (scanline >= 242 && scanline <= 261)
     {
-        ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 0);
+        ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
     }
 }
 

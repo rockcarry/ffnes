@@ -442,6 +442,7 @@ void cpu_reset(CPU *cpu)
     cpu->ps |= I_FLAG;
     cpu->nmi_last    = 1;
     cpu->nmi_cur     = 1;
+    cpu->irq_flag    = 1;
     cpu->cycles_emu  = 0;
     cpu->cycles_real = 0;
     cpu->cycles_dma  = 0;

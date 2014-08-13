@@ -43,10 +43,11 @@ static void mapper002_init(MMC *mmc)
     }
     else
     {
+        memset(mmc->pram, 0, 8192);
         mmc->pbus[3].membank->type = MEM_RAM;
         mmc->pbus[3].membank->data = mmc->pram + 4096 * 0;
         mmc->pbus[4].membank->type = MEM_RAM;
-        mmc->pbus[4].membank->data = mmc->pram + 4096 * 0;
+        mmc->pbus[4].membank->data = mmc->pram + 4096 * 1;
     }
 
     // register bus memory callback
