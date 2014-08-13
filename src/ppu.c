@@ -196,7 +196,7 @@ void ppu_run(PPU *ppu, int scanline)
     {
         NES  *nes    = container_of(ppu, NES, ppu);
         BYTE  ntabn  = ppu->ntabn & (1 << 0);
-        BYTE  ntile, chdatal, chdatah, atdata, atoffs, pixell, pixelh, pixelf;
+        BYTE  ntile, chdatal, chdatah, atdata, atoffs, pixell, pixelh;
         int   ctflag = 1;   // flag for tile change
         int   total  = 256; // total pixel number in a scanline
 
@@ -204,16 +204,16 @@ void ppu_run(PPU *ppu, int scanline)
             if (ctflag)
             {
                 ntile   = nes->vram[ntabn].data[ppu->tiley * 32 + ppu->tilex];
-                chdatal = ppu->chrom_bkg[ntile * 16 + 8 * 0 + ppu->finey];
-                chdatah = ppu->chrom_bkg[ntile * 16 + 8 * 1 + ppu->finey];
+                chdatal = ppu->chrom_bkg[ntile * 16 + 8 * 0 + ppu->finey] << ppu->finex;
+                chdatah = ppu->chrom_bkg[ntile * 16 + 8 * 1 + ppu->finey] << ppu->finex;
                 atdata  = (nes->vram[ntabn].data + 960)[(ppu->tiley >> 2) * 8 + (ppu->tilex >> 2)];
                 atoffs  = ((ppu->tiley & (1 << 1)) << 1) | ((ppu->tilex & (1 << 1)) << 0);
-                pixelh  = (atdata >> atoffs) & 0x3;
+                pixelh  = ((atdata >> atoffs) & 0x3) << 2;
             }
 
-            pixell = (((chdatal >> ppu->finex) & 0x1) << 0) | (((chdatah >> ppu->finex) & 0x1) << 1);
-            pixelf = (pixelh << 2) | (pixell << 0);
-            *ppu->draw_buffer++ = ppu->palette[pixelf];
+            pixell = ((chdatal >> 7) << 0) | ((chdatah >> 7) << 1);
+            chdatal <<= 1; chdatah <<= 1;
+            *ppu->draw_buffer++ = ppu->palette[pixelh|pixell];
 
             if (++ppu->finex == 8) {
                 ppu->finex = 0;
