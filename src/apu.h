@@ -7,7 +7,7 @@
 
 // 类型定义
 typedef struct {
-    BYTE  regs[22];
+    BYTE  regs[0x16];
 
 // private:
     void *adevctxt;
