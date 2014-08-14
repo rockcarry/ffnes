@@ -24,14 +24,14 @@ static void mapper002_wcb0(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prgrom0);
     MMC *mmc = &(nes->mmc);
-    mmc->cbus[6].membank->data = mmc->cart->buf_prom + (byte & (mmc->cart->prom_count - 1));
+    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (byte & (mmc->cart->prom_count - 1));
 }
 
 static void mapper002_wcb1(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prgrom1);
     MMC *mmc = &(nes->mmc);
-    mmc->cbus[6].membank->data = mmc->cart->buf_prom + (byte & (mmc->cart->prom_count - 1));
+    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (byte & (mmc->cart->prom_count - 1));
 }
 
 static void mapper002_init(MMC *mmc)
