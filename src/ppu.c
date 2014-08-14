@@ -243,6 +243,9 @@ void ppu_run(PPU *ppu, int scanline)
         ppu->regs[0x0002] &= ~(3 << 5);
         memset(ppu->sprram, 0, 256);
 
+        ppu->_2005_toggle = 0;
+        ppu->_2006_toggle = 0;
+
         // lock video device, obtain draw buffer address & stride
         vdev_lock(ppu->vdevctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
     }
