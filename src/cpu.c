@@ -4,7 +4,7 @@
 #include "log.h"
 
 // enable cpu debug log or not
-#define ENABLE_CPU_DEBUG_LOG  TRUE
+#define ENABLE_CPU_DEBUG_LOG  FALSE
 
 /*
 6510 Instructions by Addressing Modes
@@ -397,7 +397,7 @@ flags.
 
 #define NOP() do {} while (0)
 #define UDF() do { \
-    log_printf("6502 cpu, undefined opcode: %02X !\n", opcode); \
+    log_printf("6502 cpu, undefined opcode: 0x%02X !\n", opcode); \
 } while (0)
 
 static BYTE CPU_CYCLE_TAB[256] =
@@ -736,7 +736,7 @@ void cpu_run(CPU *cpu, int ncycle)
             switch (opmat)
             {
             case 1:
-            case 5: MR_ZP(); break;
+            case 5: MW_ZP(); break;
             case 2: AX = DT; break;
             default:MW_EA(); break;
             }
