@@ -95,7 +95,7 @@ void joypad_setkey(JOYPAD *jp, int pad, int key, int value)
 
 BYTE NES_PAD_REG_RCB(MEM *pm, int addr)
 {
-    NES    *nes = container_of(pm, NES, ppuregs);
+    NES    *nes = container_of(pm, NES, padregs);
     JOYPAD *pad = &(nes->pad);
 
     if (pad->strobe) pm->data[addr] = 0;
@@ -146,7 +146,7 @@ BYTE NES_PAD_REG_RCB(MEM *pm, int addr)
 
 void NES_PAD_REG_WCB(MEM *pm, int addr, BYTE byte)
 {
-    NES    *nes = container_of(pm, NES, ppuregs);
+    NES    *nes = container_of(pm, NES, padregs);
     JOYPAD *pad = &(nes->pad);
 
     switch (addr)

@@ -481,8 +481,8 @@ static void make_instruction(char *str, WORD pc, BYTE bytes[3])
     case  9: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                    ); break; // ?
     case 10:                                                                                      // relative
         sprintf(str, "%s $%04X", s_opcode_strs[bytes[0]], pc + 2 + (char)bytes[1]);               // relative
-        if ((char)bytes[1] > 0) sprintf(str, "%s (+$%02X)", str, abs((char)bytes[1]));            // relative
-        else                    sprintf(str, "%s (-$%02X)", str, abs((char)bytes[1]));     break; // relative
+        if ((char)bytes[1] > 0) sprintf(str, "%s (+%02X)", str, abs((char)bytes[1]));             // relative
+        else                    sprintf(str, "%s (-%02X)", str, abs((char)bytes[1]));      break; // relative
     }
 }
 
@@ -531,17 +531,7 @@ static void dump_mem_page(CPU *cpu, int page)
 void cpu_init(CPU *cpu, BUS cbus)
 {
     cpu->cbus = cbus;
-    cpu->pc   = bus_readw(cpu->cbus, RST_VECTOR);
-    cpu->sp   = 0xff;
-    cpu->ax   = 0x00;
-    cpu->xi   = 0x00;
-    cpu->yi   = 0x00;
-    cpu->ps   = I_FLAG | R_FLAG;
-    cpu->nmi_last    = 1;
-    cpu->nmi_cur     = 1;
-    cpu->cycles_emu  = 0;
-    cpu->cycles_real = 0;
-    cpu->cycles_dma  = 0;
+    cpu_reset(cpu);
 }
 
 void cpu_free(CPU *cpu)
@@ -551,8 +541,12 @@ void cpu_free(CPU *cpu)
 
 void cpu_reset(CPU *cpu)
 {
-    cpu->pc  = bus_readw(cpu->cbus, RST_VECTOR);
-    cpu->ps |= I_FLAG;
+    cpu->pc = bus_readw(cpu->cbus, RST_VECTOR);
+    cpu->sp = 0xff;
+    cpu->ax = 0x00;
+    cpu->xi = 0x00;
+    cpu->yi = 0x00;
+    cpu->ps = I_FLAG | R_FLAG;
     cpu->nmi_last    = 1;
     cpu->nmi_cur     = 1;
     cpu->irq_flag    = 1;
