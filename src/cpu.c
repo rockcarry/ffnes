@@ -111,35 +111,34 @@ flags.
 #define WRITEW(addr, word) (bus_writew(cpu->cbus, addr, word))
 
 #define ZPRDB(addr)        (RAM[(BYTE)(addr)])
-#define ZPRDW(addr)        (*(WORD*)(RAM + (addr)))
-#define ZPWRB(addr, byte)  do { RAM[(BYTE)(addr)] = byte; } while (0)
-#define ZPWRW(addr, word)  do { *(WORD*)(RAM + (addr)) = word; } while (0)
+#define ZPRDW(addr)        ((ZPRDB(addr + 0) << 0) | (ZPRDB(addr + 1) << 8))
+#define ZPWRB(addr, byte)  do { RAM[(BYTE)(addr)] = byte;            } while (0)
+#define ZPWRW(addr, word)  do { *(WORD*)(RAM + (BYTE)(addr)) = word; } while (0)
 //-- basic --//
 
 //++ addressing mode ++//
-#define MR_IM() do { DT = READB(PC++); } while (0)
-#define MR_IA() do { DT = AX;          } while (0)
-#define MR_ZP() do { EA = READB(PC++); DT = ZPRDB(EA); } while (0)
-#define MR_ZX() do { EA = READB(PC++); EA = (BYTE)(DT + XI); DT = ZPRDB(EA); } while (0)
-#define MR_ZY() do { EA = READB(PC++); EA = (BYTE)(DT + YI); DT = ZPRDB(EA); } while (0)
-#define MR_AB() do { EA = READW(PC); PC += 2; DT = READB(EA);      } while (0)
-#define MR_AX() do { ET = READW(PC); PC += 2; EA = ET + XI; DT = READB(EA); } while (0)
-#define MR_AY() do { ET = READW(PC); PC += 2; EA = ET + YI; DT = READB(EA); } while (0)
+#define MR_IM() do { DT = READB(PC++);                                               } while (0)
+#define MR_ZP() do { EA = READB(PC++); DT = ZPRDB(EA);                               } while (0)
+#define MR_ZX() do { EA = READB(PC++); EA = (BYTE)(DT + XI); DT = ZPRDB(EA);         } while (0)
+#define MR_ZY() do { EA = READB(PC++); EA = (BYTE)(DT + YI); DT = ZPRDB(EA);         } while (0)
+#define MR_AB() do { EA = READW(PC); PC += 2; DT = READB(EA);                        } while (0)
+#define MR_AX() do { ET = READW(PC); PC += 2; EA = ET + XI; DT = READB(EA);          } while (0)
+#define MR_AY() do { ET = READW(PC); PC += 2; EA = ET + YI; DT = READB(EA);          } while (0)
 
-#define MR_IX() do { DT = READB(PC++); EA = ZPRDW(DT + XI); DT = READB(EA); } while (0)
+#define MR_IX() do { DT = READB(PC++); EA = ZPRDW(DT + XI); DT = READB(EA);          } while (0)
 #define MR_IY() do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI; DT = READB(EA); } while (0)
 
-#define EA_ZP() do { EA = READB(PC++); } while (0)
-#define EA_ZX() do { DT = READB(PC++); EA = (BYTE)(DT + XI); } while (0)
-#define EA_ZY() do { DT = READB(PC++); EA = (BYTE)(DT + YI); } while (0)
-#define EA_AB() do { EA = READW(PC); PC += 2;                } while (0)
-#define EA_AX() do { ET = READW(PC); PC += 2; EA = ET + XI;  } while (0)
-#define EA_AY() do { ET = READW(PC); PC += 2; EA = ET + YI;  } while (0)
-#define EA_IX() do { DT = READB(PC++); EA = ZPRDW(DT + XI);  } while (0)
-#define EA_IY() do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI; } while (0)
-#define MW_ZP() do { ZPWRB(EA, DT);  } while (0)
-#define MW_EA() do { WRITEB(EA, DT); } while (0)
-#define	CHECK_EA() do { if ((ET & 0xFF00) != (EA & 0xFF00)) ncycle--; } while (0)
+#define EA_ZP() do { EA = READB(PC++);                                               } while (0)
+#define EA_ZX() do { DT = READB(PC++); EA = (BYTE)(DT + XI);                         } while (0)
+#define EA_ZY() do { DT = READB(PC++); EA = (BYTE)(DT + YI);                         } while (0)
+#define EA_AB() do { EA = READW(PC); PC += 2;                                        } while (0)
+#define EA_AX() do { ET = READW(PC); PC += 2; EA = ET + XI;                          } while (0)
+#define EA_AY() do { ET = READW(PC); PC += 2; EA = ET + YI;                          } while (0)
+#define EA_IX() do { DT = READB(PC++); EA = ZPRDW(DT + XI);                          } while (0)
+#define EA_IY() do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI;                 } while (0)
+#define MW_ZP() do { ZPWRB(EA, DT);                                                  } while (0)
+#define MW_EA() do { WRITEB(EA, DT);                                                 } while (0)
+#define CHECK_EA() do { if ((ET & 0xFF00) != (EA & 0xFF00)) ncycle--;                } while (0)
 //-- addressing mode --//
 
 //++ instruction ++//
@@ -397,7 +396,9 @@ flags.
 } while (0)
 
 #define NOP() do {} while (0)
-#define UDF() do {} while (0)
+#define UDF() do { \
+    log_printf("6502 cpu, undefined opcode: %02X !\n", opcode); \
+} while (0)
 
 static BYTE CPU_CYCLE_TAB[256] =
 {
@@ -420,29 +421,10 @@ static BYTE CPU_CYCLE_TAB[256] =
 };
 
 //++ for cpu debugging ++//
-static char *s_opcode_strs[256] =
-{
-    "BRK", "ORA", " t ", "SLO", "NOP", "ORA", "ASL", "SLO", "PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
-    "BPL", "ORA", " t ", "SLO", "NOP", "ORA", "ASL", "SLO", "CLC", "ORA", "NOP", "SLO", "NOP", "ORA", "ASL", "SLO",
-    "JSR", "AND", " t ", "RLA", "BIT", "AND", "ROL", "RLA", "PLP", "AND", "ROL", "ANC", "BIT", "AND", "ROL", "RLA",
-    "BMI", "AND", " t ", "RLA", "NOP", "AND", "ROL", "RLA", "SEC", "AND", "NOP", "RLA", "NOP", "AND", "ROL", "RLA",
-    "RTI", "EOR", " t ", "SRE", "NOP", "EOR", "LSR", "SRE", "PHA", "EOR", "LSR", "ASR", "JMP", "EOR", "LSR", "SRE",
-    "BVC", "EOR", " t ", "SRE", "NOP", "EOR", "LSR", "SRE", "CLI", "EOR", "NOP", "SRE", "NOP", "EOR", "LSR", "SRE",
-    "RTS", "ADC", " t ", "RRA", "NOP", "ADC", "ROR", "RRA", "PLA", "ADC", "ROR", "ARR", "JMP", "ADC", "ROR", "RRA",
-    "BVS", "ADC", " t ", "RRA", "NOP", "ADC", "ROR", "RRA", "SEI", "ADC", "NOP", "RRA", "NOP", "ADC", "ROR", "RRA",
-    "NOP", "STA", "NOP", "SAX", "STY", "STA", "STX", "SAX", "DEY", "NOP", "TXA", "ANE", "STY", "STA", "STX", "SAX",
-    "BCC", "STA", " t ", "SHA", "STY", "STA", "STX", "SAX", "TYA", "STA", "TXS", "SHS", "SHY", "STA", "SHX", "SHA",
-    "LDY", "LDA", "LDX", "LAX", "LDY", "LDA", "LDX", "LAX", "TAY", "LDA", "TAX", "LXA", "LDY", "LDA", "LDX", "LAX",
-    "BCS", "LDA", " t ", "LAX", "LDY", "LDA", "LDX", "LAX", "CLV", "LDA", "TSX", "LAS", "LDY", "LDA", "LDX", "LAX",
-    "CPY", "CMP", "NOP", "DCP", "CPY", "CMP", "DEC", "DCP", "INY", "CMP", "DEX", "SBX", "CPY", "CMP", "DEC", "DCP",
-    "BNE", "CMP", " t ", "DCP", "NOP", "CMP", "DEC", "DCP", "CLD", "CMP", "NOP", "DCP", "NOP", "CMP", "DEC", "DCP",
-    "CPX", "SBC", "NOP", "ISB", "CPX", "SBC", "INC", "ISB", "INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISB",
-    "BEQ", "SBC", " t ", "ISB", "NOP", "SBC", "INC", "ISB", "SED", "SBC", "NOP", "ISB", "NOP", "SBC", "INC", "ISB",
-};
-static char psflag_chars[8] = {'C', 'Z', 'I', 'D', 'B', '-', 'V', 'N'};
 static void make_ps_flag_str(char *str, BYTE ps)
 {
-    int i;
+    static char psflag_chars[8] = {'C', 'Z', 'I', 'D', 'B', '-', 'V', 'N'};
+           int  i;
     for (i=7; i>=0; i--)
     {
         if (ps & (1 << i)) *str++ = psflag_chars[i];
@@ -450,57 +432,98 @@ static void make_ps_flag_str(char *str, BYTE ps)
     }
     *str++ = '\0';
 }
-static void make_instruction(char *str, BYTE byte0, BYTE byte1, BYTE byte2, BYTE byte3)
-{
-    int admode = (byte0 & 0x1c) >> 2;
 
-    strcpy(str, s_opcode_strs[byte0]);
-    switch (admode)
+static void make_instruction(char *str, WORD pc, BYTE bytes[3])
+{
+    static char *s_opcode_strs[256] =
     {
-    case 0: sprintf(str, "%s ($%02X, X)"  , s_opcode_strs[byte0], byte1       ); break; // (indir,x)
-    case 1: sprintf(str, "%s $%02X"       , s_opcode_strs[byte0], byte1       ); break; // zeropage
-    case 2: sprintf(str, "%s #%02X"       , s_opcode_strs[byte0], byte1       ); break; // immediate
-    case 3: sprintf(str, "%s $%02X%02X"   , s_opcode_strs[byte0], byte2, byte1); break; // absolute
-    case 4: sprintf(str, "%s ($%02X), Y"  , s_opcode_strs[byte0], byte1       ); break; // (indir),y
-    case 5: sprintf(str, "%s $%02X, X"    , s_opcode_strs[byte0], byte1       ); break; // zeropage,x
-    case 6: sprintf(str, "%s $%02X%02X, Y", s_opcode_strs[byte0], byte2, byte1); break; // absolute,y
-    case 7: sprintf(str, "%s $%02X%02X, X", s_opcode_strs[byte0], byte2, byte1); break; // absolute,x
+        "BRK", "ORA", " t ", "SLO", "NOP", "ORA", "ASL", "SLO", "PHP", "ORA", "ASL", "ANC", "NOP"  , "ORA", "ASL", "SLO",
+        "BPL", "ORA", " t ", "SLO", "NOP", "ORA", "ASL", "SLO", "CLC", "ORA", "NOP", "SLO", "NOP"  , "ORA", "ASL", "SLO",
+        "JSR", "AND", " t ", "RLA", "BIT", "AND", "ROL", "RLA", "PLP", "AND", "ROL", "ANC", "BIT"  , "AND", "ROL", "RLA",
+        "BMI", "AND", " t ", "RLA", "NOP", "AND", "ROL", "RLA", "SEC", "AND", "NOP", "RLA", "NOP"  , "AND", "ROL", "RLA",
+        "RTI", "EOR", " t ", "SRE", "NOP", "EOR", "LSR", "SRE", "PHA", "EOR", "LSR", "ASR", "JMP"  , "EOR", "LSR", "SRE",
+        "BVC", "EOR", " t ", "SRE", "NOP", "EOR", "LSR", "SRE", "CLI", "EOR", "NOP", "SRE", "NOP"  , "EOR", "LSR", "SRE",
+        "RTS", "ADC", " t ", "RRA", "NOP", "ADC", "ROR", "RRA", "PLA", "ADC", "ROR", "ARR", "JMP()", "ADC", "ROR", "RRA",
+        "BVS", "ADC", " t ", "RRA", "NOP", "ADC", "ROR", "RRA", "SEI", "ADC", "NOP", "RRA", "NOP"  , "ADC", "ROR", "RRA",
+        "NOP", "STA", "NOP", "SAX", "STY", "STA", "STX", "SAX", "DEY", "NOP", "TXA", "ANE", "STY"  , "STA", "STX", "SAX",
+        "BCC", "STA", " t ", "SHA", "STY", "STA", "STX", "SAX", "TYA", "STA", "TXS", "SHS", "SHY"  , "STA", "SHX", "SHA",
+        "LDY", "LDA", "LDX", "LAX", "LDY", "LDA", "LDX", "LAX", "TAY", "LDA", "TAX", "LXA", "LDY"  , "LDA", "LDX", "LAX",
+        "BCS", "LDA", " t ", "LAX", "LDY", "LDA", "LDX", "LAX", "CLV", "LDA", "TSX", "LAS", "LDY"  , "LDA", "LDX", "LAX",
+        "CPY", "CMP", "NOP", "DCP", "CPY", "CMP", "DEC", "DCP", "INY", "CMP", "DEX", "SBX", "CPY"  , "CMP", "DEC", "DCP",
+        "BNE", "CMP", " t ", "DCP", "NOP", "CMP", "DEC", "DCP", "CLD", "CMP", "NOP", "DCP", "NOP"  , "CMP", "DEC", "DCP",
+        "CPX", "SBC", "NOP", "ISB", "CPX", "SBC", "INC", "ISB", "INX", "SBC", "NOP", "SBC", "CPX"  , "SBC", "INC", "ISB",
+        "BEQ", "SBC", " t ", "ISB", "NOP", "SBC", "INC", "ISB", "SED", "SBC", "NOP", "ISB", "NOP"  , "SBC", "INC", "ISB",
+    };
+    static int map_tab[32] = { 1, 7, 1, 7, 2, 2, 2, 2, 0, 1, 0, 1, 4, 4, 4, 4, 10, 8, 9, 8, 3, 3, 3, 3, 0, 6, 0, 6, 5, 5, 5, 5 };
+           int amode       = map_tab[bytes[0] & 0x1f]; // addressing mode
+
+    // for special opcode
+    switch (bytes[0])
+    {
+    case 0x40:
+    case 0x60: amode = 0; break;
+    case 0x20: amode = 4; break;
+    case 0x89: amode = 0; break;
     }
 
-    switch (byte0)
+    // for different addressing mode
+    switch (amode)
     {
-    case 0x78:
-    case 0xd8:
-        str[3] = '\0';
-        break;
+    case  0: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                    ); break; // Implied
+    case  1: sprintf(str, "%s #%02X"       , s_opcode_strs[bytes[0]], bytes[1]          ); break; // immediate
+    case  2: sprintf(str, "%s $%02X"       , s_opcode_strs[bytes[0]], bytes[1]          ); break; // zeropage
+    case  3: sprintf(str, "%s $%02X, X"    , s_opcode_strs[bytes[0]], bytes[1]          ); break; // zeropage,x
+    case  4: sprintf(str, "%s $%02X%02X"   , s_opcode_strs[bytes[0]], bytes[2], bytes[1]); break; // absolute
+    case  5: sprintf(str, "%s $%02X%02X, X", s_opcode_strs[bytes[0]], bytes[2], bytes[1]); break; // absolute,x
+    case  6: sprintf(str, "%s $%02X%02X, Y", s_opcode_strs[bytes[0]], bytes[2], bytes[1]); break; // absolute,y
+    case  7: sprintf(str, "%s ($%02X, X)"  , s_opcode_strs[bytes[0]], bytes[1]          ); break; // (indir,x)
+    case  8: sprintf(str, "%s ($%02X), Y"  , s_opcode_strs[bytes[0]], bytes[1]          ); break; // (indir),y
+    case  9: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                    ); break; // ?
+    case 10:                                                                                      // relative
+        sprintf(str, "%s $%04X", s_opcode_strs[bytes[0]], pc + 2 + (char)bytes[1]);               // relative
+        if ((char)bytes[1] > 0) sprintf(str, "%s (+$%02X)", str, abs((char)bytes[1]));            // relative
+        else                    sprintf(str, "%s (-$%02X)", str, abs((char)bytes[1]));     break; // relative
     }
 }
+
 static void cpu_debug_log(CPU *cpu)
 {
     char ps_flag_str[9 ];
     char instruction[64];
+    BYTE bytes[3];
 
     // get bytes for cbus
-    BYTE byte0 = bus_readb(cpu->cbus, cpu->pc + 0);
-    BYTE byte1 = bus_readb(cpu->cbus, cpu->pc + 1);
-    BYTE byte2 = bus_readb(cpu->cbus, cpu->pc + 2);
-    BYTE byte3 = bus_readb(cpu->cbus, cpu->pc + 3);
+    bytes[0] = bus_readb(cpu->cbus, cpu->pc + 0);
+    bytes[1] = bus_readb(cpu->cbus, cpu->pc + 1);
+    bytes[2] = bus_readb(cpu->cbus, cpu->pc + 2);
 
     // make ps flag string
     make_ps_flag_str(ps_flag_str, cpu->ps);
 
     // make instruction string
-    make_instruction(instruction, byte0, byte1, byte2, byte3);
+    make_instruction(instruction, cpu->pc, bytes);
 
     // print log
     log_printf("+----+----+----+----+----------+\n");
-    log_printf("| sp | ax | xi | yi |    ps    |\n");
+    log_printf("| SP | AX | XI | YI |    PS    |\n");
     log_printf("+----+----+----+----+----------+\n");
     log_printf("| %02X | %02X | %02X | %02X | %s |\n",
         cpu->sp, cpu->ax, cpu->xi, cpu->yi, ps_flag_str);
     log_printf("+----+----+----+----+----------+\n");
-    log_printf("%04X | %02X %02X %02X %02X | %s\n\n",
-        cpu->pc, byte0, byte1, byte2, byte3, instruction);
+    log_printf("%04X | %02X %02X %02X: %s\n\n",
+        cpu->pc, bytes[0], bytes[1], bytes[2], instruction);
+}
+static void dump_mem_page(CPU *cpu, int page)
+{
+    BYTE byte;
+    int  i;
+    for (i=0; i<256; i++)
+    {
+        byte = bus_readb(cpu->cbus, page * 256 + i);
+        log_printf("%02X ", byte);
+        if (i % 16 == 15) log_printf("\n");
+    }
+    log_printf("\n");
 }
 //++ for cpu debugging ++//
 
@@ -567,6 +590,7 @@ void cpu_run(CPU *cpu, int ncycle)
 #if ENABLE_CPU_DEBUG_LOG
         // for cpu debugging
         cpu_debug_log(cpu);
+//      dump_mem_page(cpu, 0);
 #endif
 
         //++ dma cycles counting ++//
@@ -698,7 +722,7 @@ void cpu_run(CPU *cpu, int ncycle)
             switch (opmat)
             {
             case 1: MR_ZP(); break; // zeropage
-            case 2: MR_IA(); break; // immediate
+            case 2: DT = AX; break; // implied
             case 3: MR_AB(); break; // absolute
             case 5: MR_ZX(); break; // zeropage,x
             case 7: MR_AX(); break; // absolute,x
@@ -736,8 +760,8 @@ other_opcode_handler:
         case 0x8d: EA_AB(); STA(); MW_EA(); break; // STA
         case 0x91: EA_IY(); STA(); MW_EA(); break; // STA
         case 0x95: EA_ZX(); STA(); MW_ZP(); break; // STA
-        case 0x99: EA_AY(); STA(); MW_ZP(); break; // STA
-        case 0x9d: EA_AX(); STA(); MW_ZP(); break; // STA
+        case 0x99: EA_AY(); STA(); MW_EA(); break; // STA
+        case 0x9d: EA_AX(); STA(); MW_EA(); break; // STA
 
         case 0xa3: MR_IX(); LAX(); break; // LAX
         case 0xa7: MR_ZP(); LAX(); break; // LAX
@@ -860,6 +884,7 @@ other_opcode_handler:
         case 0x6b: MR_IM(); ARR(); break; // ARR
         case 0x8b: MR_IM(); ANE(); break; // ANE
         case 0xcb: MR_IM(); SBX(); break; // SBX
+        case 0x1a: NOP(); break; // NOP
         case 0xea: NOP(); break; // NOP
         default:   UDF(); break; // undefined
         }
