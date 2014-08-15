@@ -196,6 +196,8 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     //-- pbus mem map --//
 
     joypad_init(&(nes->pad));
+    joypad_setkey(&(nes->pad), 0, NES_PAD_CONNECT, 1);
+    joypad_setkey(&(nes->pad), 1, NES_PAD_CONNECT, 1);
     mmc_init   (&(nes->mmc), &(nes->cart), nes->cbus, nes->pbus);
     ppu_init   (&(nes->ppu), nes->extra);
     apu_init   (&(nes->apu), nes->extra);
@@ -220,6 +222,8 @@ void nes_free(NES *nes)
     ppu_free      (&(nes->ppu));
     apu_free      (&(nes->apu));
     mmc_free      (&(nes->mmc));
+    joypad_setkey (&(nes->pad), 0, NES_PAD_CONNECT, 0);
+    joypad_setkey (&(nes->pad), 1, NES_PAD_CONNECT, 0);
     joypad_free   (&(nes->pad )); // free joypad
     cartridge_free(&(nes->cart)); // free cartridge
 
