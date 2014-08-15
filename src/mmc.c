@@ -24,14 +24,14 @@ static void mapper002_wcb0(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prgrom0);
     MMC *mmc = &(nes->mmc);
-    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (byte & (mmc->cart->prom_count - 1));
+    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (byte % mmc->cart->prom_count);
 }
 
 static void mapper002_wcb1(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prgrom1);
     MMC *mmc = &(nes->mmc);
-    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (byte & (mmc->cart->prom_count - 1));
+    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (byte % mmc->cart->prom_count);
 }
 
 static void mapper002_init(MMC *mmc)
@@ -75,7 +75,55 @@ static MAPPER mapper002 =
     mapper002_wcb0,
     mapper002_wcb1,
 };
-//-- mapper02 实现 --//
+//-- mapper002 实现 --//
+
+//++ mapper003 实现 ++//
+static void mapper003_reset(MMC *mmc)
+{
+    // prom0 - first back & prom1 - last bank
+    mmc->pbus[3].membank->data = mmc->cart->buf_crom + 4096 * 0;
+    mmc->pbus[4].membank->data = mmc->cart->buf_crom + 4096 * 1;
+}
+
+static void mapper003_wcb0(MEM *pm, int addr, BYTE byte)
+{
+    NES *nes = container_of(pm, NES, prgrom0);
+    MMC *mmc = &(nes->mmc);
+    mmc->pbus[3].membank->data = mmc->cart->buf_crom + 8192 * (byte % mmc->cart->crom_count);
+    mmc->pbus[4].membank->data = mmc->pbus[3].membank->data + 4096;
+}
+
+static void mapper003_wcb1(MEM *pm, int addr, BYTE byte)
+{
+    NES *nes = container_of(pm, NES, prgrom1);
+    MMC *mmc = &(nes->mmc);
+    mmc->pbus[3].membank->data = mmc->cart->buf_crom + 8192 * (byte % mmc->cart->crom_count);
+    mmc->pbus[4].membank->data = mmc->pbus[3].membank->data + 4096;
+}
+
+static void mapper003_init(MMC *mmc)
+{
+    // register bus memory callback
+    mmc->cbus[6].membank->w_callback = mapper003_wcb0;
+    mmc->cbus[7].membank->w_callback = mapper003_wcb1;
+
+    // reset mapper003
+    mapper003_reset(mmc);
+}
+
+static void mapper003_free(MMC *mmc)
+{
+}
+
+static MAPPER mapper003 =
+{
+    mapper003_init,
+    mapper003_free,
+    mapper003_reset,
+    mapper003_wcb0,
+    mapper003_wcb1,
+};
+//-- mapper003 实现 --//
 
 //++ mapper list ++//
 static MAPPER *g_mapper_list[256] =
@@ -83,6 +131,7 @@ static MAPPER *g_mapper_list[256] =
     NULL,
     NULL,
     &mapper002,
+    &mapper003,
     NULL,
 };
 //-- mapper list --//
