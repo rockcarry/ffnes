@@ -460,10 +460,11 @@ static void make_instruction(char *str, WORD pc, BYTE bytes[3])
     // for special opcode
     switch (bytes[0])
     {
+    case 0x00:
     case 0x40:
-    case 0x60: amode = 0; break;
-    case 0x20: amode = 4; break;
+    case 0x60:
     case 0x89: amode = 0; break;
+    case 0x20: amode = 4; break;
     }
 
     // for different addressing mode
