@@ -124,15 +124,15 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
 
     // create PRG-ROM 0
     nes->prgrom0.type = MEM_ROM;
-    nes->prgrom0.size = NES_PRGROM0_SIZE;
+    nes->prgrom0.size = NES_PRGROM_SIZE;
     nes->prgrom0.data = nes->cart.buf_prom;
 
     // create PRG-ROM 1
     nes->prgrom1.type = MEM_ROM;
-    nes->prgrom1.size = NES_PRGROM1_SIZE;
+    nes->prgrom1.size = NES_PRGROM_SIZE;
     nes->prgrom1.data = nes->cart.buf_prom;
     if (nes->cart.prom_count > 1) {
-        nes->prgrom1.data += NES_PRGROM0_SIZE;
+        nes->prgrom1.data += NES_PRGROM_SIZE;
     }
 
     // init nes cbus
@@ -150,16 +150,13 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     //++ pbus mem map ++//
     // create pattern table #0
     nes->pattab0.type = MEM_ROM;
-    nes->pattab0.size = NES_PATTAB0_SIZE;
-    nes->pattab0.data = nes->cart.buf_crom;
+    nes->pattab0.size = NES_PATTAB_SIZE;
+    nes->pattab0.data = nes->cart.buf_crom + NES_PATTAB_SIZE * 0;
 
     // create pattern table #1
     nes->pattab1.type = MEM_ROM;
-    nes->pattab1.size = NES_PATTAB1_SIZE;
-    nes->pattab1.data = nes->cart.buf_crom;
-    if (nes->cart.crom_count > 1) {
-        nes->pattab1.data += NES_PATTAB0_SIZE;
-    }
+    nes->pattab1.size = NES_PATTAB_SIZE;
+    nes->pattab1.data = nes->cart.buf_crom + NES_PATTAB_SIZE * 1;
 
     // create vram
     mirroring = cartridge_get_vram_mirroring(&(nes->cart));
