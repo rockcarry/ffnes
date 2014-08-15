@@ -124,10 +124,8 @@ flags.
 #define MR_AB() do { EA = READW(PC); PC += 2; DT = READB(EA);                        } while (0)
 #define MR_AX() do { ET = READW(PC); PC += 2; EA = ET + XI; DT = READB(EA);          } while (0)
 #define MR_AY() do { ET = READW(PC); PC += 2; EA = ET + YI; DT = READB(EA);          } while (0)
-
 #define MR_IX() do { DT = READB(PC++); EA = ZPRDW(DT + XI); DT = READB(EA);          } while (0)
 #define MR_IY() do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI; DT = READB(EA); } while (0)
-
 #define EA_ZP() do { EA = READB(PC++);                                               } while (0)
 #define EA_ZX() do { DT = READB(PC++); EA = (BYTE)(DT + XI);                         } while (0)
 #define EA_ZY() do { DT = READB(PC++); EA = (BYTE)(DT + YI);                         } while (0)
