@@ -701,7 +701,7 @@ void cpu_run(CPU *cpu, int ncycle)
             switch (opmat)
             {
             case 1:
-            case 5: MR_ZP(); break;
+            case 5: MW_ZP(); break;
             default:MW_EA(); break;
             }
             continue;
