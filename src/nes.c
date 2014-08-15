@@ -195,7 +195,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     bus_setmem(nes->pbus,10, 0x0000, 0x0000, NULL           );
     //-- pbus mem map --//
 
-    joypad_init(&(nes->pad));
+    joypad_init  (&(nes->pad));
     joypad_setkey(&(nes->pad), 0, NES_PAD_CONNECT, 1);
     joypad_setkey(&(nes->pad), 1, NES_PAD_CONNECT, 1);
     mmc_init   (&(nes->mmc), &(nes->cart), nes->cbus, nes->pbus);
