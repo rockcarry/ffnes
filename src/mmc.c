@@ -97,6 +97,7 @@ void mmc_init(MMC *mmc, CARTRIDGE *cart, BUS cbus, BUS pbus)
     mmc->number = cartridge_get_mappercode(cart);
     mapper = g_mapper_list[mmc->number];
     if (mapper && mapper->init) mapper->init(mmc);
+    log_printf("mapper number is %03d !\n", mmc->number);
 }
 
 void mmc_free(MMC *mmc)
