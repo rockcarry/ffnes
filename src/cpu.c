@@ -97,9 +97,9 @@ flags.
 #define SET_FLAG(v)        do { PS |=  (v); } while (0)
 #define CLR_FLAG(v)        do { PS &= ~(v); } while (0)
 #define SET_ZN_FLAG(v)     do { \
-                               PS &= ~(Z_FLAG | N_FLAG); \
-                               if (!v) PS |= Z_FLAG;     \
-                               PS |= v & (1 << 7);       \
+                               PS &= ~(Z_FLAG | N_FLAG);  \
+                               if (!v) PS |= Z_FLAG;      \
+                               else    PS |= v & (1 << 7);\
                            } while (0)
 #define TST_FLAG(c, v)     do { PS &= ~(v); if (c) PS |= (v); } while (0)
 #define CHK_FLAG(v)        (PS & (v))
@@ -746,7 +746,6 @@ other_opcode_handler:
         {
         case 0x81: EA_IX(); STA(); MW_EA(); break; // STA
         case 0x85: EA_ZP(); STA(); MW_ZP(); break; // STA
-        case 0x89: NOP(); break;                   // NOP
         case 0x8d: EA_AB(); STA(); MW_EA(); break; // STA
         case 0x91: EA_IY(); STA(); MW_EA(); break; // STA
         case 0x95: EA_ZX(); STA(); MW_ZP(); break; // STA
@@ -874,8 +873,40 @@ other_opcode_handler:
         case 0x6b: MR_IM(); ARR(); break; // ARR
         case 0x8b: MR_IM(); ANE(); break; // ANE
         case 0xcb: MR_IM(); SBX(); break; // SBX
-        case 0x1a: NOP(); break; // NOP
-        case 0xea: NOP(); break; // NOP
+
+        case 0x1a:
+        case 0x3a:
+        case 0x5a:
+        case 0x7a:
+        case 0xda:
+        case 0xea:
+        case 0xfa: NOP(); break; // NOP
+
+        case 0x80:
+        case 0x82:
+        case 0x89:
+        case 0xc2:
+        case 0xe2: NOP(); PC++; break; // DOP (CYCLES 2)
+
+        case 0x04:
+        case 0x44:
+        case 0x64: NOP(); PC++; break; // DOP (CYCLES 3)
+
+        case 0x14:
+        case 0x34:
+        case 0x54:
+        case 0x74:
+        case 0xd4:
+        case 0xf4: NOP(); PC++; break; // DOP (CYCLES 4)
+
+        case 0x0c:
+        case 0x1c:
+        case 0x3c:
+        case 0x5c:
+        case 0x7c:
+        case 0xdc:
+        case 0xfc: NOP(); PC += 2; break; // TOP
+
         default:   UDF(); break; // undefined
         }
     }
