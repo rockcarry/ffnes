@@ -192,11 +192,11 @@ static void ppu_render_scanline_bkg(PPU *ppu, int scanline)
     ppu->draw_buffer -= 256;
     ppu->draw_buffer += ppu->draw_stride;
 
-    ppu->temp0 &=~0x73ff;
-    ppu->temp0  = (finey << 12)
-                | (tiley <<  5)
-                | (tilex <<  0);
-    ppu->temp1  = (ntabn <<  4) | (finex << 0);
+    ppu->temp0 = (finey << 12)
+               | (ntabn << 10)
+               | (tiley <<  5)
+               | (tilex <<  0);
+    ppu->temp1 = (ntabn <<  4) | (finex << 0);
 }
 
 static void ppu_render_scanline_spr(PPU *ppu, int scanline)
