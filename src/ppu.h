@@ -16,9 +16,9 @@ typedef struct {
     int   pin_vbl;
     int  _2005_toggle;
     int  _2006_toggle;
-    WORD  ppu_addr;
-    WORD  ppu_tmp0;
-    WORD  ppu_tmp1;
+    WORD  addr;
+    WORD  temp0;
+    WORD  temp1;
     int   color_flags;
     BYTE *draw_buffer;
     int   draw_stride;
