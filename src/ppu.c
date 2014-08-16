@@ -297,6 +297,10 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
         ppu->_2006_toggle = 0; // after a read occurs, $2006 toggle is reset
         break;
 
+    case 0x0004:
+        byte = ppu->sprram[pm->data[0x0003]];
+        break;
+
     case 0x0007:
         byte = bus_readb(nes->pbus, ppu->addr);
         if (pm->data[0x0000] & (1 << 2)) {
