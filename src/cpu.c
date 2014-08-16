@@ -468,20 +468,17 @@ static void make_instruction(char *str, WORD pc, BYTE bytes[3])
     // for different addressing mode
     switch (amode)
     {
-    case  0: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                    ); break; // Implied
-    case  1: sprintf(str, "%s #%02X"       , s_opcode_strs[bytes[0]], bytes[1]          ); break; // immediate
-    case  2: sprintf(str, "%s $%02X"       , s_opcode_strs[bytes[0]], bytes[1]          ); break; // zeropage
-    case  3: sprintf(str, "%s $%02X, X"    , s_opcode_strs[bytes[0]], bytes[1]          ); break; // zeropage,x
-    case  4: sprintf(str, "%s $%02X%02X"   , s_opcode_strs[bytes[0]], bytes[2], bytes[1]); break; // absolute
-    case  5: sprintf(str, "%s $%02X%02X, X", s_opcode_strs[bytes[0]], bytes[2], bytes[1]); break; // absolute,x
-    case  6: sprintf(str, "%s $%02X%02X, Y", s_opcode_strs[bytes[0]], bytes[2], bytes[1]); break; // absolute,y
-    case  7: sprintf(str, "%s ($%02X, X)"  , s_opcode_strs[bytes[0]], bytes[1]          ); break; // (indir,x)
-    case  8: sprintf(str, "%s ($%02X), Y"  , s_opcode_strs[bytes[0]], bytes[1]          ); break; // (indir),y
-    case  9: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                    ); break; // ?
-    case 10:                                                                                      // relative
-        sprintf(str, "%s $%04X", s_opcode_strs[bytes[0]], pc + 2 + (char)bytes[1]);               // relative
-        if ((char)bytes[1] > 0) sprintf(str, "%s (+%02X)", str, abs((char)bytes[1]));             // relative
-        else                    sprintf(str, "%s (-%02X)", str, abs((char)bytes[1]));      break; // relative
+    case  0: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                     ); break; // Implied
+    case  1: sprintf(str, "%s #%02X"       , s_opcode_strs[bytes[0]], bytes[1]           ); break; // immediate
+    case  2: sprintf(str, "%s $%02X"       , s_opcode_strs[bytes[0]], bytes[1]           ); break; // zeropage
+    case  3: sprintf(str, "%s $%02X, X"    , s_opcode_strs[bytes[0]], bytes[1]           ); break; // zeropage,x
+    case  4: sprintf(str, "%s $%02X%02X"   , s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // absolute
+    case  5: sprintf(str, "%s $%02X%02X, X", s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // absolute,x
+    case  6: sprintf(str, "%s $%02X%02X, Y", s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // absolute,y
+    case  7: sprintf(str, "%s ($%02X, X)"  , s_opcode_strs[bytes[0]], bytes[1]           ); break; // (indir,x)
+    case  8: sprintf(str, "%s ($%02X), Y"  , s_opcode_strs[bytes[0]], bytes[1]           ); break; // (indir),y
+    case  9: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                     ); break; // ?
+    case 10: sprintf(str, "%s $%04X"       , s_opcode_strs[bytes[0]], pc+2+(char)bytes[1]); break; // relative
     }
 }
 
