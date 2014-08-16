@@ -636,32 +636,49 @@ void cpu_run(CPU *cpu, int ncycle)
         // calculate new ncycle
         ncycle -= CPU_CYCLE_TAB[opcode];
 
-        //++ ORA, AND, EOR, ADC, LDA, CMP, SBC ++//
-        if ((opcode & 0x3) == 0x01 && opopt != 4)
+        //++ ORA, AND, EOR, ADC, STA, LDA, CMP, SBC ++//
+        if ((opcode & 0x3) == 0x01)
         {
-            // addressing
-            switch (opmat)
+            if (opopt != 4)
             {
-            case 0: MR_IX(); break; // (indir,x)
-            case 1: MR_ZP(); break; // zeropage
-            case 2: MR_IM(); break; // immediate
-            case 3: MR_AB(); break; // absolute
-            case 4: MR_IY(); CHECK_EA(); break; // (indir),y
-            case 5: MR_ZX(); break; // zeropage,x
-            case 6: MR_AY(); CHECK_EA(); break; // absolute,y
-            case 7: MR_AX(); CHECK_EA(); break; // absolute,x
-            }
+                // addressing
+                switch (opmat)
+                {
+                case 0: MR_IX(); break; // (indir,x)
+                case 1: MR_ZP(); break; // zeropage
+                case 2: MR_IM(); break; // immediate
+                case 3: MR_AB(); break; // absolute
+                case 4: MR_IY(); CHECK_EA(); break; // (indir),y
+                case 5: MR_ZX(); break; // zeropage,x
+                case 6: MR_AY(); CHECK_EA(); break; // absolute,y
+                case 7: MR_AX(); CHECK_EA(); break; // absolute,x
+                }
 
-            // excute
-            switch (opopt)
+                // excute
+                switch (opopt)
+                {
+                case 0: ORA(); break; // ORA
+                case 1: AND(); break; // AND
+                case 2: EOR(); break; // EOR
+                case 3: ADC(); break; // ADC
+                case 5: LDA(); break; // LDA
+                case 6: CMP(); break; // CMP
+                case 7: SBC(); break; // SBC
+                }
+            }
+            else
             {
-            case 0: ORA(); break; // ORA
-            case 1: AND(); break; // AND
-            case 2: EOR(); break; // EOR
-            case 3: ADC(); break; // ADC
-            case 5: LDA(); break; // LDA
-            case 6: CMP(); break; // CMP
-            case 7: SBC(); break; // SBC
+                switch (opmat)
+                {
+                case 0: EA_IX(); STA(); MW_EA(); break; // STA
+                case 1: EA_ZP(); STA(); MW_ZP(); break; // STA
+                case 2: NOP();   PC++;           break; // NOP
+                case 3: EA_AB(); STA(); MW_EA(); break; // STA
+                case 4: EA_IY(); STA(); MW_EA(); break; // STA
+                case 5: EA_ZX(); STA(); MW_ZP(); break; // STA
+                case 6: EA_AY(); STA(); MW_EA(); break; // STA
+                case 7: EA_AX(); STA(); MW_EA(); break; // STA
+                }
             }
             continue;
         }
@@ -669,14 +686,13 @@ void cpu_run(CPU *cpu, int ncycle)
 
 
         //++ SLO, RLA, SRE, RRA ++//
-        if ((opcode & 0x83) == 0x03)
+        if ((opcode & 0x83) == 0x03 && opmat != 2)
         {
             // addressing
             switch (opmat)
             {
             case 0: MR_IX(); break; // (indir,x)
             case 1: MR_ZP(); break; // zeropage
-            case 2: goto other_opcode_handler;
             case 3: MR_AB(); break; // absolute
             case 4: MR_IY(); break; // (indir),y
             case 5: MR_ZX(); break; // zeropage,x
@@ -685,7 +701,7 @@ void cpu_run(CPU *cpu, int ncycle)
             }
 
             // excute
-            switch (opopt & 0x03)
+            switch (opopt)
             {
             case 0: SLO(); break; // SLO
             case 1: RLA(); break; // RLA
@@ -706,7 +722,8 @@ void cpu_run(CPU *cpu, int ncycle)
 
 
         //++ ASL, ROL, LSR, ROR ++//
-        if ((opcode & 0x83) == 0x02)
+        if ((opcode & 0x83) == 0x02 && opmat != 0
+           && opmat != 4 && opmat != 6)
         {
             // addressing
             switch (opmat)
@@ -716,11 +733,10 @@ void cpu_run(CPU *cpu, int ncycle)
             case 3: MR_AB(); break; // absolute
             case 5: MR_ZX(); break; // zeropage,x
             case 7: MR_AX(); break; // absolute,x
-            default: goto other_opcode_handler;
             }
 
             // excute
-            switch (opopt & 0x03)
+            switch (opopt)
             {
             case 0: ASL(); break; // ASL
             case 1: ROL(); break; // ROL
@@ -740,18 +756,9 @@ void cpu_run(CPU *cpu, int ncycle)
         }
         //-- ASL, ROL, LSR, ROR --//
 
-other_opcode_handler:
         // others
         switch (opcode)
         {
-        case 0x81: EA_IX(); STA(); MW_EA(); break; // STA
-        case 0x85: EA_ZP(); STA(); MW_ZP(); break; // STA
-        case 0x8d: EA_AB(); STA(); MW_EA(); break; // STA
-        case 0x91: EA_IY(); STA(); MW_EA(); break; // STA
-        case 0x95: EA_ZX(); STA(); MW_ZP(); break; // STA
-        case 0x99: EA_AY(); STA(); MW_EA(); break; // STA
-        case 0x9d: EA_AX(); STA(); MW_EA(); break; // STA
-
         case 0xa3: MR_IX(); LAX(); break; // LAX
         case 0xa7: MR_ZP(); LAX(); break; // LAX
         case 0xaf: MR_AB(); LAX(); break; // LAX
