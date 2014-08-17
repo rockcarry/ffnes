@@ -349,7 +349,7 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
         }
         else
         {
-            byte = bus_readb(nes->pbus, ppu->vaddr);
+            byte = bus_readb(nes->pbus, ppu->vaddr & 0x3fff);
             if (pm->data[0x0000] & (1 << 2)) {
                 ppu->vaddr += 32;
             }
@@ -428,7 +428,7 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         }
         else
         {
-            bus_writeb(nes->pbus, ppu->vaddr, byte);
+            bus_writeb(nes->pbus, ppu->vaddr & 0x3fff, byte);
             if (pm->data[0x0000] & (1 << 2)) {
                 ppu->vaddr += 32;
             }

@@ -44,10 +44,10 @@ static void mapper002_init(MMC *mmc)
     else
     {
         memset(mmc->pram, 0, 8192);
+        mmc->pbus[2].membank->type = MEM_RAM;
+        mmc->pbus[2].membank->data = mmc->pram + 4096 * 0;
         mmc->pbus[3].membank->type = MEM_RAM;
-        mmc->pbus[3].membank->data = mmc->pram + 4096 * 0;
-        mmc->pbus[4].membank->type = MEM_RAM;
-        mmc->pbus[4].membank->data = mmc->pram + 4096 * 1;
+        mmc->pbus[3].membank->data = mmc->pram + 4096 * 1;
     }
 
     // register bus memory callback
@@ -81,24 +81,24 @@ static MAPPER mapper002 =
 static void mapper003_reset(MMC *mmc)
 {
     // prom0 - first back & prom1 - last bank
-    mmc->pbus[3].membank->data = mmc->cart->buf_crom + 4096 * 0;
-    mmc->pbus[4].membank->data = mmc->cart->buf_crom + 4096 * 1;
+    mmc->pbus[2].membank->data = mmc->cart->buf_crom + 4096 * 0;
+    mmc->pbus[3].membank->data = mmc->cart->buf_crom + 4096 * 1;
 }
 
 static void mapper003_wcb0(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prgrom0);
     MMC *mmc = &(nes->mmc);
-    mmc->pbus[3].membank->data = mmc->cart->buf_crom + 8192 * (byte % mmc->cart->crom_count);
-    mmc->pbus[4].membank->data = mmc->pbus[3].membank->data + 4096;
+    mmc->pbus[2].membank->data = mmc->cart->buf_crom + 8192 * (byte % mmc->cart->crom_count);
+    mmc->pbus[3].membank->data = mmc->pbus[2].membank->data + 4096;
 }
 
 static void mapper003_wcb1(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prgrom1);
     MMC *mmc = &(nes->mmc);
-    mmc->pbus[3].membank->data = mmc->cart->buf_crom + 8192 * (byte % mmc->cart->crom_count);
-    mmc->pbus[4].membank->data = mmc->pbus[3].membank->data + 4096;
+    mmc->pbus[2].membank->data = mmc->cart->buf_crom + 8192 * (byte % mmc->cart->crom_count);
+    mmc->pbus[3].membank->data = mmc->pbus[2].membank->data + 4096;
 }
 
 static void mapper003_init(MMC *mmc)

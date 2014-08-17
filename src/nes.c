@@ -173,23 +173,22 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     nes->palette.data = nes->ppu.palette;
 
     // init nes pbus
-    bus_setmir(nes->pbus, 0, 0x4000, 0xFFFF, 0x3FFF);
-    bus_setmir(nes->pbus, 1, 0x3000, 0x3EFF, 0x2EFF);
-    bus_setmir(nes->pbus, 2, 0x3F00, 0x3FFF, 0x3F1F);
+    bus_setmir(nes->pbus, 0, 0x3000, 0x3EFF, 0x2FFF);
+    bus_setmir(nes->pbus, 1, 0x3F00, 0x3FFF, 0x3F1F);
 
-    bus_setmem(nes->pbus, 3, 0x0000, 0x0FFF, &(nes->pattab0));
-    bus_setmem(nes->pbus, 4, 0x1000, 0x1FFF, &(nes->pattab1));
-    bus_setmem(nes->pbus, 5, 0x2000, 0x23FF, &(nes->vram[0]));
-    bus_setmem(nes->pbus, 6, 0x2400, 0x27FF, &(nes->vram[1]));
-    bus_setmem(nes->pbus, 7, 0x2800, 0x2BFF, &(nes->vram[2]));
-    bus_setmem(nes->pbus, 8, 0x2C00, 0x2FFF, &(nes->vram[3]));
+    bus_setmem(nes->pbus, 2, 0x0000, 0x0FFF, &(nes->pattab0));
+    bus_setmem(nes->pbus, 3, 0x1000, 0x1FFF, &(nes->pattab1));
+    bus_setmem(nes->pbus, 4, 0x2000, 0x23FF, &(nes->vram[0]));
+    bus_setmem(nes->pbus, 5, 0x2400, 0x27FF, &(nes->vram[1]));
+    bus_setmem(nes->pbus, 6, 0x2800, 0x2BFF, &(nes->vram[2]));
+    bus_setmem(nes->pbus, 7, 0x2C00, 0x2FFF, &(nes->vram[3]));
 
     // palette
     // 0x3F00 - 0x3F0F: image palette
     // 0x3F10 - 0x3F1F: sprite palette
     // 0x3F00, 0x3F04, 0x3F08, 0x3F0C, 0x3F10, 0x3F14, 0x3F18, 0x3F1C mirring and store the background color
-    bus_setmem(nes->pbus, 9, 0x3F00, 0x3F1F, &(nes->palette));
-    bus_setmem(nes->pbus,10, 0x0000, 0x0000, NULL           );
+    bus_setmem(nes->pbus, 8, 0x3F00, 0x3F1F, &(nes->palette));
+    bus_setmem(nes->pbus, 9, 0x0000, 0x0000, NULL           );
     //-- pbus mem map --//
 
     joypad_init  (&(nes->pad));
