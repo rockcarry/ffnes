@@ -55,6 +55,19 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpara
     return TRUE;
 }
 
+static BOOL ShowOpenFileDialog(HWND hwnd, char *filename)
+{
+    OPENFILENAME ofn = {0};
+    ofn.lStructSize  = sizeof(ofn);
+    ofn.hwndOwner    = hwnd;
+    ofn.lpstrFilter  = "nes rom file (*.nes).\0*.nes\0";
+    ofn.lpstrFile    = filename;
+    ofn.nMaxFile     = MAX_PATH;
+    ofn.lpstrTitle   = "open nes rom file:";
+    ofn.Flags        = OFN_FILEMUSTEXIST | OFN_EXPLORER;
+    return GetOpenFileName(&ofn);
+}
+
 // 函数实现
 int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -64,7 +77,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
     RECT     rect = {0};
     int      w, h, x, y;
     NES      nes;
-    char    *file = "test.nes";
+    char     file[MAX_PATH] = {0};
 
     // 注册窗口
     wc.lpfnWndProc   = WndProc;
@@ -89,6 +102,12 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
         hCurInst,
         NULL);
     if (!hwnd) return FALSE;
+
+    if (!ShowOpenFileDialog(hwnd, file))
+    {
+        nCmdShow = SW_HIDE;
+        PostQuitMessage(0);
+    }
 
     GetClientRect(hwnd, &rect);
     w = NES_WIDTH  + (NES_WIDTH  - rect.right );
