@@ -231,10 +231,10 @@ static void ppu_render_scanline_bkg(PPU *ppu, int scanline)
     ppu->draw_buffer -= 256;
     ppu->draw_buffer += ppu->draw_stride;
 
-    // do y increment for scroll
+    // at dot 256, do y increment for scroll
     ppu_yincrement(ppu);
 
-    // reget vaddr from temp0
+    // at dot 257, reget vaddr from temp0
     ppu->vaddr &= ~0x041f;
     ppu->vaddr |= (ppu->temp0 & 0x041f);
 }
@@ -292,11 +292,9 @@ void ppu_run(PPU *ppu, int scanline)
         ppu->toggle = 0; // clear toogle
         memset(ppu->sprram, 0, 256);
 
-        if (ppu->regs[0x0001] & (0x3 << 3))
-        {
-            ppu->vaddr &= ~0xfbe0;
-            ppu->vaddr |= (ppu->temp0 & 0xfbe0);
-        }
+        // the ppu address copies the ppu's temp at the beginning of the line
+        // if sprite or name-tables are visible.
+        if (ppu->regs[0x0001] & (0x3 << 3)) ppu->vaddr = ppu->temp0;
 
         // lock video device, obtain draw buffer address & stride
         vdev_lock(ppu->vdevctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
