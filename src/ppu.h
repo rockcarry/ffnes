@@ -14,9 +14,8 @@ typedef struct {
 // private:
     void *vdevctxt;
     int   pin_vbl;
-    int  _2005_toggle;
-    int  _2006_toggle;
-    WORD  addr;
+    int   toggle;
+    WORD  vaddr;
     WORD  temp0;
     WORD  temp1;
     int   color_flags;
@@ -24,6 +23,7 @@ typedef struct {
     int   draw_stride;
     BYTE *chrom_bkg;
     BYTE *chrom_spr;
+    int   scanline;
 } PPU;
 
 // º¯ÊýÉùÃ÷

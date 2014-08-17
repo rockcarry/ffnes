@@ -142,61 +142,101 @@ static void ppu_set_vdev_pal(void *ctxt, int flags)
     vdev_setpal(ctxt, 0, 256, pal);
 }
 
+#define FINEX (ppu->temp1)
+#define FINEY (ppu->vaddr >> 12)
+#define TILEX ((ppu->vaddr >> 0) & 0x1f)
+#define TILEY ((ppu->vaddr >> 5) & 0x1f)
+static int ppu_xincrement(PPU *ppu)
+{
+    if (FINEX == 7)
+    {
+        FINEX = 0;
+        if ((ppu->vaddr & 0x1f) == 31)
+        {
+            ppu->vaddr &=~0x1f;
+            ppu->vaddr ^= (1 << 10);
+        }
+        else ppu->vaddr++;
+        return 1; // tile is changed
+    }
+    else {
+        FINEX++;
+        return 0; // tile not changed
+    }
+}
+
+static int ppu_yincrement(PPU *ppu)
+{
+    if ((ppu->vaddr & 0x7000) == 0x7000)
+    {
+        ppu->vaddr &=~0x7000;
+        switch (ppu->vaddr & (0x1f << 5))
+        {
+        case (29 << 5):
+            ppu->vaddr &=~(0x1f <<  5);
+            ppu->vaddr ^= (0x01 << 11);
+            break;
+        case (31 << 5):
+            ppu->vaddr &=~(0x1f <<  5);
+            break;
+        default:
+            ppu->vaddr += (0x01 <<  5);
+            break;
+        }
+        return 1;
+    }
+    else
+    {
+        ppu->vaddr += 0x1000;
+        return 0;
+    }
+}
+
 static void ppu_render_scanline_bkg(PPU *ppu, int scanline)
 {
-    NES  *nes    = container_of(ppu, NES, ppu);
-    BYTE  ntile, chdatal, chdatah, atdata, atoffs, pixell, pixelh;
-    int   ntabn  = (ppu->temp1 >>  4);
-    int   tilex  = (ppu->temp0 >>  0) & 0x1f;
-    int   tiley  = (ppu->temp0 >>  5) & 0x1f;
-    int   finex  = (ppu->temp1 >>  0) & 0x07;
-    int   finey  = (ppu->temp0 >> 12) & 0x07;
-    int   ctflag = 1;   // flag for tile change
-    int   total  = 256; // total pixel number in a scanline
+    NES *nes    = container_of(ppu, NES, ppu);
+    BYTE tdata, adata, cdatal, cdatah, pixell, pixelh;
+    int  ntabn, toffs, aoffs, ashift;
+    int  total  = 256; // total pixel number in a scanline
+    int  ctflag = 1;   // flag for tile change
 
     do {
         if (ctflag)
         {
-            ntile   = nes->vram[ntabn].data[tiley * 32 + tilex];
-            chdatal = ppu->chrom_bkg[ntile * 16 + 8 * 0 + finey] << finex;
-            chdatah = ppu->chrom_bkg[ntile * 16 + 8 * 1 + finey] << finex;
-            atdata  = (nes->vram[ntabn].data + 960)[(tiley >> 2) * 8 + (tilex >> 2)];
-            atoffs  = ((tiley & (1 << 1)) << 1) | ((tilex & (1 << 1)) << 0);
-            pixelh  = ((atdata >> atoffs) & 0x3) << 2;
+            // ntabn, toffs & aoffs
+            ntabn = (ppu->vaddr >> 10) & 0x0003;
+            toffs = 0x0000 + (ppu->vaddr & 0x03ff);
+            aoffs = 0x03c0 + ((ppu->vaddr >> 4) & 0x38) + ((ppu->vaddr >> 2) & 0x07);
+
+            // tdata, adata & cdata
+            tdata  = nes->vram[ntabn].data[toffs];
+            adata  = nes->vram[ntabn].data[aoffs];
+            cdatal = ppu->chrom_bkg[tdata * 16 + 8 * 0 + FINEY] << FINEX;
+            cdatah = ppu->chrom_bkg[tdata * 16 + 8 * 1 + FINEY] << FINEX;
+
+            // ashift & pixelh
+            ashift = ((TILEY & (1 << 1)) << 1) | ((TILEX & (1 << 1)) << 0);
+            pixelh = ((adata >> ashift) & 0x3) << 2;
         }
 
-        pixell = ((chdatal >> 7) << 0) | ((chdatah >> 7) << 1);
-        chdatal <<= 1; chdatah <<= 1;
+        // write pixel on adev
+        pixell = ((cdatal >> 7) << 0) | ((cdatah >> 7) << 1);
+        cdatal <<= 1; cdatah <<= 1;
         *ppu->draw_buffer++ = ppu->palette[pixelh|pixell];
 
-        if (++finex == 8) {
-            finex = 0;
-            if (++tilex == 32) {
-                tilex  = 0;
-                ntabn ^= (1 << 0);
-            }
-
-            ctflag = 1; // tile is changed
-        }
-        else ctflag = 0; // tile not changed
+        // do x increment for scroll
+        ctflag = ppu_xincrement(ppu);
     } while (--total > 0);
-
-    if (++finey == 8) {
-        finey = 0;
-        if (++tiley == 30) {
-            tiley  = 0;
-            ntabn ^= (1 << 1);
-        }
-    }
 
     ppu->draw_buffer -= 256;
     ppu->draw_buffer += ppu->draw_stride;
 
-    ppu->temp0 = (finey << 12)
-               | (ntabn << 10)
-               | (tiley <<  5)
-               | (tilex <<  0);
-    ppu->temp1 = (ntabn <<  4) | (finex << 0);
+    // do y increment for scroll
+    ppu_yincrement(ppu);
+
+    // reget vaddr from temp0
+    ppu->vaddr &= ~0x041f;
+    ppu->vaddr |= (ppu->temp0 & 0x041f);
 }
 
 static void ppu_render_scanline_spr(PPU *ppu, int scanline)
@@ -226,9 +266,8 @@ void ppu_reset(PPU *ppu)
 
     ppu->pin_vbl      = 1;
     ppu->color_flags  = 0;
-    ppu->_2005_toggle = 0;
-    ppu->_2006_toggle = 0;
-    ppu->addr         = 0;
+    ppu->toggle       = 0;
+    ppu->vaddr        = 0;
     ppu->temp0        = 0;
     ppu->temp1        = 0;
     ppu->chrom_bkg    = ppu->regs[0x0000] & (1 << 4) ? nes->pattab1.data : nes->pattab0.data;
@@ -238,25 +277,26 @@ void ppu_reset(PPU *ppu)
 
 void ppu_run(PPU *ppu, int scanline)
 {
+    // save scanline
+    ppu->scanline = scanline;
+
     // scanline 0, junk/refresh
     if (scanline == 0)
     {
         ppu->regs[0x0002] &= ~(1 << 7);
         ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
 
-        // this line clears bits $2002.5-7.
+        // this line clears bits $2002.5-7 & clear toggle
         // also throws away all the sprite data.
         ppu->regs[0x0002] &= ~(3 << 5);
-        ppu->_2005_toggle  = 0;
-        ppu->_2006_toggle  = 0;
+        ppu->toggle = 0; // clear toogle
         memset(ppu->sprram, 0, 256);
 
-        // the ppu address copies the ppu's temp at the beginning of the line
-        // if sprite or name-tables are visible.
-        if (ppu->regs[0x0001] & (0x3 << 3)) ppu->addr = ppu->temp0;
-
-        ppu->temp1 &= 0xf0;
-        ppu->temp1 |= (ppu->temp0 >> 6) & 0x30;
+        if (ppu->regs[0x0001] & (0x3 << 3))
+        {
+            ppu->vaddr &= ~0xfbe0;
+            ppu->vaddr |= (ppu->temp0 & 0xfbe0);
+        }
 
         // lock video device, obtain draw buffer address & stride
         vdev_lock(ppu->vdevctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
@@ -293,8 +333,7 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
     {
     case 0x0002:
         pm->data[0x0002] &= ~(1 << 7); // after a read occurs, D7 is set to 0 
-        ppu->_2005_toggle = 0; // after a read occurs, $2005 toggle is reset
-        ppu->_2006_toggle = 0; // after a read occurs, $2006 toggle is reset
+        ppu->toggle = 0; // after a read occurs, toggle is reset
         break;
 
     case 0x0004:
@@ -302,11 +341,20 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
         break;
 
     case 0x0007:
-        byte = bus_readb(nes->pbus, ppu->addr);
-        if (pm->data[0x0000] & (1 << 2)) {
-            ppu->addr += 32;
+        if ( ppu->scanline >= 0 && ppu->scanline <= 240
+           && (ppu->regs[0x0001] & (0x3 << 3)) != 0 )
+        {
+            ppu_xincrement(ppu);
+            ppu_yincrement(ppu);
         }
-        else ppu->addr++;
+        else
+        {
+            byte = bus_readb(nes->pbus, ppu->vaddr);
+            if (pm->data[0x0000] & (1 << 2)) {
+                ppu->vaddr += 32;
+            }
+            else ppu->vaddr++;
+        }
         break;
     }
     return byte;
@@ -339,8 +387,8 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         break;
 
     case 0x0005:
-        ppu->_2005_toggle = !ppu->_2005_toggle;
-        if (ppu->_2005_toggle)
+        ppu->toggle = !ppu->toggle;
+        if (ppu->toggle)
         {
             ppu->temp0 &= ~(0x1f <<  0);
             ppu->temp0 |=  (byte >>  3);
@@ -356,26 +404,36 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         break;
 
     case 0x0006:
-        ppu->_2006_toggle = !ppu->_2006_toggle;
-        if (ppu->_2006_toggle)
+        ppu->toggle = !ppu->toggle;
+        if (ppu->toggle)
         {
             ppu->temp0 &=~(0xff << 8);
             ppu->temp0 |= (byte << 8);
+            ppu->temp0 &= 0x3fff;
         }
         else
         {
             ppu->temp0 &=~(0xff << 0);
             ppu->temp0 |= (byte << 0);
-            ppu->addr   = ppu->temp0;
+            ppu->vaddr  = ppu->temp0;
         }
         break;
 
     case 0x0007:
-        bus_writeb(nes->pbus, ppu->addr, byte);
-        if (pm->data[0x0000] & (1 << 2)) {
-            ppu->addr += 32;
+        if ( ppu->scanline >= 0 && ppu->scanline <= 240
+           && (ppu->regs[0x0001] & (0x3 << 3)) != 0 )
+        {
+            ppu_xincrement(ppu);
+            ppu_yincrement(ppu);
         }
-        else ppu->addr++;
+        else
+        {
+            bus_writeb(nes->pbus, ppu->vaddr, byte);
+            if (pm->data[0x0000] & (1 << 2)) {
+                ppu->vaddr += 32;
+            }
+            else ppu->vaddr++;
+        }
         break;
     }
 }
