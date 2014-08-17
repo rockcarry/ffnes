@@ -21,7 +21,7 @@ void apu_reset(APU *apu)
 {
 }
 
-void apu_render_frame(APU *apu)
+void apu_run_pclk(APU *apu, int pclk)
 {
     AUDIOBUF *paudiobuf = NULL;
     adev_audio_buf_request(apu->adevctxt, &paudiobuf);
@@ -43,7 +43,7 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         for (i=0; i<256; i++) {
             nes->ppu.sprram[i] = bus_readb(nes->cbus, byte * 256 + i);
         }
-        nes->cpu.cycles_dma += 512;
+        nes->cpu.cclk_dma += 512;
         break;
     }
 }

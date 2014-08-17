@@ -19,8 +19,6 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
     DWORD dwTickDiff  = 0;
     DWORD dwTickSleep = 0;
     int   scanline    = 0;
-    int   clkremain   = 0;
-    int   clkcpurun   = 0;
 
     while (1)
     {
@@ -30,24 +28,13 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
         // run cpu & ppu
         for (scanline=0; scanline<NES_VTOTAL; scanline++)
         {
-            //++ 更精确的 cpu & ppu 时钟控制 ++//
-            #define CPUCLK_PER_SCANLINE_ROUGH  (NES_HTOTAL / 3)
-            #define CPUCLK_PER_SCANLINE_PDIFF  (NES_HTOTAL - NES_HTOTAL / 3 * 3)
-            clkcpurun  = CPUCLK_PER_SCANLINE_ROUGH;
-            clkremain += CPUCLK_PER_SCANLINE_PDIFF;
-            if (clkremain >= 3) {
-                clkremain -= 3;
-                clkcpurun++;
-            }
-            //-- 更精确的 cpu & ppu 时钟控制 --//
-
+            cpu_run_pclk(&(nes->cpu), NES_HTOTAL);
             ppu_run(&(nes->ppu), scanline );
             cpu_nmi(&(nes->cpu), nes->ppu.pin_vbl);
-            cpu_run(&(nes->cpu), clkcpurun);
         }
 
         // apu render frame
-        apu_render_frame(&(nes->apu));
+        apu_run_pclk(&(nes->apu), NES_HTOTAL * NES_VTOTAL);
 
         //++ framerate control ++//
         dwTickCur  = GetTickCount();

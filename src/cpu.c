@@ -136,7 +136,7 @@ flags.
 #define EA_IY() do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI;                 } while (0)
 #define MW_ZP() do { ZPWRB(EA, DT);                                                  } while (0)
 #define MW_EA() do { WRITEB(EA, DT);                                                 } while (0)
-#define CHECK_EA() do { if ((ET & 0xFF00) != (EA & 0xFF00)) ncycle--;                } while (0)
+#define CHECK_EA() do { if ((ET & 0xFF00) != (EA & 0xFF00)) cclk--;                  } while (0)
 //-- addressing mode --//
 
 //++ instruction ++//
@@ -332,7 +332,7 @@ flags.
     ET = PC;                \
     EA = PC + (char)DT;     \
     PC = EA;                \
-    ncycle--;               \
+    cclk--;                 \
     CHECK_EA();             \
 } while (0)
 
@@ -546,9 +546,11 @@ void cpu_reset(CPU *cpu)
     cpu->nmi_last    = 1;
     cpu->nmi_cur     = 1;
     cpu->irq_flag    = 1;
-    cpu->cycles_emu  = 0;
-    cpu->cycles_real = 0;
-    cpu->cycles_dma  = 0;
+    cpu->cclk_emu    = 0;
+    cpu->cclk_real   = 0;
+    cpu->cclk_dma    = 0;
+    cpu->pclk_emu    = 0;
+    cpu->pclk_real   = 0;
 }
 
 void cpu_nmi(CPU *cpu, int nmi)
@@ -561,7 +563,7 @@ void cpu_irq(CPU *cpu, int irq)
     cpu->irq_flag = irq;
 }
 
-void cpu_run(CPU *cpu, int ncycle)
+void cpu_run_cclk(CPU *cpu, int cclk)
 {
     BYTE opcode = 0;
     BYTE opmat  = 0;
@@ -571,11 +573,11 @@ void cpu_run(CPU *cpu, int ncycle)
     WORD ET     = 0;
     WORD WT     = 0;
 
-    cpu->cycles_emu  += ncycle;
-    ncycle = cpu->cycles_emu - cpu->cycles_real;
-    cpu->cycles_real += ncycle;
+    cpu->cclk_emu  += cclk;
+    cclk = cpu->cclk_emu - cpu->cclk_real;
+    cpu->cclk_real += cclk;
 
-    while (ncycle > 0)
+    while (cclk > 0)
     {
 #if ENABLE_CPU_DEBUG_LOG
         // for cpu debugging
@@ -583,22 +585,22 @@ void cpu_run(CPU *cpu, int ncycle)
 //      dump_mem_page(cpu, 0);
 #endif
 
-        //++ dma cycles counting ++//
-        if (cpu->cycles_dma > 0)
+        //++ dma cclk counting ++//
+        if (cpu->cclk_dma > 0)
         {
-            if (ncycle > cpu->cycles_dma)
+            if (cclk > cpu->cclk_dma)
             {
-                ncycle -= cpu->cycles_dma;
-                cpu->cycles_dma = 0;
+                cclk -= cpu->cclk_dma;
+                cpu->cclk_dma = 0;
             }
             else
             {
-                cpu->cycles_dma -= ncycle;
-                ncycle = 0;
+                cpu->cclk_dma -= cclk;
+                cclk = 0;
                 break;
             }
         }
-        //-- dma cycles counting --//
+        //-- dma cclk counting --//
 
         //++ handle nmi interrupt ++//
         if (cpu->nmi_last != cpu->nmi_cur) {
@@ -610,7 +612,7 @@ void cpu_run(CPU *cpu, int ncycle)
                 PUSH(PS);
                 SET_FLAG(I_FLAG);
                 PC = READW(NMI_VECTOR);
-                ncycle -= 7;
+                cclk -= 7;
             }
         }
         //-- handle nmi interrupt --//
@@ -624,7 +626,7 @@ void cpu_run(CPU *cpu, int ncycle)
             PUSH(PS);
             SET_FLAG(I_FLAG);
             PC = READW(IRQ_VECTOR);
-            ncycle -= 7;
+            cclk -= 7;
         }
         //-- handle irq interrupt --//
 
@@ -633,8 +635,8 @@ void cpu_run(CPU *cpu, int ncycle)
         opmat  = (opcode & 0x1c) >> 2;
         opopt  = (opcode >> 5);
 
-        // calculate new ncycle
-        ncycle -= CPU_CYCLE_TAB[opcode];
+        // calculate new cclk
+        cclk -= CPU_CYCLE_TAB[opcode];
 
         //++ ORA, AND, EOR, ADC, STA, LDA, CMP, SBC ++//
         if ((opcode & 0x3) == 0x01)
@@ -918,6 +920,16 @@ void cpu_run(CPU *cpu, int ncycle)
         }
     }
 
-    cpu->cycles_real -= ncycle;
+    cpu->cclk_real -= cclk;
+}
+
+void cpu_run_pclk(CPU *cpu, int pclk)
+{
+    int cclk = 0;
+    cpu->pclk_emu  += pclk;
+    pclk = cpu->pclk_emu - cpu->pclk_real;
+    cclk = pclk / 3;
+    cpu->pclk_real += cclk * 3;
+    cpu_run_cclk(cpu, cclk);
 }
 

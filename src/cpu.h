@@ -16,9 +16,11 @@ typedef struct {
     int  nmi_last;
     int  nmi_cur;
     int  irq_flag;
-    long cycles_emu;
-    long cycles_real;
-    long cycles_dma;
+    long cclk_emu;
+    long cclk_real;
+    long cclk_dma;
+    long pclk_emu;
+    long pclk_real;
 
 // private:
     BUS  cbus;       // cpu bus
@@ -31,7 +33,8 @@ void cpu_free (CPU *cpu);
 void cpu_reset(CPU *cpu);
 void cpu_nmi  (CPU *cpu, int nmi);
 void cpu_irq  (CPU *cpu, int irq);
-void cpu_run  (CPU *cpu, int cycle);
+void cpu_run_cclk(CPU *cpu, int cclk);
+void cpu_run_pclk(CPU *cpu, int pclk);
 
 #endif
 
