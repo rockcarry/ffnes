@@ -71,13 +71,13 @@ static BOOL ShowOpenFileDialog(HWND hwnd, char *filename)
 // 函数实现
 int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int nCmdShow)
 {
-    WNDCLASS wc   = {0};
-    MSG      msg  = {0};
-    HWND     hwnd = NULL;
-    RECT     rect = {0};
-    int      w, h, x, y;
-    NES      nes;
+    WNDCLASS wc             = {0};
+    MSG      msg            = {0};
+    HWND     hwnd           = NULL;
+    RECT     rect           = {0};
     char     file[MAX_PATH] = {0};
+    NES      nes            = {0};
+    int      w, h, x, y;
 
     // 注册窗口
     wc.lpfnWndProc   = WndProc;
