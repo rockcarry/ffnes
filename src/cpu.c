@@ -395,7 +395,7 @@ flags.
 
 #define NOP() do {} while (0)
 #define UDF() do { \
-    log_printf("6502 cpu, undefined opcode: 0x%02X !\n", opcode); \
+    log_printf("6502 cpu, undefined opcode: 0x%02X, pc = %04X !\n", opcode, cpu->pc); \
 } while (0)
 
 static BYTE CPU_CYCLE_TAB[256] =
