@@ -56,7 +56,7 @@ clean :
 	-rm -f *.dll
 	-rm -f *.exe
 
-# RockCarry
+# rockcarry
 # 2006.10.4
 # THE END
 
