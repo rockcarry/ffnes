@@ -168,7 +168,7 @@ static void ppu_fetch_tile(PPU *ppu)
     ppu->pixelh = ((adata >> ashift) & 0x3) << 2;
 }
 
-static void ppu_xincrement(PPU *ppu)
+static int ppu_xincrement(PPU *ppu)
 {
     if (FINEX == 7)
     {
@@ -179,16 +179,15 @@ static void ppu_xincrement(PPU *ppu)
             ppu->vaddr ^= (1 << 10);
         }
         else ppu->vaddr++;
-
-        // fetch tile data
-        ppu_fetch_tile(ppu);
+        return 1;
     }
     else {
         FINEX++;
+        return 0;
     }
 }
 
-static void ppu_yincrement(PPU *ppu)
+static int ppu_yincrement(PPU *ppu)
 {
     if ((ppu->vaddr & 0x7000) == 0x7000)
     {
@@ -206,13 +205,12 @@ static void ppu_yincrement(PPU *ppu)
             ppu->vaddr += (0x01 <<  5);
             break;
         }
+        return 1;
     }
     else {
         ppu->vaddr += 0x1000;
+        return 0;
     }
-
-    // chage tile data
-    ppu_fetch_tile(ppu);
 }
 
 static void ppu_run_step(PPU *ppu)
@@ -254,7 +252,10 @@ static void ppu_run_step(PPU *ppu)
                 *ppu->draw_buffer++ = ppu->palette[ppu->pixelh|pixell];
 
                 // do x increment
-                ppu_xincrement(ppu);
+                if (ppu_xincrement(ppu)) {
+                    // fetch tile data
+                    ppu_fetch_tile(ppu);
+                }
             }
             else if (ppu->pclk_line == 256)
             {
@@ -267,6 +268,9 @@ static void ppu_run_step(PPU *ppu)
                 // at dot 257, reget vaddr from temp0
                 ppu->vaddr &= ~0x041f;
                 ppu->vaddr |= (ppu->temp0 & 0x041f);
+
+                // fetch tile data
+                ppu_fetch_tile(ppu);
             }
         }
     }
@@ -363,7 +367,8 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
         break;
 
     case 0x0007:
-        if ( ppu->scanline >= 0 && ppu->scanline <= 240
+        if (  ppu->pclk_frame > NES_HTOTAL + 280
+           && ppu->pclk_frame < NES_HTOTAL * 241
            && (ppu->regs[0x0001] & (0x3 << 3)) != 0 )
         {
             ppu_xincrement(ppu);
@@ -442,7 +447,8 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         break;
 
     case 0x0007:
-        if ( ppu->scanline >= 0 && ppu->scanline <= 240
+        if (  ppu->pclk_frame > NES_HTOTAL + 280
+           && ppu->pclk_frame < NES_HTOTAL * 241
            && (ppu->regs[0x0001] & (0x3 << 3)) != 0 )
         {
             ppu_xincrement(ppu);
