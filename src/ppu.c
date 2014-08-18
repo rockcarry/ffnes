@@ -330,13 +330,17 @@ void ppu_reset(PPU *ppu)
     NES *nes = container_of(ppu, NES, ppu);
 
     ppu->pin_vbl      = 1;
-    ppu->color_flags  = 0;
     ppu->toggle       = 0;
     ppu->vaddr        = 0;
     ppu->temp0        = 0;
     ppu->temp1        = 0;
+    ppu->_2007_data   = 0;
+    ppu->color_flags  = 0;
     ppu->chrom_bkg    = ppu->regs[0x0000] & (1 << 4) ? nes->pattab1.data : nes->pattab0.data;
     ppu->chrom_spr    = ppu->regs[0x0000] & (1 << 3) ? nes->pattab1.data : nes->pattab0.data;
+    ppu->scanline     = 0;
+    ppu->pclk_frame   = 0;
+    ppu->pclk_line    = 0;
     ppu_set_vdev_pal(ppu->vdevctxt, 0);
 }
 
@@ -345,6 +349,7 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
     NES *nes  = container_of(pm, NES, ppuregs);
     PPU *ppu  = &(nes->ppu);
     BYTE byte = pm->data[addr];
+    int  vaddr= ppu->vaddr & 0x3fff;
 
     switch (addr)
     {
@@ -366,11 +371,10 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
         }
         else
         {
-            byte = bus_readb(nes->pbus, ppu->vaddr & 0x3fff);
-            if (pm->data[0x0000] & (1 << 2)) {
-                ppu->vaddr += 32;
-            }
-            else ppu->vaddr++;
+            byte = ppu->_2007_data;
+            ppu->_2007_data = bus_readb(nes->pbus, vaddr);
+            if (vaddr >= 0x3f00) byte = ppu->_2007_data & 0x3f;
+            ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
         }
         break;
     }
@@ -379,8 +383,9 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
 
 void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
 {
-    NES *nes = container_of(pm, NES, ppuregs);
-    PPU *ppu = &(nes->ppu);
+    NES *nes   = container_of(pm, NES, ppuregs);
+    PPU *ppu   = &(nes->ppu);
+    int  vaddr = ppu->vaddr & 0x3fff;
 
     switch (addr)
     {
@@ -445,11 +450,19 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         }
         else
         {
-            bus_writeb(nes->pbus, ppu->vaddr & 0x3fff, byte);
-            if (pm->data[0x0000] & (1 << 2)) {
-                ppu->vaddr += 32;
+            if (vaddr >= 0x3f00 && (vaddr & 0x3) == 0)
+            {
+                bus_writeb(nes->pbus, 0x3f00, byte);
+                bus_writeb(nes->pbus, 0x3f04, byte);
+                bus_writeb(nes->pbus, 0x3f08, byte);
+                bus_writeb(nes->pbus, 0x3f0c, byte);
+                bus_writeb(nes->pbus, 0x3f10, byte);
+                bus_writeb(nes->pbus, 0x3f14, byte);
+                bus_writeb(nes->pbus, 0x3f18, byte);
+                bus_writeb(nes->pbus, 0x3f1c, byte);
             }
-            else ppu->vaddr++;
+            else bus_writeb(nes->pbus, vaddr , byte);
+            ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
         }
         break;
     }
