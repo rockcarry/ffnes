@@ -5,12 +5,13 @@
 #include "log.h"
 
 // 内部常量定义
-#define LOG_MODE_FILE     0
-#define LOG_MODE_DEBUGER  1
+#define LOG_MODE_DISABLE  0
+#define LOG_MODE_FILE     1
+#define LOG_MODE_DEBUGER  2
 
 // 内部全部变量定义
 static FILE *s_log_fp   = NULL;
-static DWORD s_log_mode = 0;
+static DWORD s_log_mode = LOG_MODE_DISABLE;
 
 /* 函数实现 */
 void log_init(char *file)
@@ -20,8 +21,10 @@ void log_init(char *file)
             s_log_mode = LOG_MODE_DEBUGER;
         }
         else {
-            s_log_mode = LOG_MODE_FILE;
-            s_log_fp   = fopen(file, "w");
+            s_log_fp = fopen(file, "w");
+            if (s_log_fp) {
+                s_log_mode = LOG_MODE_FILE;
+            }
         }
     }
 }
@@ -41,6 +44,9 @@ void log_printf(char *format, ...)
 {
     char buf[MAX_LOG_BUF];
     va_list valist;
+
+    // if debug log is not enable, directly return
+    if (s_log_mode == LOG_MODE_DISABLE) return;
 
     va_start(valist, format);
     vsnprintf(buf, MAX_LOG_BUF, format, valist);
