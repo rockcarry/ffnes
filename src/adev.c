@@ -20,7 +20,6 @@ static void CALLBACK waveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD dwInstance, DWOR
     switch (uMsg)
     {
     case WOM_DONE:
-        dev->pWaveHdr[dev->head].dwBufferLength = dev->buflen;
         if (++dev->head == dev->bufnum) dev->head = 0;
         ReleaseSemaphore(dev->bufsem, 1, NULL);
         break;
@@ -30,40 +29,42 @@ static void CALLBACK waveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD dwInstance, DWOR
 // º¯ÊýÊµÏÖ
 void* adev_create(int bufnum, int buflen)
 {
-    ADEV *dev = malloc(sizeof(ADEV));
-    if (dev)
-    {
-        WAVEFORMATEX wfx = {0};
-        BYTE        *pwavbuf;
-        int          i;
+    ADEV        *dev = NULL;
+    WAVEFORMATEX wfx = {0};
+    BYTE        *pwavbuf;
+    int          i;
 
-        dev->bufnum   = bufnum;
-        dev->buflen   = buflen;
-        dev->head     = 0;
-        dev->tail     = 0;
-        dev->pWaveHdr = (WAVEHDR*)malloc(bufnum * (sizeof(WAVEHDR) + buflen));
-        dev->bufsem   = CreateSemaphore(NULL, bufnum, bufnum, NULL);
+    // allocate adev context
+    dev = malloc(sizeof(ADEV));
+    if (!dev) return NULL;
 
-        // init for audio
-        wfx.cbSize          = sizeof(wfx);
-        wfx.wFormatTag      = WAVE_FORMAT_PCM;
-        wfx.wBitsPerSample  = 16;    // 16bit
-//      wfx.nSamplesPerSec  = 44100; // 44.1k
-        wfx.nSamplesPerSec  = 48000; // 48.0k
-        wfx.nChannels       = 2;     // stereo
-        wfx.nBlockAlign     = wfx.nChannels * wfx.wBitsPerSample / 8;
-        wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
-        waveOutOpen(&(dev->hWaveOut), WAVE_MAPPER, &wfx, (DWORD_PTR)waveOutProc, (DWORD)dev, CALLBACK_FUNCTION);
+    dev->bufnum   = bufnum;
+    dev->buflen   = buflen;
+    dev->head     = 0;
+    dev->tail     = 0;
+    dev->pWaveHdr = (WAVEHDR*)malloc(bufnum * (sizeof(WAVEHDR) + buflen));
+    dev->bufsem   = CreateSemaphore(NULL, bufnum, bufnum, NULL);
 
-        // init wavebuf
-        memset(dev->pWaveHdr, 0, bufnum * (sizeof(WAVEHDR) + buflen));
-        pwavbuf = (BYTE*)(dev->pWaveHdr + bufnum);
-        for (i=0; i<bufnum; i++) {
-            dev->pWaveHdr[i].lpData         = (LPSTR)(pwavbuf + i * buflen);
-            dev->pWaveHdr[i].dwBufferLength = buflen;
-            waveOutPrepareHeader(dev->hWaveOut, &(dev->pWaveHdr[i]), sizeof(WAVEHDR));
-        }
+    // init for audio
+    wfx.cbSize          = sizeof(wfx);
+    wfx.wFormatTag      = WAVE_FORMAT_PCM;
+    wfx.wBitsPerSample  = 16;    // 16bit
+//  wfx.nSamplesPerSec  = 44100; // 44.1k
+    wfx.nSamplesPerSec  = 48000; // 48.0k
+    wfx.nChannels       = 2;     // stereo
+    wfx.nBlockAlign     = wfx.nChannels * wfx.wBitsPerSample / 8;
+    wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
+    waveOutOpen(&(dev->hWaveOut), WAVE_MAPPER, &wfx, (DWORD_PTR)waveOutProc, (DWORD)dev, CALLBACK_FUNCTION);
+
+    // init wavebuf
+    memset(dev->pWaveHdr, 0, bufnum * (sizeof(WAVEHDR) + buflen));
+    pwavbuf = (BYTE*)(dev->pWaveHdr + bufnum);
+    for (i=0; i<bufnum; i++) {
+        dev->pWaveHdr[i].lpData         = (LPSTR)(pwavbuf + i * buflen);
+        dev->pWaveHdr[i].dwBufferLength = buflen;
+        waveOutPrepareHeader(dev->hWaveOut, &(dev->pWaveHdr[i]), sizeof(WAVEHDR));
     }
+
     return dev;
 }
 
