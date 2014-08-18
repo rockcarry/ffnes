@@ -20,7 +20,7 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
 
         totalpclk = NES_HTOTAL * NES_VTOTAL;
         do {
-            torunpclk  = (totalpclk < 8) ? totalpclk : 8;
+            torunpclk  = (totalpclk < 16) ? totalpclk : 16;
             totalpclk -= torunpclk;
 
             apu_run_pclk(&(nes->apu), torunpclk);
