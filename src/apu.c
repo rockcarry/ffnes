@@ -1,6 +1,5 @@
 // 包含头文件
 #include "nes.h"
-#include "adev.h"
 
 // 内部常量定义
 #define APU_ABUF_NUM  16
@@ -9,7 +8,11 @@
 // 函数实现
 void apu_init(APU *apu, DWORD extra)
 {
+    // create adev & request buffer
     apu->adevctxt = adev_create(APU_ABUF_NUM, APU_ABUF_LEN);
+
+    // reset apu
+    apu_reset(apu);
 }
 
 void apu_free(APU *apu)
@@ -19,13 +22,26 @@ void apu_free(APU *apu)
 
 void apu_reset(APU *apu)
 {
+    apu->pclk_frame = 0;
 }
 
 void apu_run_pclk(APU *apu, int pclk)
 {
-    AUDIOBUF *paudiobuf = NULL;
-    adev_audio_buf_request(apu->adevctxt, &paudiobuf);
-    adev_audio_buf_post   (apu->adevctxt,  paudiobuf);
+    if (apu->pclk_frame == 0) {
+        adev_audio_buf_request(apu->adevctxt, &(apu->audiobuf));
+    }
+
+    //++ render audio data on audio buffer ++//
+    // todo...
+    //-- render audio data on audio buffer --//
+
+    // add pclk to pclk_frame
+    apu->pclk_frame += pclk;
+
+    if (apu->pclk_frame == NES_HTOTAL * NES_VTOTAL) {
+        adev_audio_buf_post(apu->adevctxt,  (apu->audiobuf));
+        apu->pclk_frame = 0;
+    }
 }
 
 BYTE NES_APU_REG_RCB(MEM *pm, int addr)

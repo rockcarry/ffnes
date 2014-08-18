@@ -419,6 +419,7 @@ static BYTE CPU_CYCLE_TAB[256] =
 };
 
 //++ for cpu debugging ++//
+#if ENABLE_CPU_DEBUG_LOG
 static void make_ps_flag_str(char *str, BYTE ps)
 {
     static char psflag_chars[8] = {'C', 'Z', 'I', 'D', 'B', '-', 'V', 'N'};
@@ -509,6 +510,7 @@ static void cpu_debug_log(CPU *cpu)
     log_printf("%04X | %02X %02X %02X: %s\n\n",
         cpu->pc, bytes[0], bytes[1], bytes[2], instruction);
 }
+
 static void dump_mem_page(CPU *cpu, int page)
 {
     BYTE byte;
@@ -521,6 +523,7 @@ static void dump_mem_page(CPU *cpu, int page)
     }
     log_printf("\n");
 }
+#endif
 //++ for cpu debugging ++//
 
 // º¯ÊýÊµÏÖ
@@ -546,11 +549,9 @@ void cpu_reset(CPU *cpu)
     cpu->nmi_last    = 1;
     cpu->nmi_cur     = 1;
     cpu->irq_flag    = 1;
-    cpu->cclk_emu    = 0;
-    cpu->cclk_real   = 0;
+    cpu->pclk_diff   = 0;
+    cpu->cclk_diff   = 0;
     cpu->cclk_dma    = 0;
-    cpu->pclk_emu    = 0;
-    cpu->pclk_real   = 0;
 }
 
 void cpu_nmi(CPU *cpu, int nmi)
@@ -563,7 +564,7 @@ void cpu_irq(CPU *cpu, int irq)
     cpu->irq_flag = irq;
 }
 
-void cpu_run_cclk(CPU *cpu, int cclk)
+static void cpu_run_cclk(CPU *cpu, int cclk)
 {
     BYTE opcode = 0;
     BYTE opmat  = 0;
@@ -573,9 +574,8 @@ void cpu_run_cclk(CPU *cpu, int cclk)
     WORD ET     = 0;
     WORD WT     = 0;
 
-    cpu->cclk_emu  += cclk;
-    cclk = cpu->cclk_emu - cpu->cclk_real;
-    cpu->cclk_real += cclk;
+    // for cclk diff
+    cclk += cpu->cclk_diff;
 
     while (cclk > 0)
     {
@@ -916,20 +916,20 @@ void cpu_run_cclk(CPU *cpu, int cclk)
         case 0xdc:
         case 0xfc: NOP(); PC += 2; break; // TOP
 
-        default:   UDF(); break; // undefined
+        default: UDF(); break; // undefined opcode
         }
     }
 
-    cpu->cclk_real -= cclk;
+    // for cclk diff
+    cpu->cclk_diff = cclk;
 }
 
 void cpu_run_pclk(CPU *cpu, int pclk)
 {
     int cclk = 0;
-    cpu->pclk_emu  += pclk;
-    pclk = cpu->pclk_emu - cpu->pclk_real;
-    cclk = pclk / 3;
-    cpu->pclk_real += cclk * 3;
+    pclk += cpu->pclk_diff;
+    cclk  = pclk / 3;
+    cpu->pclk_diff = pclk - cclk * 3;
     cpu_run_cclk(cpu, cclk);
 }
 

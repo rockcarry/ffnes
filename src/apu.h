@@ -3,6 +3,7 @@
 
 // 包含头文件
 #include "stdefine.h"
+#include "adev.h"
 #include "mem.h"
 
 // 类型定义
@@ -10,7 +11,9 @@ typedef struct {
     BYTE  regs[0x16];
 
 // private:
-    void *adevctxt;
+    void     *adevctxt;
+    AUDIOBUF *audiobuf;
+    long      pclk_frame;
 } APU;
 
 // 函数声明

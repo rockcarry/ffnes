@@ -12,6 +12,16 @@
 #include "cartridge.h"
 #include "joypad.h"
 
+// 常量定义
+// clock defines
+#define NES_FREQ_MCLK   21477272         // mclk freq
+#define NES_FREQ_CPU   (FREQ_MCLK / 12)  // cpu freq
+#define NES_FREQ_PPU   (FREQ_MCLK / 4 )  // ppu freq
+#define NES_HTOTAL      341              // htotal
+#define NES_VTOTAL      262              // vtotal
+#define NES_FRAMERATE  (FREQ_PPU / (NTSC_HTOTAL*NTSC_VTOTAL))  // frame rate
+
+// memory size defines
 #define NES_CRAM_SIZE     0x0800
 #define NES_PPUREGS_SIZE  0x0008
 #define NES_APUREGS_SIZE  0x0016

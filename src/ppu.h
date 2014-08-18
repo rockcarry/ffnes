@@ -19,18 +19,26 @@ typedef struct {
     WORD  temp0;
     WORD  temp1;
     int   color_flags;
-    BYTE *draw_buffer;
-    int   draw_stride;
     BYTE *chrom_bkg;
     BYTE *chrom_spr;
-    int   scanline;
+
+    //++ for step pclk rendering ++//
+    int   scanline;   // current scanline
+    int   pclk_frame; // current pclk cycles in one frame
+    int   pclk_line;  // current pclk cycles in one line
+    BYTE *draw_buffer;
+    int   draw_stride;
+    BYTE  cdatal;
+    BYTE  cdatah;
+    BYTE  pixelh;
+    //-- for step pclk rendering --//
 } PPU;
 
 // º¯ÊýÉùÃ÷
-void ppu_init  (PPU *ppu, DWORD extra);
-void ppu_free  (PPU *ppu);
-void ppu_reset (PPU *ppu);
-void ppu_run   (PPU *ppu, int scanline);
+void ppu_init    (PPU *ppu, DWORD extra);
+void ppu_free    (PPU *ppu);
+void ppu_reset   (PPU *ppu);
+void ppu_run_pclk(PPU *ppu, int pclk);
 
 BYTE NES_PPU_REG_RCB(MEM *pm, int addr);
 void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte);
