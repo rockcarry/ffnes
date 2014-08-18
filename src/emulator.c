@@ -92,7 +92,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
     hwnd = CreateWindow(
         APP_CLASS_NAME,
         APP_WND_TITLE,
-        WS_OVERLAPPED|WS_SYSMENU,
+        WS_OVERLAPPED|WS_SYSMENU|WS_SIZEBOX,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
         NES_WIDTH,

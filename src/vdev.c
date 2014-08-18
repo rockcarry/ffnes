@@ -114,11 +114,46 @@ void vdev_lock(void *ctxt, void **buf, int *stride)
 
 void vdev_unlock(void *ctxt)
 {
-    RECT rect = {0};
-    VDEV *dev = (VDEV*)ctxt;
+    RECT  rect = {0};
+    VDEV *dev  = (VDEV*)ctxt;
+    int   x    = 0;
+    int   y    = 0;
+    int  sw, sh, dw, dh;
+
+    // check context valid
     if (dev == NULL) return;
 
     GetClientRect(dev->hwnd, &rect);
-    StretchBlt(dev->hdcdst, rect.left, rect.top, rect.right, rect.bottom,
-               dev->hdcsrc, 0, 0, dev->width, dev->height, SRCCOPY);
+    sw = dw = rect.right;
+    sh = dh = rect.bottom;
+
+    //++ keep picture w/h ratio when stretching ++//
+    if (256 * sh > 240 * sw)
+    {
+        dh = dw * 240 / 256;
+        y  = (sh - dh) / 2;
+
+        rect.bottom = y;
+        InvalidateRect(dev->hwnd, &rect, TRUE);
+        rect.top    = sh - y;
+        rect.bottom = sh;
+        InvalidateRect(dev->hwnd, &rect, TRUE);
+    }
+    else
+    {
+        dw = dh * 256 / 240;
+        x  = (sw - dw) / 2;
+
+        rect.right  = x;
+        InvalidateRect(dev->hwnd, &rect, TRUE);
+        rect.left   = sw - x;
+        rect.right  = sw;
+        InvalidateRect(dev->hwnd, &rect, TRUE);
+    }
+    //-- keep picture w/h ratio when stretching --//
+
+    // bitblt picture to window witch stretching
+    StretchBlt(dev->hdcdst, x, y, dw, dh,
+               dev->hdcsrc, 0, 0, dev->width, dev->height,
+               SRCCOPY);
 }
