@@ -76,8 +76,8 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
     HWND     hwnd           = NULL;
     RECT     rect           = {0};
     char     file[MAX_PATH] = {0};
-    NES      nes            = {0};
     int      w, h, x, y;
+    NES      nes;
 
     // ×¢²á´°¿Ú
     wc.lpfnWndProc   = WndProc;
