@@ -232,6 +232,9 @@ static void ppu_run_step(PPU *ppu)
         // if sprite or name-tables are visible.
         if (ppu->regs[0x0001] & (0x3 << 3)) ppu->vaddr = ppu->temp0;
 
+        // y increment
+        ppu_yincrement(ppu);
+
         // fetch tile data
         ppu_fetch_tile(ppu);
 
@@ -350,10 +353,10 @@ void ppu_reset(PPU *ppu)
 
 BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
 {
-    NES *nes  = container_of(pm, NES, ppuregs);
-    PPU *ppu  = &(nes->ppu);
-    BYTE byte = pm->data[addr];
-    int  vaddr= ppu->vaddr & 0x3fff;
+    NES *nes   = container_of(pm, NES, ppuregs);
+    PPU *ppu   = &(nes->ppu);
+    BYTE byte  = pm->data[addr];
+    int  vaddr = ppu->vaddr & 0x3fff;
 
     switch (addr)
     {
@@ -467,7 +470,7 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
                 bus_writeb(nes->pbus, 0x3f18, byte);
                 bus_writeb(nes->pbus, 0x3f1c, byte);
             }
-            else bus_writeb(nes->pbus, vaddr , byte);
+            else bus_writeb(nes->pbus, vaddr, byte);
             ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
         }
         break;
