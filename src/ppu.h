@@ -24,7 +24,6 @@ typedef struct {
     BYTE *chrom_spr;
 
     //++ for step pclk rendering ++//
-    int   scanline;   // current scanline
     int   pclk_frame; // current pclk cycles in one frame
     int   pclk_line;  // current pclk cycles in one line
     BYTE *draw_buffer;

@@ -300,14 +300,12 @@ static void ppu_run_step(PPU *ppu)
     {
         // frame change
         ppu->pclk_frame = 0;
-        ppu->scanline   = 0;
     }
 
     if (++ppu->pclk_line == NES_HTOTAL * 1)
     {
         // scanline change
         ppu->pclk_line = 0;
-        ppu->scanline++;
     }
 }
 
@@ -345,7 +343,6 @@ void ppu_reset(PPU *ppu)
     ppu->color_flags  = 0;
     ppu->chrom_bkg    = ppu->regs[0x0000] & (1 << 4) ? nes->pattab1.data : nes->pattab0.data;
     ppu->chrom_spr    = ppu->regs[0x0000] & (1 << 3) ? nes->pattab1.data : nes->pattab0.data;
-    ppu->scanline     = 0;
     ppu->pclk_frame   = 0;
     ppu->pclk_line    = 0;
     ppu_set_vdev_pal(ppu->vdevctxt, 0);
