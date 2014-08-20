@@ -219,14 +219,10 @@ static void ppu_run_step(PPU *ppu)
     if (ppu->pclk_frame == NES_HTOTAL * 0 + 280) // scanline 0, tick 280
     {
         // clear vblank bit of reg $2002
-        ppu->regs[0x0002] &= ~(1 << 7);
+        ppu->regs[0x0002] &= ~(7 << 5);
 
         // update vblank pin status
         ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
-
-        ppu->regs[0x0002] &= ~(3 << 5);  // clear bits $2002.5-7
-        ppu->toggle        = 0;          // clear toogle
-        memset(ppu->sprram, 0, 256);     // throws away all the sprite data.
 
         // the ppu address copies the ppu's temp at the beginning of the line
         // if sprite or name-tables are visible.
