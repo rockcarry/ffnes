@@ -16,8 +16,8 @@ static DWORD WINAPI turbokey_thread_proc(LPVOID lpParam)
 
         for (i=0; i<4; i++)
         {
-            if (jp->pad_data[i] & (NES_KEY_TURBO_A)) jp->pad_data[i] ^= NES_KEY_TURBO_A;
-            if (jp->pad_data[i] & (NES_KEY_TURBO_B)) jp->pad_data[i] ^= NES_KEY_TURBO_B;
+            if (jp->pad_data[i] & (NES_KEY_TURBO_A)) jp->pad_data[i] ^= NES_KEY_A;
+            if (jp->pad_data[i] & (NES_KEY_TURBO_B)) jp->pad_data[i] ^= NES_KEY_B;
         }
 
         // delay some time
