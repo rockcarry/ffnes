@@ -103,16 +103,16 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     nes->sram.data = nes->cart.buf_sram;
 
     // create PRG-ROM 0
-    nes->prgrom0.type = MEM_ROM;
-    nes->prgrom0.size = NES_PRGROM_SIZE;
-    nes->prgrom0.data = nes->cart.buf_prom;
+    nes->prom0.type = MEM_ROM;
+    nes->prom0.size = NES_PRGROM_SIZE;
+    nes->prom0.data = nes->cart.buf_prom;
 
     // create PRG-ROM 1
-    nes->prgrom1.type = MEM_ROM;
-    nes->prgrom1.size = NES_PRGROM_SIZE;
-    nes->prgrom1.data = nes->cart.buf_prom;
+    nes->prom1.type = MEM_ROM;
+    nes->prom1.size = NES_PRGROM_SIZE;
+    nes->prom1.data = nes->cart.buf_prom;
     if (nes->cart.prom_count > 1) {
-        nes->prgrom1.data += NES_PRGROM_SIZE;
+        nes->prom1.data += NES_PRGROM_SIZE;
     }
 
     // init nes cbus
@@ -122,8 +122,8 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     bus_setmem(nes->cbus, 3, 0x4016, 0x401F, &(nes->padregs));
     bus_setmem(nes->cbus, 4, 0x4020, 0x5FFF, &(nes->erom   ));
     bus_setmem(nes->cbus, 5, 0x6000, 0x7FFF, &(nes->sram   ));
-    bus_setmem(nes->cbus, 6, 0x8000, 0xBFFF, &(nes->prgrom0));
-    bus_setmem(nes->cbus, 7, 0xC000, 0xFFFF, &(nes->prgrom1));
+    bus_setmem(nes->cbus, 6, 0x8000, 0xBFFF, &(nes->prom0  ));
+    bus_setmem(nes->cbus, 7, 0xC000, 0xFFFF, &(nes->prom1  ));
     bus_setmem(nes->cbus, 8, 0x0000, 0x0000, NULL           );
     //-- cbus mem map --//
 

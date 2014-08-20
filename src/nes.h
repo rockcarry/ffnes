@@ -55,8 +55,8 @@ typedef struct {
     MEM padregs; // pad regs
     MEM erom;    // expansion rom
     MEM sram;    // sram
-    MEM prgrom0; // PRG-ROM 0
-    MEM prgrom1; // PRG-ROM 1
+    MEM prom0;   // PRG-ROM 0
+    MEM prom1;   // PRG-ROM 1
 
     // ppu bus
     BUSITEM pbus[NES_MAX_BUS_SIZE];

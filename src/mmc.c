@@ -40,30 +40,20 @@ static void mapper002_reset(MMC *mmc)
 
 static void mapper002_wcb0(MEM *pm, int addr, BYTE byte)
 {
-    NES *nes = container_of(pm, NES, prgrom0);
-    MMC *mmc = &(nes->mmc);
-    mmc_switch_pbank0(mmc, byte);
+    NES *nes = container_of(pm, NES, prom0);
+    mmc_switch_pbank0(&(nes->mmc), byte);
 }
 
 static void mapper002_wcb1(MEM *pm, int addr, BYTE byte)
 {
-    NES *nes = container_of(pm, NES, prgrom1);
-    MMC *mmc = &(nes->mmc);
-    mmc_switch_pbank0(mmc, byte);
+    NES *nes = container_of(pm, NES, prom1);
+    mmc_switch_pbank0(&(nes->mmc), byte);
 }
 
 static void mapper002_init(MMC *mmc)
 {
-    // allocate memory for 8KB ram
-    mmc->pram = (BYTE*)malloc(0x2000);
-    if (!mmc->pram) {
-        log_printf("mapper002_init, malloc failed !\n");
-    }
-    else
-    {
-        mmc->pbus[2].membank->type = MEM_RAM;
-        mmc->pbus[2].membank->data = mmc->pram;
-    }
+    mmc->pbus[2].membank->type = MEM_RAM;
+    mmc->pbus[2].membank->data = mmc->chrram;
 
     // register bus memory callback
     mmc->cbus[6].membank->w_callback = mapper002_wcb0;
@@ -75,11 +65,7 @@ static void mapper002_init(MMC *mmc)
 
 static void mapper002_free(MMC *mmc)
 {
-    // free memory
-    if (mmc->pram) {
-        free(mmc->pram);
-        mmc->pram = NULL;
-    }
+    // do nothing
 }
 
 static MAPPER mapper002 =
@@ -100,16 +86,14 @@ static void mapper003_reset(MMC *mmc)
 
 static void mapper003_wcb0(MEM *pm, int addr, BYTE byte)
 {
-    NES *nes = container_of(pm, NES, prgrom0);
-    MMC *mmc = &(nes->mmc);
-    mmc_switch_cbank(mmc, byte);
+    NES *nes = container_of(pm, NES, prom0);
+    mmc_switch_cbank(&(nes->mmc), byte);
 }
 
 static void mapper003_wcb1(MEM *pm, int addr, BYTE byte)
 {
-    NES *nes = container_of(pm, NES, prgrom1);
-    MMC *mmc = &(nes->mmc);
-    mmc_switch_cbank(mmc, byte);
+    NES *nes = container_of(pm, NES, prom1);
+    mmc_switch_cbank(&(nes->mmc), byte);
 }
 
 static void mapper003_init(MMC *mmc)
@@ -124,6 +108,7 @@ static void mapper003_init(MMC *mmc)
 
 static void mapper003_free(MMC *mmc)
 {
+    // do nothing
 }
 
 static MAPPER mapper003 =

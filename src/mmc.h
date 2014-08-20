@@ -8,11 +8,12 @@
 
 // 类型定义
 typedef struct {
-    CARTRIDGE *cart;
-    BUS        cbus;
-    BUS        pbus;
-    int      number;
-    BYTE      *pram;
+    CARTRIDGE     *cart;
+    BUS            cbus;
+    BUS            pbus;
+    int          number; // mapper number
+    BYTE chrram[0x2000]; // some cartridge don't have CHR-ROM
+                         // but use 8KB CHR-RAM instead of it
 } MMC;
 
 // 函数声明
