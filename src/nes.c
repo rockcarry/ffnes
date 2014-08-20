@@ -52,7 +52,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     int *mirroring = NULL;
     int  i         = 0;
 
-    log_init("DEBUGER");
+    log_init("DEBUGER"); // log init
 
     // clear it
     memset(nes, 0, sizeof(NES));
@@ -128,15 +128,10 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     //-- cbus mem map --//
 
     //++ pbus mem map ++//
-    // create pattern table #0
-    nes->pattab0.type = MEM_ROM;
-    nes->pattab0.size = NES_PATTAB_SIZE;
-    nes->pattab0.data = nes->cart.buf_crom + NES_PATTAB_SIZE * 0;
-
-    // create pattern table #1
-    nes->pattab1.type = MEM_ROM;
-    nes->pattab1.size = NES_PATTAB_SIZE;
-    nes->pattab1.data = nes->cart.buf_crom + NES_PATTAB_SIZE * 1;
+    // create CHR-ROM
+    nes->chrrom.type = MEM_ROM;
+    nes->chrrom.size = NES_CHRROM_SIZE;
+    nes->chrrom.data = nes->cart.buf_crom ;
 
     // create vram
     mirroring = cartridge_get_vram_mirroring(&(nes->cart));
@@ -156,28 +151,30 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     bus_setmir(nes->pbus, 0, 0x3000, 0x3EFF, 0x2FFF);
     bus_setmir(nes->pbus, 1, 0x3F00, 0x3FFF, 0x3F1F);
 
-    bus_setmem(nes->pbus, 2, 0x0000, 0x0FFF, &(nes->pattab0));
-    bus_setmem(nes->pbus, 3, 0x1000, 0x1FFF, &(nes->pattab1));
-    bus_setmem(nes->pbus, 4, 0x2000, 0x23FF, &(nes->vram[0]));
-    bus_setmem(nes->pbus, 5, 0x2400, 0x27FF, &(nes->vram[1]));
-    bus_setmem(nes->pbus, 6, 0x2800, 0x2BFF, &(nes->vram[2]));
-    bus_setmem(nes->pbus, 7, 0x2C00, 0x2FFF, &(nes->vram[3]));
+    bus_setmem(nes->pbus, 2, 0x0000, 0x1FFF, &(nes->chrrom ));
+    bus_setmem(nes->pbus, 3, 0x2000, 0x23FF, &(nes->vram[0]));
+    bus_setmem(nes->pbus, 4, 0x2400, 0x27FF, &(nes->vram[1]));
+    bus_setmem(nes->pbus, 5, 0x2800, 0x2BFF, &(nes->vram[2]));
+    bus_setmem(nes->pbus, 6, 0x2C00, 0x2FFF, &(nes->vram[3]));
 
     // palette
     // 0x3F00 - 0x3F0F: image palette
     // 0x3F10 - 0x3F1F: sprite palette
     // 0x3F00, 0x3F04, 0x3F08, 0x3F0C, 0x3F10, 0x3F14, 0x3F18, 0x3F1C mirring and store the background color
-    bus_setmem(nes->pbus, 8, 0x3F00, 0x3F1F, &(nes->palette));
-    bus_setmem(nes->pbus, 9, 0x0000, 0x0000, NULL           );
+    bus_setmem(nes->pbus, 7, 0x3F00, 0x3F1F, &(nes->palette));
+    bus_setmem(nes->pbus, 8, 0x0000, 0x0000, NULL           );
     //-- pbus mem map --//
 
+    // init joypad
     joypad_init  (&(nes->pad));
     joypad_setkey(&(nes->pad), 0, NES_PAD_CONNECT, 1);
     joypad_setkey(&(nes->pad), 1, NES_PAD_CONNECT, 1);
-    mmc_init   (&(nes->mmc), &(nes->cart), nes->cbus, nes->pbus);
-    ppu_init   (&(nes->ppu), nes->extra);
-    apu_init   (&(nes->apu), nes->extra);
-    cpu_init   (&(nes->cpu), nes->cbus );
+
+    // init mmc & cpu & ppu & apu
+    mmc_init(&(nes->mmc), &(nes->cart), nes->cbus, nes->pbus);
+    cpu_init(&(nes->cpu), nes->cbus );
+    ppu_init(&(nes->ppu), nes->extra);
+    apu_init(&(nes->apu), nes->extra);
 
     // create nes event & thread
     nes->hNesEvent  = CreateEvent (NULL, TRUE, FALSE, NULL);
@@ -203,7 +200,7 @@ void nes_free(NES *nes)
     joypad_free   (&(nes->pad )); // free joypad
     cartridge_free(&(nes->cart)); // free cartridge
 
-    log_done();
+    log_done(); // log done
 }
 
 void nes_reset(NES *nes)

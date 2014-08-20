@@ -30,9 +30,12 @@
 #define NES_SRAM_SIZE     0x2000
 #define NES_PRGROM_SIZE   0x4000
 
-#define NES_PATTAB_SIZE   0x1000
+#define NES_CHRROM_SIZE   0x2000
 #define NES_VRAM_SIZE     0x0400
 #define NES_PALETTE_SIZE  0x0020
+
+// nes max bus size
+#define NES_MAX_BUS_SIZE  10
 
 // 类型定义
 typedef struct {
@@ -57,8 +60,7 @@ typedef struct {
 
     // ppu bus
     BUSITEM pbus[NES_MAX_BUS_SIZE];
-    MEM pattab0; // pattern table #0
-    MEM pattab1; // pattern table #1
+    MEM chrrom ; // CHR-ROM 8KB, int cart
     MEM vram[4]; // vram0 1KB * 4 vram, in ppu/cart
     MEM palette; // color palette in ppu
 

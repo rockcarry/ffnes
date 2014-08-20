@@ -341,8 +341,8 @@ void ppu_reset(PPU *ppu)
     ppu->temp1        = 0;
     ppu->_2007_data   = 0;
     ppu->color_flags  = 0;
-    ppu->chrom_bkg    = ppu->regs[0x0000] & (1 << 4) ? nes->pattab1.data : nes->pattab0.data;
-    ppu->chrom_spr    = ppu->regs[0x0000] & (1 << 3) ? nes->pattab1.data : nes->pattab0.data;
+    ppu->chrom_bkg    = nes->chrrom.data + ((ppu->regs[0x0000] >> 4) & 1) * 0x1000;
+    ppu->chrom_spr    = nes->chrrom.data + ((ppu->regs[0x0000] >> 3) & 1) * 0x1000;
     ppu->pclk_frame   = 0;
     ppu->pclk_line    = 0;
     ppu_set_vdev_pal(ppu->vdevctxt, 0);
@@ -397,8 +397,8 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
     case 0x0000:
         ppu->temp0 &=~(0x03 << 10);
         ppu->temp0 |= (byte & 0x03) << 10;
-        ppu->chrom_bkg = ppu->regs[0x0000] & (1 << 4) ? nes->pattab1.data : nes->pattab0.data;
-        ppu->chrom_spr = ppu->regs[0x0000] & (1 << 3) ? nes->pattab1.data : nes->pattab0.data;
+        ppu->chrom_bkg = nes->chrrom.data + ((ppu->regs[0x0000] >> 4) & 1) * 0x1000;
+        ppu->chrom_spr = nes->chrrom.data + ((ppu->regs[0x0000] >> 3) & 1) * 0x1000;
         break;
 
     case 0x0001:

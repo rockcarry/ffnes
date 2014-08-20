@@ -2,6 +2,25 @@
 #include "nes.h"
 #include "log.h"
 
+// 内部函数实现
+static void mmc_switch_pbank0(MMC *mmc, int bank)
+{
+    bank = (bank == -1) ? (mmc->cart->prom_count - 1) : bank; // -1 is special, means the last bank
+    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
+}
+
+static void mmc_switch_pbank1(MMC *mmc, int bank)
+{
+    bank = (bank == -1) ? (mmc->cart->prom_count - 1) : bank; // -1 is special, means the last bank
+    mmc->cbus[7].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
+}
+
+static void mmc_switch_cbank (MMC *mmc, int bank)
+{
+    bank = (bank == -1) ? (mmc->cart->crom_count - 1) : bank; // -1 is special, means the last bank
+    mmc->pbus[2].membank->data = mmc->cart->buf_crom + 0x2000 * (bank % mmc->cart->crom_count);
+}
+
 // 内部类型定义
 typedef struct
 {
@@ -15,39 +34,35 @@ typedef struct
 //++ mapper002 实现 ++//
 static void mapper002_reset(MMC *mmc)
 {
-    // prom0 - first back & prom1 - last bank
-    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 16384 * 0;
-    mmc->cbus[7].membank->data = mmc->cart->buf_prom + 16384 * (mmc->cart->prom_count - 1);
+    mmc_switch_pbank0(mmc, 0); // prom0 - first bank
+    mmc_switch_pbank1(mmc,-1); // prom1 - last  bank
 }
 
 static void mapper002_wcb0(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prgrom0);
     MMC *mmc = &(nes->mmc);
-    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (byte % mmc->cart->prom_count);
+    mmc_switch_pbank0(mmc, byte);
 }
 
 static void mapper002_wcb1(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prgrom1);
     MMC *mmc = &(nes->mmc);
-    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (byte % mmc->cart->prom_count);
+    mmc_switch_pbank0(mmc, byte);
 }
 
 static void mapper002_init(MMC *mmc)
 {
     // allocate memory for 8KB ram
-    mmc->pram = (BYTE*)malloc(8192);
+    mmc->pram = (BYTE*)malloc(0x2000);
     if (!mmc->pram) {
         log_printf("mapper002_init, malloc failed !\n");
     }
     else
     {
-        memset(mmc->pram, 0, 8192);
         mmc->pbus[2].membank->type = MEM_RAM;
-        mmc->pbus[2].membank->data = mmc->pram + 4096 * 0;
-        mmc->pbus[3].membank->type = MEM_RAM;
-        mmc->pbus[3].membank->data = mmc->pram + 4096 * 1;
+        mmc->pbus[2].membank->data = mmc->pram;
     }
 
     // register bus memory callback
@@ -80,25 +95,21 @@ static MAPPER mapper002 =
 //++ mapper003 实现 ++//
 static void mapper003_reset(MMC *mmc)
 {
-    // prom0 - first back & prom1 - last bank
-    mmc->pbus[2].membank->data = mmc->cart->buf_crom + 4096 * 0;
-    mmc->pbus[3].membank->data = mmc->cart->buf_crom + 4096 * 1;
+    mmc_switch_cbank(mmc, 0);
 }
 
 static void mapper003_wcb0(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prgrom0);
     MMC *mmc = &(nes->mmc);
-    mmc->pbus[2].membank->data = mmc->cart->buf_crom + 8192 * (byte % mmc->cart->crom_count);
-    mmc->pbus[3].membank->data = mmc->pbus[2].membank->data + 4096;
+    mmc_switch_cbank(mmc, byte);
 }
 
 static void mapper003_wcb1(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prgrom1);
     MMC *mmc = &(nes->mmc);
-    mmc->pbus[2].membank->data = mmc->cart->buf_crom + 8192 * (byte % mmc->cart->crom_count);
-    mmc->pbus[3].membank->data = mmc->pbus[2].membank->data + 4096;
+    mmc_switch_cbank(mmc, byte);
 }
 
 static void mapper003_init(MMC *mmc)

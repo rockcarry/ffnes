@@ -5,7 +5,7 @@
 static MEM* find_mem_bank(BUS bus, int baddr, int *maddr)
 {
     int i;
-    for (i=0; i<NES_MAX_BUS_SIZE && bus[i].membank; i++) {
+    for (i=0; bus[i].membank; i++) {
         if (baddr >= bus[i].start && baddr <= bus[i].end)
         {
             if (bus[i].type == BUS_MAP_MIRROR) {

@@ -6,8 +6,6 @@
 #include "mem.h"
 
 // 常量定义
-#define NES_MAX_BUS_SIZE  16
-
 enum {
     BUS_MAP_MEMORY,
     BUS_MAP_MIRROR,

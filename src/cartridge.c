@@ -23,22 +23,22 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
 
     // allocate sram if exists
     if (cartridge_has_sram(pcart)) {
-        pcart->buf_sram = malloc(8 * 1024);
+        pcart->buf_sram = malloc(0x2000);
         if (!pcart->buf_sram) goto done;
     }
 
     // read prom & crom
     if (pcart->prom_count > 0)
     {
-        pcart->buf_prom = malloc(pcart->prom_count * 16 * 1024);
+        pcart->buf_prom = malloc(pcart->prom_count * 0x4000);
         if (!pcart->buf_prom) goto done;
-        fread(pcart->buf_prom, pcart->prom_count * 16 * 1024, 1, fp);
+        fread(pcart->buf_prom, pcart->prom_count * 0x4000, 1, fp);
     }
     if (pcart->crom_count > 0)
     {
-        pcart->buf_crom = malloc(pcart->crom_count * 8  * 1024);
+        pcart->buf_crom = malloc(pcart->crom_count * 0x2000);
         if (!pcart->buf_crom) goto done;
-        fread(pcart->buf_crom, pcart->crom_count * 8  * 1024, 1, fp);
+        fread(pcart->buf_crom, pcart->crom_count * 0x2000, 1, fp);
     }
     bret = TRUE;
 
@@ -66,8 +66,8 @@ BOOL cartridge_save(CARTRIDGE *pcart, char *file)
     }
 
     if (!pcart->buf_prom || !pcart->buf_crom) goto done;
-    fwrite(pcart->buf_prom, pcart->prom_count * 16 * 1024, 1, fp);
-    fwrite(pcart->buf_crom, pcart->crom_count * 8  * 1024, 1, fp);
+    fwrite(pcart->buf_prom, pcart->prom_count * 0x4000, 1, fp);
+    fwrite(pcart->buf_crom, pcart->crom_count * 0x2000, 1, fp);
     bret = TRUE;
 
 done:
