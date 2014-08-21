@@ -1,0 +1,9 @@
+EXPORTS
+
+nes_init
+nes_free
+nes_reset
+nes_run
+nes_pause
+
+joypad_setkey
