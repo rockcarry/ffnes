@@ -1,0 +1,9 @@
+ffnes is a nes emulator.
+
+Now there are a lot of nes emulators, but for me, I still want to write a completely new one. It's a interesting thing.
+
+I have already spent a lot of time on study how nes hardare working and how to write a emulator. Now I'm ready to write code and do debugging.
+
+I payed more attention to the quality of the code and portability. I think the code is clear and good for your reading, enjoy it.
+
+
