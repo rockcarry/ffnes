@@ -41,6 +41,7 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
         }
         if (dwTickSleep) Sleep(dwTickSleep);
         //-- framerate control --//
+
 //      log_printf("%d, %d\n", dwTickDiff, dwTickSleep);
     }
     return 0;
@@ -62,6 +63,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
 
     // load cartridge first
     if (!cartridge_load(&(nes->cart), file)) {
+        log_printf("failed to load nes rom file !");
         return FALSE;
     }
 
@@ -165,16 +167,19 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     bus_setmem(nes->pbus, 8, 0x0000, 0x0000, NULL           );
     //-- pbus mem map --//
 
+    // init mmc before cpu & ppu & apu, due to mmc will do bank switch
+    // this will change memory mapping on cbus & pbus
+    mmc_init(&(nes->mmc), &(nes->cart), nes->cbus, nes->pbus);
+
+    // now it's time to init cpu & ppu & apu
+    cpu_init(&(nes->cpu), nes->cbus );
+    ppu_init(&(nes->ppu), nes->extra);
+    apu_init(&(nes->apu), nes->extra);
+
     // init joypad
     joypad_init  (&(nes->pad));
     joypad_setkey(&(nes->pad), 0, NES_PAD_CONNECT, 1);
     joypad_setkey(&(nes->pad), 1, NES_PAD_CONNECT, 1);
-
-    // init mmc & cpu & ppu & apu
-    mmc_init(&(nes->mmc), &(nes->cart), nes->cbus, nes->pbus);
-    cpu_init(&(nes->cpu), nes->cbus );
-    ppu_init(&(nes->ppu), nes->extra);
-    apu_init(&(nes->apu), nes->extra);
 
     // create nes event & thread
     nes->hNesEvent  = CreateEvent (NULL, TRUE, FALSE, NULL);
@@ -191,14 +196,19 @@ void nes_free(NES *nes)
     CloseHandle(nes->hNesEvent );
     CloseHandle(nes->hNesThread);
 
-    cpu_free      (&(nes->cpu));
-    ppu_free      (&(nes->ppu));
-    apu_free      (&(nes->apu));
-    mmc_free      (&(nes->mmc));
-    joypad_setkey (&(nes->pad), 0, NES_PAD_CONNECT, 0);
-    joypad_setkey (&(nes->pad), 1, NES_PAD_CONNECT, 0);
-    joypad_free   (&(nes->pad )); // free joypad
-    cartridge_free(&(nes->cart)); // free cartridge
+    // free joypad
+    joypad_setkey(&(nes->pad), 0, NES_PAD_CONNECT, 0);
+    joypad_setkey(&(nes->pad), 1, NES_PAD_CONNECT, 0);
+    joypad_free  (&(nes->pad ));
+
+    // free cpu & ppu & apu & mmc
+    cpu_free(&(nes->cpu));
+    ppu_free(&(nes->ppu));
+    apu_free(&(nes->apu));
+    mmc_free(&(nes->mmc));
+
+    // free cartridge
+    cartridge_free(&(nes->cart));
 
     log_done(); // log done
 }
@@ -206,10 +216,17 @@ void nes_free(NES *nes)
 void nes_reset(NES *nes)
 {
     joypad_reset(&(nes->pad));
-    mmc_reset   (&(nes->mmc));
-    ppu_reset   (&(nes->ppu));
-    apu_reset   (&(nes->apu));
-    cpu_reset   (&(nes->cpu));
+
+    // mmc need reset first
+    mmc_reset(&(nes->mmc));
+
+    // reset cpu & ppu & apu
+    cpu_reset(&(nes->cpu));
+    ppu_reset(&(nes->ppu));
+    apu_reset(&(nes->apu));
+
+    // reset joypad
+    joypad_reset(&(nes->pad));
 }
 
 void nes_run  (NES *nes) {   SetEvent(nes->hNesEvent); }
