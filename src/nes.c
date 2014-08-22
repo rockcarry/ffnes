@@ -3,6 +3,20 @@
 #include "log.h"
 
 // 内部函数实现
+static void nes_do_reset(NES* nes)
+{
+    // mmc need reset first
+    mmc_reset(&(nes->mmc));
+
+    // reset cpu & ppu & apu
+    cpu_reset(&(nes->cpu));
+    ppu_reset(&(nes->ppu));
+    apu_reset(&(nes->apu));
+
+    // reset joypad
+    joypad_reset(&(nes->pad));
+}
+
 static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
 {
     NES *nes = (NES*)lpParam;
@@ -17,6 +31,11 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
     {
         WaitForSingleObject(nes->hNesEvent, -1);
         if (nes->bExitThread) break;
+
+        if (nes->request_reset == 1) {
+            nes->request_reset = 0;
+            nes_do_reset(nes);
+        }
 
         totalpclk = NES_HTOTAL * NES_VTOTAL;
         do {
@@ -213,22 +232,7 @@ void nes_free(NES *nes)
     log_done(); // log done
 }
 
-void nes_reset(NES *nes)
-{
-    joypad_reset(&(nes->pad));
-
-    // mmc need reset first
-    mmc_reset(&(nes->mmc));
-
-    // reset cpu & ppu & apu
-    cpu_reset(&(nes->cpu));
-    ppu_reset(&(nes->ppu));
-    apu_reset(&(nes->apu));
-
-    // reset joypad
-    joypad_reset(&(nes->pad));
-}
-
+void nes_reset(NES *nes) { nes->request_reset = 1;     }
 void nes_run  (NES *nes) {   SetEvent(nes->hNesEvent); }
 void nes_pause(NES *nes) { ResetEvent(nes->hNesEvent); }
 

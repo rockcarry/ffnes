@@ -67,6 +67,9 @@ typedef struct {
     BYTE buf_erom   [NES_EROM_SIZE]; // erom buffer on cbus
     BYTE buf_vram[4][NES_VRAM_SIZE]; // vram buffer on pbus
 
+    // for reset nes
+    int request_reset;
+
     // nes thread
     HANDLE hNesThread;
     HANDLE hNesEvent;

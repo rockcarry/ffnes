@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "ffemulator.h"
 #include "ffemulatorDlg.h"
+#include "ffndbdebugDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -104,7 +105,23 @@ void CffemulatorDlg::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 void CffemulatorDlg::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-    // TODO: Add your message handler code here and/or call default
+    // ctrl+d pressed
+    if (GetKeyState(VK_CONTROL) < 0 && nChar == 'D')
+    {
+        CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
+        if (!dlg) {
+            dlg = new CffndbdebugDlg(this, &m_nes);
+            dlg->Create(IDD_FFNDBDEBUG_DIALOG, GetDesktopWindow());
+            RECT rect = {0};
+            this->GetWindowRect(&rect);
+            this->MoveWindow(0, 0, rect.right - rect.left, rect.bottom - rect.top);
+            this->GetWindowRect(&rect);
+            dlg ->MoveWindow(rect.right, rect.top, 760, 570);
+        }
+        dlg->ShowWindow(SW_SHOW);
+        return;
+    }
+
     switch (nChar)
     {
     case 'E': joypad_setkey(&(m_nes.pad), 0, NES_KEY_UP     , 1); break;

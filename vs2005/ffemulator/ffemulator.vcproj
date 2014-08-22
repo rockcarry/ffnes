@@ -198,6 +198,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ffndbdebugDlg.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -229,6 +233,10 @@
 			</File>
 			<File
 				RelativePath=".\ffemulatorDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ffndbdebugDlg.h"
 				>
 			</File>
 			<File
