@@ -6,8 +6,8 @@
 #define IDR_MAINFRAME                   128
 #define IDD_FFNDBDEBUG_DIALOG           129
 #define IDC_BTN_NES_RESET               1000
-#define IDC_BTN_NES_RUN                 1001
-#define IDC_BTN_NES_PAUSE               1002
+#define IDC_BTN_NES_RUN_PAUSE           1001
+#define IDC_BTN_NES_DEBUG_CPU           1002
 
 // Next default values for new objects
 // 

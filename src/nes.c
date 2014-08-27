@@ -12,6 +12,7 @@ static void nes_do_reset(NES* nes)
     cpu_reset(&(nes->cpu));
     ppu_reset(&(nes->ppu));
     apu_reset(&(nes->apu));
+    ndb_reset(&(nes->ndb));
 
     // reset joypad
     joypad_reset(&(nes->pad));
@@ -194,6 +195,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     cpu_init(&(nes->cpu), nes->cbus );
     ppu_init(&(nes->ppu), nes->extra);
     apu_init(&(nes->apu), nes->extra);
+    ndb_init(&(nes->ndb),&(nes->cpu));
 
     // init joypad
     joypad_init  (&(nes->pad));
@@ -225,6 +227,7 @@ void nes_free(NES *nes)
     ppu_free(&(nes->ppu));
     apu_free(&(nes->apu));
     mmc_free(&(nes->mmc));
+    ndb_free(&(nes->ndb));
 
     // free cartridge
     cartridge_free(&(nes->cart));
@@ -232,7 +235,7 @@ void nes_free(NES *nes)
     log_done(); // log done
 }
 
-void nes_reset(NES *nes) { nes->request_reset = 1;     }
-void nes_run  (NES *nes) {   SetEvent(nes->hNesEvent); }
-void nes_pause(NES *nes) { ResetEvent(nes->hNesEvent); }
+void nes_reset(NES *nes) { nes->request_reset = 1; }
+void nes_run  (NES *nes) { nes->isrunning = 1;   SetEvent(nes->hNesEvent); }
+void nes_pause(NES *nes) { nes->isrunning = 0; ResetEvent(nes->hNesEvent); }
 

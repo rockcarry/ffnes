@@ -86,8 +86,8 @@ FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     GROUPBOX        "general control",IDC_STATIC,8,7,489,40
     PUSHBUTTON      "reset",IDC_BTN_NES_RESET,18,20,50,18
-    PUSHBUTTON      "run",IDC_BTN_NES_RUN,74,20,50,18
-    PUSHBUTTON      "pause",IDC_BTN_NES_PAUSE,130,20,50,18
+    PUSHBUTTON      "run/pause",IDC_BTN_NES_RUN_PAUSE,74,20,50,18
+    PUSHBUTTON      "debug cpu",IDC_BTN_NES_DEBUG_CPU,130,20,50,18
 END
 
 

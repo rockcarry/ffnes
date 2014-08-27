@@ -1,6 +1,6 @@
 // 包含头文件
 #include <stdio.h>
-#include "cpu.h"
+#include "nes.h"
 #include "log.h"
 
 // enable cpu debug log or not
@@ -535,7 +535,7 @@ void cpu_init(CPU *cpu, BUS cbus)
 
 void cpu_free(CPU *cpu)
 {
-    // todo..
+    // do nothing
 }
 
 void cpu_reset(CPU *cpu)
@@ -584,6 +584,13 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
         cpu_debug_log(cpu);
 //      dump_mem_page(cpu, 0);
 #endif
+
+        //++ for ndb cpu debug ++//
+        {
+            NES *nes = container_of(cpu, NES, cpu);
+            ndb_cpu_debug(&(nes->ndb));
+        }
+        //-- for ndb cpu debug --//
 
         //++ dma cclk counting ++//
         if (cpu->cclk_dma > 0)

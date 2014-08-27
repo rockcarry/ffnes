@@ -215,6 +215,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\ndb.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\nes.c"
 				>
 			</File>
@@ -266,6 +270,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mmc.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\ndb.h"
 				>
 			</File>
 			<File

@@ -6,4 +6,9 @@ nes_reset
 nes_run
 nes_pause
 
+joypad_reset
 joypad_setkey
+
+ndb_reset
+ndb_cpu_runto
+

@@ -9,6 +9,7 @@
 #include "mmc.h"
 #include "bus.h"
 #include "mem.h"
+#include "ndb.h"
 #include "cartridge.h"
 #include "joypad.h"
 
@@ -43,6 +44,7 @@ typedef struct {
     PPU ppu;  // 2c02
     APU apu;  // 2a03
     MMC mmc;  // mmc
+    NDB ndb;  // ndb
     CARTRIDGE cart;
     JOYPAD    pad ;
     DWORD     extra;
@@ -69,6 +71,7 @@ typedef struct {
 
     // for reset nes
     int request_reset;
+    int isrunning;
 
     // nes thread
     HANDLE hNesThread;

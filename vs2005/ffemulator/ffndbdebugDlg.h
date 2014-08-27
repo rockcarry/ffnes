@@ -20,6 +20,7 @@ protected:
     NES *m_pNES;
 
 protected:
+    virtual BOOL OnInitDialog();
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
 protected:
@@ -28,6 +29,6 @@ protected:
     afx_msg void OnOK();
     afx_msg void OnCancel();
     afx_msg void OnBnClickedBtnNesReset();
-    afx_msg void OnBnClickedBtnNesRun();
-    afx_msg void OnBnClickedBtnNesPause();
+    afx_msg void OnBnClickedBtnNesRunPause();
+    afx_msg void OnBnClickedBtnNesDebugCpu();
 };

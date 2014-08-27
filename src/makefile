@@ -15,6 +15,7 @@ OBJS = \
     ppu.o \
     apu.o \
     mmc.o \
+    ndb.o \
     cartridge.o \
     joypad.o \
     adev.o \
