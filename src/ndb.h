@@ -27,6 +27,7 @@ void ndb_free (NDB *ndb);
 void ndb_reset(NDB *ndb);
 void ndb_cpu_debug(NDB *ndb);
 void ndb_cpu_runto(NDB *ndb, int cond, void *param);
+void ndb_cpu_info_str(NDB *ndb, char *str);
 
 #endif
 

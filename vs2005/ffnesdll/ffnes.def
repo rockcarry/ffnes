@@ -11,4 +11,4 @@ joypad_setkey
 
 ndb_reset
 ndb_cpu_runto
-
+ndb_cpu_info_str

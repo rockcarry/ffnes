@@ -210,6 +210,9 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
 
 void nes_free(NES *nes)
 {
+    // set ndb cpu always running
+    ndb_cpu_runto(&(nes->ndb), 0, NULL);
+
     // destroy nes event & thread
     nes->bExitThread = TRUE;
     SetEvent(nes->hNesEvent);
