@@ -55,9 +55,6 @@ BOOL CffndbdebugDlg::OnInitDialog()
     }
     else pwnd->SetWindowText("paused");
 
-    pwnd = GetDlgItem(IDC_LST_OPCODE);
-    pwnd->MoveWindow(9, 187, 736, 342, FALSE);
-
     return TRUE;
 }
 

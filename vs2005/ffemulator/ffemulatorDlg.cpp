@@ -115,8 +115,7 @@ void CffemulatorDlg::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
             RECT rect = {0};
             this->GetWindowRect(&rect);
             this->MoveWindow(0, 0, rect.right - rect.left, rect.bottom - rect.top);
-            this->GetWindowRect(&rect);
-            dlg ->MoveWindow(rect.right, rect.top, 760, 570);
+            dlg ->CenterWindow();
         }
         dlg->ShowWindow(SW_SHOW);
         return;
