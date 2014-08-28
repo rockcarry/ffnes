@@ -30,6 +30,7 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_BN_CLICKED(IDC_BTN_NES_RESET    , &CffndbdebugDlg::OnBnClickedBtnNesReset)
     ON_BN_CLICKED(IDC_BTN_NES_RUN_PAUSE, &CffndbdebugDlg::OnBnClickedBtnNesRunPause)
     ON_BN_CLICKED(IDC_BTN_NES_DEBUG_CPU, &CffndbdebugDlg::OnBnClickedBtnNesDebugCpu)
+    ON_BN_CLICKED(IDC_BTN_NES_DEBUG_PPU, &CffndbdebugDlg::OnBnClickedBtnNesDebugPpu)
 END_MESSAGE_MAP()
 
 // CffndbdebugDlg message handlers
@@ -53,6 +54,10 @@ BOOL CffndbdebugDlg::OnInitDialog()
         pwnd->SetWindowText("running");
     }
     else pwnd->SetWindowText("paused");
+
+    pwnd = GetDlgItem(IDC_LST_OPCODE);
+    pwnd->MoveWindow(9, 187, 736, 342, FALSE);
+
     return TRUE;
 }
 
@@ -84,5 +89,18 @@ void CffndbdebugDlg::OnBnClickedBtnNesRunPause()
 
 void CffndbdebugDlg::OnBnClickedBtnNesDebugCpu()
 {
-    // TODO: Add your control notification handler code here
+    for (int i=IDC_GRP_CPU_CONTROL; i<=IDC_TXT_CPUINFO; i++)
+    {
+        CWnd *pwnd = GetDlgItem(i);
+        pwnd->ShowWindow(SW_SHOW);
+    }
+}
+
+void CffndbdebugDlg::OnBnClickedBtnNesDebugPpu()
+{
+    for (int i=IDC_GRP_CPU_CONTROL; i<=IDC_TXT_CPUINFO; i++)
+    {
+        CWnd *pwnd = GetDlgItem(i);
+        pwnd->ShowWindow(SW_HIDE);
+    }
 }

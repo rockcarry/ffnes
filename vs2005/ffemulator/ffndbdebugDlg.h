@@ -31,4 +31,5 @@ protected:
     afx_msg void OnBnClickedBtnNesReset();
     afx_msg void OnBnClickedBtnNesRunPause();
     afx_msg void OnBnClickedBtnNesDebugCpu();
+    afx_msg void OnBnClickedBtnNesDebugPpu();
 };
