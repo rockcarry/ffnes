@@ -119,7 +119,7 @@ flags.
 //++ addressing mode ++//
 #define MR_IM() do { DT = READB(PC++);                                               } while (0)
 #define MR_ZP() do { EA = READB(PC++); DT = ZPRDB(EA);                               } while (0)
-#define MR_ZX() do { EA = READB(PC++); EA = (BYTE)(DT + XI); DT = ZPRDB(EA);         } while (0)
+#define MR_ZX() do { DT = READB(PC++); EA = (BYTE)(DT + XI); DT = ZPRDB(EA);         } while (0)
 #define MR_ZY() do { EA = READB(PC++); EA = (BYTE)(DT + YI); DT = ZPRDB(EA);         } while (0)
 #define MR_AB() do { EA = READW(PC); PC += 2; DT = READB(EA);                        } while (0)
 #define MR_AX() do { ET = READW(PC); PC += 2; EA = ET + XI; DT = READB(EA);          } while (0)
