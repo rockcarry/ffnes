@@ -342,6 +342,7 @@ void ppu_reset(PPU *ppu)
     ppu->pclk_frame   = 0;
     ppu->pclk_line    = 0;
     ppu_set_vdev_pal(ppu->vdevctxt, 0);
+    memset(ppu->regs, 0, 8); // reset need clear regs
 }
 
 BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
@@ -433,16 +434,23 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         break;
 
     case 0x0007:
-        if (vaddr >= 0x3f00 && (vaddr & 0x3) == 0)
-        {
-            bus_writeb(nes->pbus, 0x3f00, byte);
-            bus_writeb(nes->pbus, 0x3f04, byte);
-            bus_writeb(nes->pbus, 0x3f08, byte);
-            bus_writeb(nes->pbus, 0x3f0c, byte);
-            bus_writeb(nes->pbus, 0x3f10, byte);
-            bus_writeb(nes->pbus, 0x3f14, byte);
-            bus_writeb(nes->pbus, 0x3f18, byte);
-            bus_writeb(nes->pbus, 0x3f1c, byte);
+        if (vaddr >= 0x3f00)
+        {   // for ppu palette mirroring
+            if (vaddr == 0x3f00)
+            {
+                ppu->palette[0x00] = byte;
+                ppu->palette[0x04] = byte;
+                ppu->palette[0x08] = byte;
+                ppu->palette[0x0c] = byte;
+                ppu->palette[0x10] = byte;
+                ppu->palette[0x14] = byte;
+                ppu->palette[0x18] = byte;
+                ppu->palette[0x1c] = byte;
+            }
+            else if (vaddr & 0x3)
+            {
+                ppu->palette[vaddr & 0x1f] = byte;
+            }
         }
         else bus_writeb(nes->pbus, vaddr, byte);
         ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
