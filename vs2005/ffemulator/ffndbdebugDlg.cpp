@@ -85,7 +85,7 @@ BOOL CffndbdebugDlg::OnInitDialog()
                          CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH , "Fixedsys");
 
     // create pen
-    m_penDraw.CreatePen(PS_SOLID, 2, RGB(0, 0, 255));
+    m_penDraw.CreatePen(PS_SOLID, 2, RGB(128, 128, 128));
 
     // setup timer
     SetTimer(NDB_TIMER, 50, NULL);
@@ -129,6 +129,21 @@ void CffndbdebugDlg::OnPaint()
     }
 }
 
+void CffndbdebugDlg::DrawGrid(int m, int n, int *x, int *y)
+{
+    for (int i=0; i<n; i++)
+    {
+        m_cdcDraw.MoveTo(x[0  ], y[i]);
+        m_cdcDraw.LineTo(x[m-1], y[i]);
+    }
+
+    for (int i=0; i<m; i++)
+    {
+        m_cdcDraw.MoveTo(x[i], y[0    ]);
+        m_cdcDraw.LineTo(x[i], y[n - 1]);
+    }
+}
+
 void CffndbdebugDlg::DrawCpuInfo()
 {
     char cpuinfo[128] = {0};
@@ -149,23 +164,9 @@ void CffndbdebugDlg::DrawCpuInfo()
     m_cdcDraw.DrawText(" pc   sp  ax  xi  yi     ps", -1, &rect, 0); rect.top += 20;
     m_cdcDraw.DrawText(cpuinfo                      , -1, &rect, 0);
 
-    m_cdcDraw.MoveTo(1  , 2 );
-    m_cdcDraw.LineTo(258, 2 );
-    m_cdcDraw.LineTo(258, 44);
-    m_cdcDraw.LineTo(2  , 44);
-    m_cdcDraw.LineTo(2  , 2 );
-    m_cdcDraw.MoveTo(2  , 24);
-    m_cdcDraw.LineTo(258, 24);
-    m_cdcDraw.MoveTo(43 + 33 * 0, 2 );
-    m_cdcDraw.LineTo(43 + 33 * 0, 44);
-    m_cdcDraw.MoveTo(43 + 33 * 1, 2 );
-    m_cdcDraw.LineTo(43 + 33 * 1, 44);
-    m_cdcDraw.MoveTo(43 + 33 * 2, 2 );
-    m_cdcDraw.LineTo(43 + 33 * 2, 44);
-    m_cdcDraw.MoveTo(43 + 33 * 3, 2 );
-    m_cdcDraw.LineTo(43 + 33 * 3, 44);
-    m_cdcDraw.MoveTo(43 + 33 * 4, 2 );
-    m_cdcDraw.LineTo(43 + 33 * 4, 44);
+    int gridx[] = { 1, 43+33*0, 43+33*1, 43+33*2, 43+33*3, 43+33*4, 258 };
+    int gridy[] = { 2, 24, 44 };
+    DrawGrid(7, 3, gridx, gridy);
 
     // restore dc
     m_cdcDraw.RestoreDC(savedc);

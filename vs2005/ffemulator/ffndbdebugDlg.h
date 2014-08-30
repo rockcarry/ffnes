@@ -33,6 +33,7 @@ protected:
     CPen    m_penDraw;
 
 protected:
+    void DrawGrid(int m, int n, int *x, int *y);
     void DrawCpuInfo();
 
 protected:
