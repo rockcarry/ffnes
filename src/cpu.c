@@ -889,6 +889,7 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
         case 0x6b: MR_IM(); ARR(); break; // ARR
         case 0x8b: MR_IM(); ANE(); break; // ANE
         case 0xcb: MR_IM(); SBX(); break; // SBX
+        case 0xeb: MR_IM(); SBC(); break; // SBX
 
         case 0x1a:
         case 0x3a:
