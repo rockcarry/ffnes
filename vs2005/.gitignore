@@ -1,0 +1,9 @@
+!.gitignore
+debug/
+release/
+*.aps
+*.ncb
+*.suo
+*.vcproj.*.user
+
+
