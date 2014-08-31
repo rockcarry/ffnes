@@ -29,9 +29,10 @@ CffndbdebugDlg::~CffndbdebugDlg()
 void CffndbdebugDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialog::DoDataExchange(pDX);
-    DDX_Radio(pDX, IDC_RDO_CPU_KEEP_RUNNING, m_nCpuStopCond    );
-    DDX_Text (pDX, IDC_EDT_NSTEPS          , m_strCpuStopNSteps);
-    DDX_Text (pDX, IDC_EDT_PC              , m_strCpuStopToPC  );
+    DDX_Radio  (pDX, IDC_RDO_CPU_KEEP_RUNNING, m_nCpuStopCond      );
+    DDX_Text   (pDX, IDC_EDT_NSTEPS          , m_strCpuStopNSteps  );
+    DDX_Text   (pDX, IDC_EDT_PC              , m_strCpuStopToPC    );
+    DDX_Control(pDX, IDC_LST_OPCODE          , m_ctrInstructionList);
 }
 
 BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
@@ -86,6 +87,18 @@ BOOL CffndbdebugDlg::OnInitDialog()
 
     // create pen
     m_penDraw.CreatePen(PS_SOLID, 2, RGB(128, 128, 128));
+
+    // create list control
+    m_ctrInstructionList.Create(WS_CHILD|WS_VISIBLE|WS_BORDER|LVS_REPORT, CRect(9, 87, 356, 527), this, IDC_LST_OPCODE);
+
+    DWORD dwstyle = m_ctrInstructionList.GetExtendedStyle();
+    dwstyle |= LVS_EX_FULLROWSELECT;
+    dwstyle |= LVS_EX_GRIDLINES;
+    m_ctrInstructionList.SetExtendedStyle(dwstyle);
+    m_ctrInstructionList.InsertColumn(0, "pc"    , LVCFMT_CENTER, 50 );
+    m_ctrInstructionList.InsertColumn(1, "opcode", LVCFMT_CENTER, 80 );
+    m_ctrInstructionList.InsertColumn(2, "asm"   , LVCFMT_CENTER, 100);
+    m_ctrInstructionList.InsertColumn(3, "comments"      , LVCFMT_CENTER, 115);
 
     // setup timer
     SetTimer(NDB_TIMER, 50, NULL);

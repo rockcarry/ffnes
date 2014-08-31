@@ -1,4 +1,8 @@
 #pragma once
+
+// 包含头文件
+#include "afxcmn.h"
+
 extern "C" {
 #include "../../src/nes.h"
 }
@@ -55,7 +59,8 @@ protected:
     afx_msg void OnBnClickedBtnCpuStep();
 
 private:
-    int     m_nCpuStopCond;
-    CString m_strCpuStopNSteps;
-    CString m_strCpuStopToPC;
+    int       m_nCpuStopCond;
+    CString   m_strCpuStopNSteps;
+    CString   m_strCpuStopToPC;
+    CListCtrl m_ctrInstructionList;
 };
