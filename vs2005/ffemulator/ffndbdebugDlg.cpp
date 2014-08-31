@@ -6,7 +6,7 @@
 #include "ffndbdebugDlg.h"
 
 // 内部常量定义
-static RECT s_rtCpuInfo = { 371, 87, 747, 425 };
+static RECT s_rtCpuInfo = { 362, 87, 750, 425 };
 
 // CffndbdebugDlg dialog
 
@@ -146,10 +146,7 @@ void CffndbdebugDlg::DrawGrid(int m, int n, int *x, int *y)
 
 void CffndbdebugDlg::DrawCpuInfo()
 {
-    char cpuinfo[128] = {0};
     RECT rect  = {0, 0, s_rtCpuInfo.right - s_rtCpuInfo.left, s_rtCpuInfo.bottom - s_rtCpuInfo.top };
-
-    ndb_cpu_info_str(&(m_pNES->ndb), cpuinfo);
 
     // save dc
     int savedc = m_cdcDraw.SaveDC();
@@ -158,15 +155,51 @@ void CffndbdebugDlg::DrawCpuInfo()
     m_cdcDraw.SelectObject(&m_fntDraw);
     m_cdcDraw.SelectObject(&m_penDraw);
     m_cdcDraw.FillSolidRect(&rect, RGB(255, 255, 255));
-    m_cdcDraw.DrawEdge     (&rect, EDGE_ETCHED, BF_RECT);
 
-    rect.left += 6; rect.top += 6;
-    m_cdcDraw.DrawText(" pc   sp  ax  xi  yi     ps", -1, &rect, 0); rect.top += 20;
-    m_cdcDraw.DrawText(cpuinfo                      , -1, &rect, 0);
+    // draw cpu pc & regs info
+    {
+        char cpuinfo[128] = {0};
+        ndb_cpu_info_str(&(m_pNES->ndb), cpuinfo);
+        rect.left += 6; rect.top += 6;
+        m_cdcDraw.DrawText(" pc   sp  ax  xi  yi     ps", -1, &rect, 0); rect.top += 22;
+        m_cdcDraw.DrawText(cpuinfo                      , -1, &rect, 0);
 
-    int gridx[] = { 1, 43+33*0, 43+33*1, 43+33*2, 43+33*3, 43+33*4, 258 };
-    int gridy[] = { 2, 24, 44 };
-    DrawGrid(7, 3, gridx, gridy);
+        int gridx[] = { 3, 45+32*0, 45+32*1, 45+32*2, 45+32*3, 45+32*4, 256 };
+        int gridy[] = { 3, 3+22*1, 3+22*2 };
+        DrawGrid(7, 3, gridx, gridy);
+    }
+
+    // draw stack info
+    {
+        char stackinfo[128] = {0};
+        char stackbyte[  8] = {0};
+        int  top    = 0x100 + m_pNES->cpu.sp;
+        int  bottom = (top & 0xfff0) + 0xf;
+
+        sprintf(stackinfo, "%02X                   stack                   %02X",
+            (bottom & 0xff), (bottom & 0xf0));
+        rect.left = 6; rect.top += 28;
+        m_cdcDraw.DrawText(stackinfo, -1, &rect, 0);
+
+        stackinfo[0] = '\0';
+        for (int i=bottom; i>bottom-16; i--)
+        {
+            if (i > top) sprintf(stackbyte, "%02X ", m_pNES->cpu.cram[i]);
+            else         sprintf(stackbyte, "-- ");
+            strcat (stackinfo, stackbyte);
+        }
+        rect.left = 6; rect.top += 22;
+        m_cdcDraw.DrawText(stackinfo, -1, &rect, 0);
+
+        int gridx[] = { 3+24*0, 3+24*1, 3+24*2 , 3+24*3 , 3+24*4 , 3+24*5 , 3+24*6 , 3+24*7 ,
+                        3+24*8, 3+24*9, 3+24*10, 3+24*11, 3+24*12, 3+24*13, 3+24*14, 3+24*15, 3+24*16-2};
+        int gridy[] = { rect.top - 4, rect.top - 4 + 22 };
+        DrawGrid(17, 2, gridx, gridy);
+    }
+
+    // draw edge
+    rect.left = rect.top = 0;
+    m_cdcDraw.DrawEdge(&rect, EDGE_ETCHED, BF_RECT);
 
     // restore dc
     m_cdcDraw.RestoreDC(savedc);
