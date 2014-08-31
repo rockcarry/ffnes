@@ -35,10 +35,13 @@ protected:
     CDC     m_cdcDraw;
     CFont   m_fntDraw;
     CPen    m_penDraw;
+    WORD   *m_pPCInstMapTab;
 
 protected:
     void DrawGrid(int m, int n, int *x, int *y);
-    void DrawCpuInfo();
+    void DrawCpuDebugging();
+    void DoNesRomDisAsm();
+    void UpdateCurInstHighLight();
 
 protected:
     virtual BOOL OnInitDialog();
