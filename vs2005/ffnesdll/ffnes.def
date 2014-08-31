@@ -11,4 +11,10 @@ joypad_setkey
 
 ndb_reset
 ndb_cpu_runto
-ndb_cpu_info_str
+ndb_cpu_dasm
+ndb_cpu_dump
+
+bus_readb
+bus_readw
+bus_writeb
+bus_writew
