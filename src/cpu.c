@@ -3,9 +3,6 @@
 #include "nes.h"
 #include "log.h"
 
-// enable cpu debug log or not
-#define ENABLE_CPU_DEBUG_LOG  FALSE
-
 /*
 6510 Instructions by Addressing Modes
 
@@ -418,114 +415,6 @@ static BYTE CPU_CYCLE_TAB[256] =
     2, 5, 0, 5, 4, 4, 6, 5, 2, 4, 2, 5, 2, 4, 7, 5,
 };
 
-//++ for cpu debugging ++//
-#if ENABLE_CPU_DEBUG_LOG
-static void make_ps_flag_str(char *str, BYTE ps)
-{
-    static char psflag_chars[8] = {'C', 'Z', 'I', 'D', 'B', '-', 'V', 'N'};
-           int  i;
-    for (i=7; i>=0; i--)
-    {
-        if (ps & (1 << i)) *str++ = psflag_chars[i];
-        else               *str++ = '-';
-    }
-    *str++ = '\0';
-}
-
-static void make_instruction(char *str, WORD pc, BYTE bytes[3])
-{
-    static char *s_opcode_strs[256] =
-    {
-        "BRK", "ORA", " t ", "SLO", "NOP", "ORA", "ASL", "SLO", "PHP", "ORA", "ASL", "ANC", "NOP"  , "ORA", "ASL", "SLO",
-        "BPL", "ORA", " t ", "SLO", "NOP", "ORA", "ASL", "SLO", "CLC", "ORA", "NOP", "SLO", "NOP"  , "ORA", "ASL", "SLO",
-        "JSR", "AND", " t ", "RLA", "BIT", "AND", "ROL", "RLA", "PLP", "AND", "ROL", "ANC", "BIT"  , "AND", "ROL", "RLA",
-        "BMI", "AND", " t ", "RLA", "NOP", "AND", "ROL", "RLA", "SEC", "AND", "NOP", "RLA", "NOP"  , "AND", "ROL", "RLA",
-        "RTI", "EOR", " t ", "SRE", "NOP", "EOR", "LSR", "SRE", "PHA", "EOR", "LSR", "ASR", "JMP"  , "EOR", "LSR", "SRE",
-        "BVC", "EOR", " t ", "SRE", "NOP", "EOR", "LSR", "SRE", "CLI", "EOR", "NOP", "SRE", "NOP"  , "EOR", "LSR", "SRE",
-        "RTS", "ADC", " t ", "RRA", "NOP", "ADC", "ROR", "RRA", "PLA", "ADC", "ROR", "ARR", "JMP()", "ADC", "ROR", "RRA",
-        "BVS", "ADC", " t ", "RRA", "NOP", "ADC", "ROR", "RRA", "SEI", "ADC", "NOP", "RRA", "NOP"  , "ADC", "ROR", "RRA",
-        "NOP", "STA", "NOP", "SAX", "STY", "STA", "STX", "SAX", "DEY", "NOP", "TXA", "ANE", "STY"  , "STA", "STX", "SAX",
-        "BCC", "STA", " t ", "SHA", "STY", "STA", "STX", "SAX", "TYA", "STA", "TXS", "SHS", "SHY"  , "STA", "SHX", "SHA",
-        "LDY", "LDA", "LDX", "LAX", "LDY", "LDA", "LDX", "LAX", "TAY", "LDA", "TAX", "LXA", "LDY"  , "LDA", "LDX", "LAX",
-        "BCS", "LDA", " t ", "LAX", "LDY", "LDA", "LDX", "LAX", "CLV", "LDA", "TSX", "LAS", "LDY"  , "LDA", "LDX", "LAX",
-        "CPY", "CMP", "NOP", "DCP", "CPY", "CMP", "DEC", "DCP", "INY", "CMP", "DEX", "SBX", "CPY"  , "CMP", "DEC", "DCP",
-        "BNE", "CMP", " t ", "DCP", "NOP", "CMP", "DEC", "DCP", "CLD", "CMP", "NOP", "DCP", "NOP"  , "CMP", "DEC", "DCP",
-        "CPX", "SBC", "NOP", "ISB", "CPX", "SBC", "INC", "ISB", "INX", "SBC", "NOP", "SBC", "CPX"  , "SBC", "INC", "ISB",
-        "BEQ", "SBC", " t ", "ISB", "NOP", "SBC", "INC", "ISB", "SED", "SBC", "NOP", "ISB", "NOP"  , "SBC", "INC", "ISB",
-    };
-    static int map_tab[32] = { 1, 7, 1, 7, 2, 2, 2, 2, 0, 1, 0, 1, 4, 4, 4, 4, 10, 8, 9, 8, 3, 3, 3, 3, 0, 6, 0, 6, 5, 5, 5, 5 };
-           int amode       = map_tab[bytes[0] & 0x1f]; // addressing mode
-
-    // for special opcode
-    switch (bytes[0])
-    {
-    case 0x00:
-    case 0x40:
-    case 0x60:
-    case 0x89: amode = 0; break;
-    case 0x20: amode = 4; break;
-    }
-
-    // for different addressing mode
-    switch (amode)
-    {
-    case  0: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                     ); break; // Implied
-    case  1: sprintf(str, "%s #%02X"       , s_opcode_strs[bytes[0]], bytes[1]           ); break; // immediate
-    case  2: sprintf(str, "%s $%02X"       , s_opcode_strs[bytes[0]], bytes[1]           ); break; // zeropage
-    case  3: sprintf(str, "%s $%02X, X"    , s_opcode_strs[bytes[0]], bytes[1]           ); break; // zeropage,x
-    case  4: sprintf(str, "%s $%02X%02X"   , s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // absolute
-    case  5: sprintf(str, "%s $%02X%02X, X", s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // absolute,x
-    case  6: sprintf(str, "%s $%02X%02X, Y", s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // absolute,y
-    case  7: sprintf(str, "%s ($%02X, X)"  , s_opcode_strs[bytes[0]], bytes[1]           ); break; // (indir,x)
-    case  8: sprintf(str, "%s ($%02X), Y"  , s_opcode_strs[bytes[0]], bytes[1]           ); break; // (indir),y
-    case  9: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                     ); break; // ?
-    case 10: sprintf(str, "%s $%04X"       , s_opcode_strs[bytes[0]], pc+2+(char)bytes[1]); break; // relative
-    }
-}
-
-static void cpu_debug_log(CPU *cpu)
-{
-    char ps_flag_str[9 ];
-    char instruction[64];
-    BYTE bytes[3];
-
-    // get bytes for cbus
-    bytes[0] = bus_readb(cpu->cbus, cpu->pc + 0);
-    bytes[1] = bus_readb(cpu->cbus, cpu->pc + 1);
-    bytes[2] = bus_readb(cpu->cbus, cpu->pc + 2);
-
-    // make ps flag string
-    make_ps_flag_str(ps_flag_str, cpu->ps);
-
-    // make instruction string
-    make_instruction(instruction, cpu->pc, bytes);
-
-    // print log
-    log_printf("+----+----+----+----+----------+\n");
-    log_printf("| SP | AX | XI | YI |    PS    |\n");
-    log_printf("+----+----+----+----+----------+\n");
-    log_printf("| %02X | %02X | %02X | %02X | %s |\n",
-        cpu->sp, cpu->ax, cpu->xi, cpu->yi, ps_flag_str);
-    log_printf("+----+----+----+----+----------+\n");
-    log_printf("%04X | %02X %02X %02X: %s\n\n",
-        cpu->pc, bytes[0], bytes[1], bytes[2], instruction);
-}
-
-static void dump_mem_page(CPU *cpu, int page)
-{
-    BYTE byte;
-    int  i;
-    for (i=0; i<256; i++)
-    {
-        byte = bus_readb(cpu->cbus, page * 256 + i);
-        log_printf("%02X ", byte);
-        if (i % 16 == 15) log_printf("\n");
-    }
-    log_printf("\n");
-}
-#endif
-//++ for cpu debugging ++//
-
 // º¯ÊýÊµÏÖ
 void cpu_init(CPU *cpu, BUS cbus)
 {
@@ -579,12 +468,6 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
 
     while (cclk > 0)
     {
-#if ENABLE_CPU_DEBUG_LOG
-        // for cpu debugging
-        cpu_debug_log(cpu);
-//      dump_mem_page(cpu, 0);
-#endif
-
         //++ for ndb cpu debug ++//
         {
             NES *nes = container_of(cpu, NES, cpu);
