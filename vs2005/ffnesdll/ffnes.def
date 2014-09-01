@@ -12,7 +12,7 @@ joypad_setkey
 ndb_reset
 ndb_cpu_runto
 ndb_cpu_dasm
-ndb_cpu_dump
+ndb_dump_info
 
 bus_readb
 bus_readw

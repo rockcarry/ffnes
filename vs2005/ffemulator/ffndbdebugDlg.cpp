@@ -287,11 +287,13 @@ void CffndbdebugDlg::DrawCpuDebugging()
 
     // draw cpu pc & regs info
     {
-        char cpuinfo[128] = {0};
-        ndb_cpu_dump(&(m_pNES->ndb), cpuinfo);
+        char cpuregs[128] = {0};
         rect.left += 6; rect.top += 6;
-        m_cdcDraw.DrawText(" pc   ax  xi  yi  sp     ps", -1, &rect, 0); rect.top += 22;
-        m_cdcDraw.DrawText(cpuinfo                      , -1, &rect, 0);
+        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_REGS0, cpuregs);
+        m_cdcDraw.DrawText(cpuregs, -1, &rect, 0);
+        rect.left += 0; rect.top += 22;
+        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_REGS1, cpuregs);
+        m_cdcDraw.DrawText(cpuregs, -1, &rect, 0);
 
         int gridx[] = { 3, 45+32*0, 45+32*1, 45+32*2, 45+32*3, 45+32*4, 256 };
         int gridy[] = { 3, 3+22*1, 3+22*2 };
@@ -301,23 +303,11 @@ void CffndbdebugDlg::DrawCpuDebugging()
     // draw stack info
     {
         char stackinfo[128] = {0};
-        char stackbyte[  8] = {0};
-        int  top    = 0x100 + m_pNES->cpu.sp;
-        int  bottom = (top & 0xfff0) + 0xf;
-
-        sprintf(stackinfo, "%02X                   stack                   %02X",
-            (bottom & 0xff), (bottom & 0xf0));
         rect.left = 6; rect.top += 28;
+        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_STACK0, stackinfo);
         m_cdcDraw.DrawText(stackinfo, -1, &rect, 0);
-
-        stackinfo[0] = '\0';
-        for (int i=bottom; i>bottom-16; i--)
-        {
-            if (i > top) sprintf(stackbyte, "%02X ", m_pNES->cpu.cram[i]);
-            else         sprintf(stackbyte, "-- ");
-            strcat (stackinfo, stackbyte);
-        }
         rect.left = 6; rect.top += 22;
+        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_STACK1, stackinfo);
         m_cdcDraw.DrawText(stackinfo, -1, &rect, 0);
 
         int gridx[] = { 3+24*0, 3+24*1, 3+24*2 , 3+24*3 , 3+24*4 , 3+24*5 , 3+24*6 , 3+24*7 ,

@@ -159,7 +159,12 @@ int ndb_cpu_dasm(NDB *ndb, WORD pc, BYTE bytes[3], char *str)
     }
 }
 
-void ndb_cpu_dump(NDB *ndb, char *str)
+static void ndb_dump_cpu_regs0(NDB *ndb, char *str)
+{
+    strcpy(str, " pc   ax  xi  yi  sp     ps");
+}
+
+static void ndb_dump_cpu_regs1(NDB *ndb, char *str)
 {
     static char psflag_chars[8] = {'C', 'Z', 'I', 'D', 'B', '-', 'V', 'N'};
     int  i;
@@ -178,3 +183,47 @@ void ndb_cpu_dump(NDB *ndb, char *str)
     *str++ = '\0';
 }
 
+static void ndb_dump_cpu_stack0(NDB *ndb, char *str)
+{
+    int  top    = 0x100 + ndb->cpu->sp;
+    int  bottom = (top & 0xfff0) + 0xf;
+
+    sprintf(str, "%02X                   stack                   %02X",
+        (bottom & 0xff), (bottom & 0xf0));
+}
+
+static void ndb_dump_cpu_stack1(NDB *ndb, char *str)
+{
+    int  top     = 0x100 + ndb->cpu->sp;
+    int  bottom  = (top & 0xfff0) + 0xf;
+    char byte[8] = {0};
+    int  i;
+
+    str[0] = '\0';
+    for (i=bottom; i>bottom-16; i--)
+    {
+        if (i > top) sprintf(byte, "%02X ", ndb->cpu->cram[i]);
+        else         sprintf(byte, "-- ");
+        strcat (str, byte);
+    }
+}
+
+static void ndb_dump_cpu_vector(NDB *ndb, char *str)
+{
+    sprintf(str, "reset vector: %04x\nnmi   vector: %04x\nirq   vector: %04X",
+        bus_readw(ndb->cpu->cbus, 0xfffc),
+        bus_readw(ndb->cpu->cbus, 0xfffa),
+        bus_readw(ndb->cpu->cbus, 0xfffe));
+}
+
+void ndb_dump_info(NDB *ndb, int type, char *str)
+{
+    switch (type)
+    {
+    case NDB_DUMP_CPU_REGS0 : ndb_dump_cpu_regs0 (ndb, str); break;
+    case NDB_DUMP_CPU_REGS1 : ndb_dump_cpu_regs1 (ndb, str); break;
+    case NDB_DUMP_CPU_STACK0: ndb_dump_cpu_stack0(ndb, str); break;
+    case NDB_DUMP_CPU_STACK1: ndb_dump_cpu_stack1(ndb, str); break;
+    case NDB_DUMP_CPU_VECTOR: ndb_dump_cpu_vector(ndb, str); break;
+    }
+}

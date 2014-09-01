@@ -12,6 +12,14 @@ enum {
     NDB_CPU_STOP_PCEQU,   // cpu keep running, but when pc == xxxx will stop
 };
 
+enum {
+    NDB_DUMP_CPU_REGS0 , // dump cpu regs info0
+    NDB_DUMP_CPU_REGS1 , // dump cpu regs info1
+    NDB_DUMP_CPU_STACK0, // dump cpu stack info0
+    NDB_DUMP_CPU_STACK1, // dump cpu stack info1
+    NDB_DUMP_CPU_VECTOR, // dump cpu rst & nmi & irq vector
+};
+
 // 类型定义
 typedef struct
 {
@@ -38,7 +46,9 @@ void ndb_restore(NDB *ndb);
 void ndb_cpu_debug(NDB *ndb);
 void ndb_cpu_runto(NDB *ndb, int cond, void *param);
 int  ndb_cpu_dasm (NDB *ndb, WORD pc, BYTE bytes[3], char *str);
-void ndb_cpu_dump (NDB *ndb, char *str);
+
+// ndb dump info
+void ndb_dump_info(NDB *ndb, int type, char *str);
 
 #endif
 
