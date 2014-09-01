@@ -237,6 +237,12 @@ void CffndbdebugDlg::OnBnClickedBtnCpuStep()
 {
     DWORD nsteps = 1;
     ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_NSTEPS, &nsteps);
+    if (!m_bEnableTracking)
+    {
+        m_bEnableTracking = TRUE;
+        CWnd *pwnd = GetDlgItem(IDC_BTN_CPU_TRACKING);
+        pwnd->SetWindowText("disable cpu tracking");
+    }
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuTracking()
