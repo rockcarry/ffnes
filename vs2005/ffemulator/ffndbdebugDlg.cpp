@@ -101,10 +101,11 @@ BOOL CffndbdebugDlg::OnInitDialog()
     //++ create & init list control
     m_ctrInstructionList.Create(WS_CHILD|WS_VISIBLE|WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS, CRect(9, 87, 356, 527), this, IDC_LST_OPCODE);
     m_ctrInstructionList.SetExtendedStyle(m_ctrInstructionList.GetExtendedStyle()|LVS_EX_FULLROWSELECT|LVS_EX_GRIDLINES);
-    m_ctrInstructionList.InsertColumn(0, "pc"      , LVCFMT_LEFT, 40 );
-    m_ctrInstructionList.InsertColumn(1, "opcode"  , LVCFMT_LEFT, 70 );
-    m_ctrInstructionList.InsertColumn(2, "asm"     , LVCFMT_LEFT, 90 );
-    m_ctrInstructionList.InsertColumn(3, "comments", LVCFMT_LEFT, 128);
+    m_ctrInstructionList.InsertColumn(0, "b"       , LVCFMT_LEFT, 18 );
+    m_ctrInstructionList.InsertColumn(1, "pc"      , LVCFMT_LEFT, 40 );
+    m_ctrInstructionList.InsertColumn(2, "opcode"  , LVCFMT_LEFT, 70 );
+    m_ctrInstructionList.InsertColumn(3, "asm"     , LVCFMT_LEFT, 90 );
+    m_ctrInstructionList.InsertColumn(4, "comments", LVCFMT_LEFT, 110);
     //-- create & init list control
 
     // do nes rom disasm
@@ -344,14 +345,14 @@ void CffndbdebugDlg::DoNesRomDisAsm()
     {
         len = ndb_cpu_dasm(&(m_pNES->ndb), pc, bytes, strasm);
         sprintf(strtmp, "%04X", pc);
-        n = m_ctrInstructionList.InsertItem(n, strtmp);
+        n = m_ctrInstructionList.InsertItem(n, "");
 
-        m_ctrInstructionList.SetItemText(n, 0, strtmp);
+        m_ctrInstructionList.SetItemText(n, 1, strtmp);
         for (i=0; i<len; i++) {
             sprintf(&(strtmp[i*3]), "%02X ", bytes[i]);
         }
-        m_ctrInstructionList.SetItemText(n, 1, strtmp);
-        m_ctrInstructionList.SetItemText(n, 2, strasm);
+        m_ctrInstructionList.SetItemText(n, 2, strtmp);
+        m_ctrInstructionList.SetItemText(n, 3, strasm);
 
         if (m_pPCInstMapTab) m_pPCInstMapTab[pc - 0x8000] = n;
         pc += len; n++;
