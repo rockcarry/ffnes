@@ -237,7 +237,6 @@ void CffndbdebugDlg::OnBnClickedBtnCpuStep()
 {
     DWORD nsteps = 1;
     ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_NSTEPS, &nsteps);
-    UpdateCurInstHighLight();
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuTracking()
