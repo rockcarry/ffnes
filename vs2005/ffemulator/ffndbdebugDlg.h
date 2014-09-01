@@ -36,6 +36,7 @@ protected:
     CFont   m_fntDraw;
     CPen    m_penDraw;
     WORD   *m_pPCInstMapTab;
+    BOOL    m_bEnableTracking;
 
 protected:
     void DrawGrid(int m, int n, int *x, int *y);
@@ -60,6 +61,7 @@ protected:
     afx_msg void OnBnClickedBtnNesDebugPpu();
     afx_msg void OnBnClickedBtnCpuGoto();
     afx_msg void OnBnClickedBtnCpuStep();
+    afx_msg void OnBnClickedBtnCpuTracking();
 
 private:
     int       m_nCpuStopCond;

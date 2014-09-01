@@ -18,8 +18,11 @@ CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
     , m_strCpuStopNSteps("1")
     , m_strCpuStopToPC("FFFF")
 {
-    // save nes pointer
-    m_pNES = pnes;
+    // init varibles
+    m_pNES            = pnes;
+    m_nDebugType      = 0;
+    m_pPCInstMapTab   = NULL;
+    m_bEnableTracking = FALSE;
 }
 
 CffndbdebugDlg::~CffndbdebugDlg()
@@ -45,6 +48,7 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_BN_CLICKED(IDC_BTN_NES_DEBUG_PPU, &CffndbdebugDlg::OnBnClickedBtnNesDebugPpu)
     ON_BN_CLICKED(IDC_BTN_CPU_GOTO     , &CffndbdebugDlg::OnBnClickedBtnCpuGoto)
     ON_BN_CLICKED(IDC_BTN_CPU_STEP     , &CffndbdebugDlg::OnBnClickedBtnCpuStep)
+    ON_BN_CLICKED(IDC_BTN_CPU_TRACKING , &CffndbdebugDlg::OnBnClickedBtnCpuTracking)
 END_MESSAGE_MAP()
 
 // CffndbdebugDlg message handlers
@@ -62,15 +66,18 @@ void CffndbdebugDlg::OnCancel()
 
 BOOL CffndbdebugDlg::OnInitDialog()
 {
-    // init debug type
-    m_nDebugType = DT_DEBUG_CPU;
-
     // update button
     CWnd *pwnd = GetDlgItem(IDC_BTN_NES_RUN_PAUSE);
     if (m_pNES->isrunning) {
         pwnd->SetWindowText("pause");
     }
     else pwnd->SetWindowText("run");
+
+    pwnd = GetDlgItem(IDC_BTN_CPU_TRACKING);
+    if (m_bEnableTracking) {
+        pwnd->SetWindowText("disable cpu tracking");
+    }
+    else pwnd->SetWindowText("enable cpu tracking");
 
     // create dc
     m_cdcDraw.CreateCompatibleDC(NULL);
@@ -233,6 +240,15 @@ void CffndbdebugDlg::OnBnClickedBtnCpuStep()
     UpdateCurInstHighLight();
 }
 
+void CffndbdebugDlg::OnBnClickedBtnCpuTracking()
+{
+    CWnd *pwnd = GetDlgItem(IDC_BTN_CPU_TRACKING);
+    m_bEnableTracking = !m_bEnableTracking;
+    if (m_bEnableTracking) {
+        pwnd->SetWindowText("disable cpu tracking");
+    }
+    else pwnd->SetWindowText("enable cpu tracking");
+}
 
 void CffndbdebugDlg::DrawGrid(int m, int n, int *x, int *y)
 {
@@ -346,8 +362,11 @@ void CffndbdebugDlg::DoNesRomDisAsm()
 
 void CffndbdebugDlg::UpdateCurInstHighLight()
 {
+    if (!m_bEnableTracking) return;
     int nCurInst = m_pPCInstMapTab[m_pNES->cpu.pc - 0x8000];
     m_ctrInstructionList.EnsureVisible(nCurInst, FALSE);
     m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(nCurInst), 0, LVIS_SELECTED);  
     m_ctrInstructionList.SetItemState (nCurInst, LVIS_SELECTED, LVIS_SELECTED);
 }
+
+
