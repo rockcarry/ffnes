@@ -35,9 +35,8 @@ void ndb_restore(NDB *ndb)
 
 void ndb_cpu_debug(NDB *ndb)
 {
-    WORD  * wparam = (WORD *)ndb->param;
-    DWORD *dwparam = (DWORD*)ndb->param;
-    LONG  * lparam = (LONG *)ndb->param;
+    WORD *wparam = (WORD*)ndb->param;
+    LONG *lparam = (LONG*)ndb->param;
 
     switch (ndb->cond)
     {
@@ -61,9 +60,8 @@ void ndb_cpu_debug(NDB *ndb)
 
 void ndb_cpu_runto(NDB *ndb, int cond, void *param)
 {
-    WORD  * wparam = (WORD *)ndb->param;
-    DWORD *dwparam = (DWORD*)ndb->param;
-    LONG  * lparam = (LONG *)ndb->param;
+    WORD *wparam = (WORD*)ndb->param;
+    LONG *lparam = (LONG*)ndb->param;
 
     ndb->cond = cond;
     switch (cond)
