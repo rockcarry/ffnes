@@ -217,20 +217,23 @@ void CffndbdebugDlg::OnBnClickedBtnNesDebugPpu()
 
 void CffndbdebugDlg::OnBnClickedBtnCpuGoto()
 {
+    WORD   wparam = 0;
     DWORD dwparam = 0;
+    LONG   lparam = 0;
 
     UpdateData(TRUE);
     switch (m_nCpuStopCond)
     {
     case NDB_CPU_RUN_NSTEPS:
-        dwparam = atoi(m_strCpuStopNSteps);
+        lparam = atoi(m_strCpuStopNSteps);
+        ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, &lparam);
         break;
 
     case NDB_CPU_STOP_PCEQU:
-        dwparam = strtoul(m_strCpuStopToPC, NULL, 16);
+        wparam = (WORD)strtoul(m_strCpuStopToPC, NULL, 16);
+        ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, &wparam);
         break;
     }
-    ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, &dwparam);
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuStep()

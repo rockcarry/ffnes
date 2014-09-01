@@ -19,12 +19,22 @@ typedef struct
     int   stop;
     int   cond;
     BYTE  param[32];
+
+    // for saving debugging status
+    int save_stop;
+    int save_cond;
 } NDB;
 
 // º¯ÊýÉùÃ÷
 void ndb_init (NDB *ndb, CPU *cpu);
 void ndb_free (NDB *ndb);
 void ndb_reset(NDB *ndb);
+
+// save & restore debugging status
+void ndb_save   (NDB *ndb);
+void ndb_restore(NDB *ndb);
+
+// debug cpu
 void ndb_cpu_debug(NDB *ndb);
 void ndb_cpu_runto(NDB *ndb, int cond, void *param);
 int  ndb_cpu_dasm (NDB *ndb, WORD pc, BYTE bytes[3], char *str);

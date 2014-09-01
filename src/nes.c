@@ -12,10 +12,12 @@ static void nes_do_reset(NES* nes)
     cpu_reset(&(nes->cpu));
     ppu_reset(&(nes->ppu));
     apu_reset(&(nes->apu));
-    ndb_reset(&(nes->ndb));
 
     // reset joypad
     joypad_reset(&(nes->pad));
+
+    // restore ndb debugging status
+    ndb_restore(&(nes->ndb));
 }
 
 static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
@@ -238,7 +240,13 @@ void nes_free(NES *nes)
     log_done(); // log done
 }
 
-void nes_reset(NES *nes) { nes->request_reset = 1; }
+void nes_reset(NES *nes)
+{
+    ndb_save (&(nes->ndb));
+    ndb_reset(&(nes->ndb));
+    nes->request_reset = 1;
+}
+
 void nes_run  (NES *nes) { nes->isrunning = 1;   SetEvent(nes->hNesEvent); }
 void nes_pause(NES *nes) { nes->isrunning = 0; ResetEvent(nes->hNesEvent); }
 

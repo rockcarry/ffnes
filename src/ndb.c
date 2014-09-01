@@ -20,10 +20,24 @@ void ndb_reset(NDB *ndb)
     ndb->cond = 0;
 }
 
+// save & restore debugging status
+void ndb_save(NDB *ndb)
+{
+    ndb->save_cond = ndb->cond;
+    ndb->save_stop = ndb->stop;
+}
+
+void ndb_restore(NDB *ndb)
+{
+    ndb->cond = ndb->save_cond;
+    ndb->stop = ndb->save_stop;
+}
+
 void ndb_cpu_debug(NDB *ndb)
 {
     WORD  * wparam = (WORD *)ndb->param;
     DWORD *dwparam = (DWORD*)ndb->param;
+    LONG  * lparam = (LONG *)ndb->param;
 
     switch (ndb->cond)
     {
@@ -32,7 +46,8 @@ void ndb_cpu_debug(NDB *ndb)
         break;
 
     case NDB_CPU_RUN_NSTEPS:
-        ndb->stop = --(*dwparam) ? 0 : 1;
+        if (*lparam > 0) (*lparam)--;
+        ndb->stop = (*lparam > 0) ? 0 : 1;
         break;
 
     case NDB_CPU_STOP_PCEQU:
@@ -48,25 +63,26 @@ void ndb_cpu_runto(NDB *ndb, int cond, void *param)
 {
     WORD  * wparam = (WORD *)ndb->param;
     DWORD *dwparam = (DWORD*)ndb->param;
+    LONG  * lparam = (LONG *)ndb->param;
 
     ndb->cond = cond;
     switch (cond)
     {
+    case NDB_CPU_KEEP_RUNNING:
+        ndb->stop = 0;
+        break;
+
     case NDB_CPU_RUN_NSTEPS:
-        *dwparam = *(DWORD*)param;
-        if (*dwparam == 0)
-        {
-            *dwparam  = 1;
-            ndb->stop = 1;
-            return;
-        }
+        *lparam = *(LONG*)param;
+        if (*lparam <= 0) ndb->stop = 1;
+        else              ndb->stop = 0;
         break;
 
     case NDB_CPU_STOP_PCEQU:
-        * wparam = *( WORD*)param;
+        *wparam = *(WORD*)param;
+        ndb->stop = 0;
         break;
     }
-    ndb->stop = 0;
 }
 
 int ndb_cpu_dasm(NDB *ndb, WORD pc, BYTE bytes[3], char *str)
