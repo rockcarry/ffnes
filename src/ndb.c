@@ -208,7 +208,7 @@ static void ndb_dump_cpu_stack1(NDB *ndb, char *str)
 
 static void ndb_dump_cpu_vector(NDB *ndb, char *str)
 {
-    sprintf(str, "reset vector: %04x\nnmi   vector: %04x\nirq   vector: %04X",
+    sprintf(str, "reset: %04X\nnmi  : %04X\nirq  : %04X",
         bus_readw(ndb->cpu->cbus, 0xfffc),
         bus_readw(ndb->cpu->cbus, 0xfffa),
         bus_readw(ndb->cpu->cbus, 0xfffe));

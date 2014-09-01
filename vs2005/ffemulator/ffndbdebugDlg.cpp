@@ -299,6 +299,12 @@ void CffndbdebugDlg::DrawCpuDebugging()
         int gridx[] = { 3, 45+32*0, 45+32*1, 45+32*2, 45+32*3, 45+32*4, 256 };
         int gridy[] = { 3, 3+22*1, 3+22*2 };
         DrawGrid(7, 3, gridx, gridy);
+
+        char vector[128] = {0};
+        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_VECTOR, vector);
+        rect.left += 266; rect.top -= 27;
+        m_cdcDraw.DrawText(vector, -1, &rect, DT_LEFT);
+        rect.left -= 266; rect.top += 27;
     }
 
     // draw stack info
