@@ -46,7 +46,8 @@ protected:
 
 protected:
     virtual BOOL OnInitDialog();
-    virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+    virtual void DoDataExchange(CDataExchange* pDX);
+    virtual BOOL PreTranslateMessage(MSG* pMsg);
 
 protected:
     DECLARE_MESSAGE_MAP()

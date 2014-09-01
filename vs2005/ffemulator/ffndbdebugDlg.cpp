@@ -38,6 +38,28 @@ void CffndbdebugDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_LST_OPCODE          , m_ctrInstructionList);
 }
 
+BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
+{
+    switch (pMsg->message)
+    {
+    case WM_KEYDOWN:
+        if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'F')
+        {
+            CFindReplaceDialog *dlg = (CFindReplaceDialog*)FindWindow(NULL, "ffndb find");
+            if (!dlg) {
+                dlg = new CFindReplaceDialog();
+                dlg->Create(TRUE, NULL, NULL, FR_DOWN, this);
+                dlg->SetWindowText("ffndb find");
+                dlg->ShowWindow(SW_SHOW);
+            }
+            else SwitchToThisWindow(dlg->GetSafeHwnd(), TRUE);
+        }
+        return TRUE;
+
+    default: return CDialog::PreTranslateMessage(pMsg);
+    }
+}
+
 BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_WM_DESTROY()
     ON_WM_PAINT()
@@ -373,5 +395,7 @@ void CffndbdebugDlg::UpdateCurInstHighLight()
     m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(nCurInst), 0, LVIS_SELECTED);  
     m_ctrInstructionList.SetItemState (nCurInst, LVIS_SELECTED, LVIS_SELECTED);
 }
+
+
 
 
