@@ -68,9 +68,9 @@ BOOL CffndbdebugDlg::OnInitDialog()
     // update button
     CWnd *pwnd = GetDlgItem(IDC_BTN_NES_RUN_PAUSE);
     if (m_pNES->isrunning) {
-        pwnd->SetWindowText("running");
+        pwnd->SetWindowText("pause");
     }
-    else pwnd->SetWindowText("paused");
+    else pwnd->SetWindowText("run");
 
     // create dc
     m_cdcDraw.CreateCompatibleDC(NULL);
@@ -174,11 +174,11 @@ void CffndbdebugDlg::OnBnClickedBtnNesRunPause()
     CWnd *pwnd = GetDlgItem(IDC_BTN_NES_RUN_PAUSE);
     if (m_pNES->isrunning) {
         nes_pause(m_pNES);
-        pwnd->SetWindowText("paused");
+        pwnd->SetWindowText("run");
     }
     else {
         nes_run(m_pNES);
-        pwnd->SetWindowText("running");
+        pwnd->SetWindowText("pause");
     }
 }
 
