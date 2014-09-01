@@ -27,11 +27,69 @@ void CffemulatorDlg::DoDataExchange(CDataExchange* pDX)
     CDialog::DoDataExchange(pDX);
 }
 
+BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
+{
+    if (pMsg->message == WM_KEYDOWN)
+    {
+        // ctrl+d pressed
+        if (GetAsyncKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'D')
+        {
+            CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
+            if (!dlg) {
+                RECT rect = {0};
+                GetWindowRect(&rect);
+                MoveWindow(0, 0, rect.right - rect.left, rect.bottom - rect.top);
+
+                dlg = new CffndbdebugDlg(this, &m_nes);
+                dlg->Create(IDD_FFNDBDEBUG_DIALOG, GetDesktopWindow());
+                dlg->CenterWindow();
+                dlg->ShowWindow(SW_SHOW);
+            }
+            else SwitchToThisWindow(dlg->GetSafeHwnd(), TRUE);
+            return TRUE;
+        }
+
+        switch (pMsg->wParam)
+        {
+        case 'E': joypad_setkey(&(m_nes.pad), 0, NES_KEY_UP     , 1); break;
+        case 'D': joypad_setkey(&(m_nes.pad), 0, NES_KEY_DOWN   , 1); break;
+        case 'S': joypad_setkey(&(m_nes.pad), 0, NES_KEY_LEFT   , 1); break;
+        case 'F': joypad_setkey(&(m_nes.pad), 0, NES_KEY_RIGHT  , 1); break;
+        case 'J': joypad_setkey(&(m_nes.pad), 0, NES_KEY_A      , 1); break;
+        case 'K': joypad_setkey(&(m_nes.pad), 0, NES_KEY_B      , 1); break;
+        case 'U': joypad_setkey(&(m_nes.pad), 0, NES_KEY_TURBO_A, 1); break;
+        case 'I': joypad_setkey(&(m_nes.pad), 0, NES_KEY_TURBO_B, 1); break;
+        case 'B': joypad_setkey(&(m_nes.pad), 0, NES_KEY_SELECT , 1); break;
+        case 'N': joypad_setkey(&(m_nes.pad), 0, NES_KEY_START  , 1); break;
+        }
+        return TRUE;
+    }
+
+    if (pMsg->message == WM_KEYUP)
+    {
+        switch (pMsg->wParam)
+        {
+        case 'E': joypad_setkey(&(m_nes.pad), 0, NES_KEY_UP     , 0); break;
+        case 'D': joypad_setkey(&(m_nes.pad), 0, NES_KEY_DOWN   , 0); break;
+        case 'S': joypad_setkey(&(m_nes.pad), 0, NES_KEY_LEFT   , 0); break;
+        case 'F': joypad_setkey(&(m_nes.pad), 0, NES_KEY_RIGHT  , 0); break;
+        case 'J': joypad_setkey(&(m_nes.pad), 0, NES_KEY_A      , 0); break;
+        case 'K': joypad_setkey(&(m_nes.pad), 0, NES_KEY_B      , 0); break;
+        case 'U': joypad_setkey(&(m_nes.pad), 0, NES_KEY_TURBO_A, 0); break;
+        case 'I': joypad_setkey(&(m_nes.pad), 0, NES_KEY_TURBO_B, 0); break;
+        case 'B': joypad_setkey(&(m_nes.pad), 0, NES_KEY_SELECT , 0); break;
+        case 'N': joypad_setkey(&(m_nes.pad), 0, NES_KEY_START  , 0); break;
+        }
+        return TRUE;
+    }
+
+    return CDialog::PreTranslateMessage(pMsg);
+}
+
 BEGIN_MESSAGE_MAP(CffemulatorDlg, CDialog)
     ON_WM_DESTROY()
     ON_WM_CTLCOLOR()
-    ON_WM_KEYUP()
-    ON_WM_KEYDOWN()
+    ON_WM_ACTIVATE()
 END_MESSAGE_MAP()
 
 // CffemulatorDlg message handlers
@@ -88,55 +146,17 @@ HBRUSH CffemulatorDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
     else return hbr;
 }
 
-void CffemulatorDlg::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+void CffemulatorDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
 {
-    // TODO: Add your message handler code here and/or call default
-    switch (nChar)
+    CDialog::OnActivate(nState, pWndOther, bMinimized);
+
+    // TODO: Add your message handler code here
+    switch (nState)
     {
-    case 'E': joypad_setkey(&(m_nes.pad), 0, NES_KEY_UP     , 0); break;
-    case 'D': joypad_setkey(&(m_nes.pad), 0, NES_KEY_DOWN   , 0); break;
-    case 'S': joypad_setkey(&(m_nes.pad), 0, NES_KEY_LEFT   , 0); break;
-    case 'F': joypad_setkey(&(m_nes.pad), 0, NES_KEY_RIGHT  , 0); break;
-    case 'J': joypad_setkey(&(m_nes.pad), 0, NES_KEY_A      , 0); break;
-    case 'K': joypad_setkey(&(m_nes.pad), 0, NES_KEY_B      , 0); break;
-    case 'U': joypad_setkey(&(m_nes.pad), 0, NES_KEY_TURBO_A, 0); break;
-    case 'I': joypad_setkey(&(m_nes.pad), 0, NES_KEY_TURBO_B, 0); break;
-    case 'B': joypad_setkey(&(m_nes.pad), 0, NES_KEY_SELECT , 0); break;
-    case 'N': joypad_setkey(&(m_nes.pad), 0, NES_KEY_START  , 0); break;
+    case WA_ACTIVE:
+    case WA_CLICKACTIVE:
+        this->SetFocus();
+        break;
     }
-    CDialog::OnKeyUp(nChar, nRepCnt, nFlags);
 }
 
-void CffemulatorDlg::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
-{
-    // ctrl+d pressed
-    if (GetKeyState(VK_CONTROL) < 0 && nChar == 'D')
-    {
-        CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
-        if (!dlg) {
-            dlg = new CffndbdebugDlg(this, &m_nes);
-            dlg->Create(IDD_FFNDBDEBUG_DIALOG, GetDesktopWindow());
-            RECT rect = {0};
-            this->GetWindowRect(&rect);
-            this->MoveWindow(0, 0, rect.right - rect.left, rect.bottom - rect.top);
-            dlg ->CenterWindow();
-        }
-        dlg->ShowWindow(SW_SHOW);
-        return;
-    }
-
-    switch (nChar)
-    {
-    case 'E': joypad_setkey(&(m_nes.pad), 0, NES_KEY_UP     , 1); break;
-    case 'D': joypad_setkey(&(m_nes.pad), 0, NES_KEY_DOWN   , 1); break;
-    case 'S': joypad_setkey(&(m_nes.pad), 0, NES_KEY_LEFT   , 1); break;
-    case 'F': joypad_setkey(&(m_nes.pad), 0, NES_KEY_RIGHT  , 1); break;
-    case 'J': joypad_setkey(&(m_nes.pad), 0, NES_KEY_A      , 1); break;
-    case 'K': joypad_setkey(&(m_nes.pad), 0, NES_KEY_B      , 1); break;
-    case 'U': joypad_setkey(&(m_nes.pad), 0, NES_KEY_TURBO_A, 1); break;
-    case 'I': joypad_setkey(&(m_nes.pad), 0, NES_KEY_TURBO_B, 1); break;
-    case 'B': joypad_setkey(&(m_nes.pad), 0, NES_KEY_SELECT , 1); break;
-    case 'N': joypad_setkey(&(m_nes.pad), 0, NES_KEY_START  , 1); break;
-    }
-    CDialog::OnKeyUp(nChar, nRepCnt, nFlags);
-}
