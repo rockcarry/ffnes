@@ -71,6 +71,10 @@ void CffemulatorDlg::OnDestroy()
 {
     CDialog::OnDestroy();
 
+    // destroy ffndb dialog
+    CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
+    if (dlg) dlg->DestroyWindow();
+
     // free nes
     nes_free(&m_nes);
 }
