@@ -6,7 +6,8 @@
 #include "ffndbdebugDlg.h"
 
 // 内部常量定义
-static RECT s_rtCpuInfo = { 362, 87, 750, 425 };
+static RECT s_rtCpuInfo    = { 362, 87, 750, 425 };
+static int  WM_FINDREPLACE = RegisterWindowMessage(FINDMSGSTRING);
 
 // CffndbdebugDlg dialog
 
@@ -23,6 +24,7 @@ CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
     m_nDebugType      = 0;
     m_pPCInstMapTab   = NULL;
     m_bEnableTracking = FALSE;
+    m_bIsSearchDown   = TRUE;
 }
 
 CffndbdebugDlg::~CffndbdebugDlg()
@@ -40,15 +42,25 @@ void CffndbdebugDlg::DoDataExchange(CDataExchange* pDX)
 
 BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
 {
+    BOOL bShowFindDialog = FALSE;
+
     switch (pMsg->message)
     {
     case WM_KEYDOWN:
-        if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'F')
+        if (pMsg->wParam == 'F' && GetKeyState(VK_CONTROL) < 0) bShowFindDialog = TRUE;
+        if (pMsg->wParam == VK_F3)
+        {
+            if (m_strCurFindStr.Compare("") == 0) bShowFindDialog = TRUE;
+            else FindStrInListCtrl(m_strCurFindStr, m_bIsSearchDown);
+        }
+        if (bShowFindDialog)
         {
             CFindReplaceDialog *dlg = (CFindReplaceDialog*)FindWindow(NULL, "ffndb find");
             if (!dlg) {
+                DWORD flags = FR_HIDEMATCHCASE|FR_HIDEWHOLEWORD;
+                if (m_bIsSearchDown) flags |= FR_DOWN;
                 dlg = new CFindReplaceDialog();
-                dlg->Create(TRUE, NULL, NULL, FR_DOWN, this);
+                dlg->Create(TRUE, m_strCurFindStr, NULL, flags, this);
                 dlg->SetWindowText("ffndb find");
                 dlg->ShowWindow(SW_SHOW);
             }
@@ -71,6 +83,7 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_BN_CLICKED(IDC_BTN_CPU_GOTO     , &CffndbdebugDlg::OnBnClickedBtnCpuGoto)
     ON_BN_CLICKED(IDC_BTN_CPU_STEP     , &CffndbdebugDlg::OnBnClickedBtnCpuStep)
     ON_BN_CLICKED(IDC_BTN_CPU_TRACKING , &CffndbdebugDlg::OnBnClickedBtnCpuTracking)
+    ON_REGISTERED_MESSAGE(WM_FINDREPLACE, OnFindReplace)
 END_MESSAGE_MAP()
 
 // CffndbdebugDlg message handlers
@@ -247,6 +260,10 @@ void CffndbdebugDlg::OnBnClickedBtnCpuGoto()
     UpdateData(TRUE);
     switch (m_nCpuStopCond)
     {
+    case NDB_CPU_KEEP_RUNNING:
+        ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, NULL);
+        break;
+
     case NDB_CPU_RUN_NSTEPS:
         lparam = atoi(m_strCpuStopNSteps);
         ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, &lparam);
@@ -280,6 +297,22 @@ void CffndbdebugDlg::OnBnClickedBtnCpuTracking()
     }
     else pwnd->SetWindowText("enable cpu tracking");
 }
+
+LONG CffndbdebugDlg::OnFindReplace(WPARAM wparam, LPARAM lparam)
+{
+    CFindReplaceDialog *dlg = CFindReplaceDialog::GetNotifier(lparam);
+
+    if (dlg->FindNext())
+    {
+        // save current find string
+        m_strCurFindStr = dlg->GetFindString();
+        m_bIsSearchDown = dlg->SearchDown();
+        FindStrInListCtrl(m_strCurFindStr, m_bIsSearchDown);
+    }
+
+    return 0;
+}
+
 
 void CffndbdebugDlg::DrawGrid(int m, int n, int *x, int *y)
 {
@@ -392,10 +425,38 @@ void CffndbdebugDlg::UpdateCurInstHighLight()
     if (!m_bEnableTracking) return;
     int nCurInst = m_pPCInstMapTab[m_pNES->cpu.pc - 0x8000];
     m_ctrInstructionList.EnsureVisible(nCurInst, FALSE);
-    m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(nCurInst), 0, LVIS_SELECTED);  
+    m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(nCurInst), 0, LVIS_SELECTED);
     m_ctrInstructionList.SetItemState (nCurInst, LVIS_SELECTED, LVIS_SELECTED);
 }
 
+void CffndbdebugDlg::FindStrInListCtrl(CString str, BOOL down)
+{
+    int     d     = down ? 1 : -1;
+    int     n     = m_ctrInstructionList.GetSelectionMark() + d;
+    int     total = m_ctrInstructionList.GetItemCount();
+    CString find  = str.MakeUpper();
 
+    while (n >= 0 && n < total) {
+        CString strItem = "";
+        strItem += m_ctrInstructionList.GetItemText(n, 1);
+        strItem += m_ctrInstructionList.GetItemText(n, 2);
+        strItem += m_ctrInstructionList.GetItemText(n, 3);
+        strItem += m_ctrInstructionList.GetItemText(n, 4);
+        strItem.MakeUpper();
+        if (strItem.Find(find) != -1) break;
+        n += d;
+    }
+
+    if (n >= 0 && n < total)
+    {
+        m_ctrInstructionList.EnsureVisible(n, FALSE);
+        m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(n), 0, LVIS_SELECTED);
+        m_ctrInstructionList.SetItemState (n, LVIS_SELECTED, LVIS_SELECTED);
+    }
+    else
+    {
+        MessageBox(CString("can't find \"") + str + "\"", "ffndb find", MB_ICONASTERISK|MB_ICONINFORMATION);
+    }
+}
 
 

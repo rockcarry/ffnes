@@ -32,7 +32,7 @@ BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
     if (pMsg->message == WM_KEYDOWN)
     {
         // ctrl+d pressed
-        if (GetAsyncKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'D')
+        if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'D')
         {
             CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
             if (!dlg) {

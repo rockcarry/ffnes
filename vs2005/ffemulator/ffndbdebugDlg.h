@@ -37,12 +37,15 @@ protected:
     CPen    m_penDraw;
     WORD   *m_pPCInstMapTab;
     BOOL    m_bEnableTracking;
+    CString m_strCurFindStr;
+    BOOL    m_bIsSearchDown;
 
 protected:
     void DrawGrid(int m, int n, int *x, int *y);
     void DrawCpuDebugging();
     void DoNesRomDisAsm();
     void UpdateCurInstHighLight();
+    void FindStrInListCtrl(CString str, BOOL down);
 
 protected:
     virtual BOOL OnInitDialog();
@@ -63,6 +66,7 @@ protected:
     afx_msg void OnBnClickedBtnCpuGoto();
     afx_msg void OnBnClickedBtnCpuStep();
     afx_msg void OnBnClickedBtnCpuTracking();
+    afx_msg LONG OnFindReplace(WPARAM wParam, LPARAM lParam);
 
 private:
     int       m_nCpuStopCond;
