@@ -121,7 +121,10 @@ int ndb_cpu_dasm(NDB *ndb, WORD pc, BYTE bytes[3], char *str)
     case 0x00:
     case 0x40:
     case 0x60:
-    case 0x89: am =  0; break;
+    case 0x64:
+    case 0x74:
+    case 0x89:
+    case 0xd4: am =  0; break;
 
     case 0x96:
     case 0x97:
