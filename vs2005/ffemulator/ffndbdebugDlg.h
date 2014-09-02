@@ -35,7 +35,7 @@ protected:
     CDC     m_cdcDraw;
     CFont   m_fntDraw;
     CPen    m_penDraw;
-    WORD   *m_pPCInstMapTab;
+    WORD    m_aPcInstMapTab[0x8000];
     BOOL    m_bEnableTracking;
     CString m_strCurFindStr;
     BOOL    m_bIsSearchDown;

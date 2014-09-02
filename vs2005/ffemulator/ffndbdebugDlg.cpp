@@ -22,7 +22,6 @@ CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
     // init varibles
     m_pNES            = pnes;
     m_nDebugType      = 0;
-    m_pPCInstMapTab   = NULL;
     m_bEnableTracking = FALSE;
     m_bIsSearchDown   = TRUE;
 }
@@ -130,9 +129,6 @@ BOOL CffndbdebugDlg::OnInitDialog()
     // create pen
     m_penDraw.CreatePen(PS_SOLID, 2, RGB(128, 128, 128));
 
-    // allocate pc-instruction map tab
-    m_pPCInstMapTab = (WORD*)malloc(32 * 1024 * sizeof(WORD));
-
     //++ create & init list control
     m_ctrInstructionList.Create(WS_CHILD|WS_VISIBLE|WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS, CRect(9, 87, 356, 527), this, IDC_LST_OPCODE);
     m_ctrInstructionList.SetExtendedStyle(m_ctrInstructionList.GetExtendedStyle()|LVS_EX_FULLROWSELECT|LVS_EX_GRIDLINES);
@@ -161,12 +157,6 @@ void CffndbdebugDlg::OnDestroy()
 
     // kill timer
     KillTimer(NDB_TIMER);
-
-    // free m_pPCInstMapTab
-    if (m_pPCInstMapTab) {
-        free(m_pPCInstMapTab);
-        m_pPCInstMapTab = NULL;
-    }
 
     // delete dc & object
     m_cdcDraw.DeleteDC();
@@ -402,6 +392,7 @@ void CffndbdebugDlg::DoNesRomDisAsm()
     int  i   = 0;
     int  n   = 0;
 
+    memset(m_aPcInstMapTab, 0, 0x8000);
     for (pc=rst; pc<0xffff; )
     {
         len = ndb_cpu_dasm(&(m_pNES->ndb), pc, bytes, strasm);
@@ -415,7 +406,7 @@ void CffndbdebugDlg::DoNesRomDisAsm()
         m_ctrInstructionList.SetItemText(n, 2, strtmp);
         m_ctrInstructionList.SetItemText(n, 3, strasm);
 
-        if (m_pPCInstMapTab) m_pPCInstMapTab[pc - 0x8000] = n;
+        if (m_aPcInstMapTab) m_aPcInstMapTab[pc - 0x8000] = n;
         pc += len; n++;
     }
 }
@@ -423,7 +414,7 @@ void CffndbdebugDlg::DoNesRomDisAsm()
 void CffndbdebugDlg::UpdateCurInstHighLight()
 {
     if (!m_bEnableTracking) return;
-    int nCurInst = m_pPCInstMapTab[m_pNES->cpu.pc - 0x8000];
+    int nCurInst = m_aPcInstMapTab[m_pNES->cpu.pc - 0x8000];
     m_ctrInstructionList.EnsureVisible(nCurInst, FALSE);
     m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(nCurInst), 0, LVIS_SELECTED);
     m_ctrInstructionList.SetItemState (nCurInst, LVIS_SELECTED, LVIS_SELECTED);
