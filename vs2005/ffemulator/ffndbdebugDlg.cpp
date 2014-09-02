@@ -21,7 +21,6 @@ CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
 {
     // init varibles
     m_pNES            = pnes;
-    m_nDebugType      = 0;
     m_bEnableTracking = FALSE;
     m_bIsSearchDown   = TRUE;
 }
@@ -149,11 +148,9 @@ BOOL CffndbdebugDlg::OnInitDialog()
     m_ctrInstructionList.InsertColumn(4, "comments", LVCFMT_LEFT, 110);
     //-- create & init list control
 
-    // do nes rom disasm
-    DoNesRomDisAsm();
-
     // setup timer
-    SetTimer(NDB_TIMER, 50, NULL);
+    SetTimer(NDB_REFRESH_TIMER, 50, NULL);
+    SetTimer(NDB_DIASM_TIMER  , 50, NULL);
 
     // update data false
     UpdateData(FALSE);
@@ -166,7 +163,8 @@ void CffndbdebugDlg::OnDestroy()
     CDialog::OnDestroy();
 
     // kill timer
-    KillTimer(NDB_TIMER);
+    KillTimer(NDB_REFRESH_TIMER);
+    KillTimer(NDB_DIASM_TIMER  );
 
     // delete dc & object
     m_cdcDraw.DeleteDC();
@@ -196,14 +194,24 @@ void CffndbdebugDlg::OnPaint()
 
 void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
 {
-    switch (m_nDebugType)
+    switch (nIDEvent)
     {
-    case DT_DEBUG_CPU:
-        UpdateCurInstHighLight();
-        DrawCpuDebugging();
+    case NDB_REFRESH_TIMER:
+        switch (m_nDebugType)
+        {
+        case DT_DEBUG_CPU:
+            UpdateCurInstHighLight();
+            DrawCpuDebugging();
+            break;
+        }
+        break;
+
+    case NDB_DIASM_TIMER:
+        KillTimer(NDB_DIASM_TIMER);
+        DoNesRomDisAsm(); // do nes rom disasm
+        m_nDebugType = DT_DEBUG_CPU;
         break;
     }
-
     CDialog::OnTimer(nIDEvent);
 }
 

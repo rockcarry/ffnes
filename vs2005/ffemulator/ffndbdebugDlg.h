@@ -26,7 +26,8 @@ public:
         DT_DEBUG_MEM,
     };
 
-    #define NDB_TIMER 1
+    #define NDB_REFRESH_TIMER 1
+    #define NDB_DIASM_TIMER   2
 
 protected:
     NES    *m_pNES;
