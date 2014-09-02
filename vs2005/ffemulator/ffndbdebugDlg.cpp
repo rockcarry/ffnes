@@ -384,7 +384,7 @@ void CffndbdebugDlg::DoNesRomDisAsm()
     WORD rst = bus_readw(m_pNES->cbus, 0xfffc);
     WORD nmi = bus_readw(m_pNES->cbus, 0xfffa);
     WORD irq = bus_readw(m_pNES->cbus, 0xfffe);
-    WORD pc  = 0;
+    int  pc  = 0;
     BYTE bytes [ 3];
     char strasm[64];
     char strtmp[16];
