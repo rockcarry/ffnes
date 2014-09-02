@@ -155,7 +155,7 @@ void CffemulatorDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
     {
     case WA_ACTIVE:
     case WA_CLICKACTIVE:
-        this->SetFocus();
+        SetFocus();
         break;
     }
 }

@@ -43,6 +43,7 @@ protected:
 protected:
     void DrawGrid(int m, int n, int *x, int *y);
     void DrawCpuDebugging();
+    int  DisAsmByEntry(WORD entry, CString name, int instn);
     void DoNesRomDisAsm();
     void UpdateCurInstHighLight();
     void FindStrInListCtrl(CString str, BOOL down);

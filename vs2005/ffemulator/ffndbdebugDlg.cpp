@@ -41,18 +41,22 @@ void CffndbdebugDlg::DoDataExchange(CDataExchange* pDX)
 
 BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
 {
-    BOOL bShowFindDialog = FALSE;
-
     switch (pMsg->message)
     {
     case WM_KEYDOWN:
-        if (pMsg->wParam == 'F' && GetKeyState(VK_CONTROL) < 0) bShowFindDialog = TRUE;
-        if (pMsg->wParam == VK_F3)
+        if (::GetFocus() == m_ctrInstructionList.GetSafeHwnd()
+           && (pMsg->wParam == VK_HOME || pMsg->wParam == VK_END)
+           && GetKeyState(VK_CONTROL) < 0 )
         {
-            if (m_strCurFindStr.Compare("") == 0) bShowFindDialog = TRUE;
-            else FindStrInListCtrl(m_strCurFindStr, m_bIsSearchDown);
+            int n = (pMsg->wParam == VK_HOME) ? 0 : m_ctrInstructionList.GetItemCount() - 1;
+            m_ctrInstructionList.EnsureVisible(n, FALSE);
+            m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(n), 0, LVIS_SELECTED);
+            m_ctrInstructionList.SetItemState (n, LVIS_SELECTED, LVIS_SELECTED);
+            return TRUE;
         }
-        if (bShowFindDialog)
+
+        if (  pMsg->wParam == 'F' && GetKeyState(VK_CONTROL) < 0
+           || pMsg->wParam == VK_F3 && m_strCurFindStr.Compare("") == 0 )
         {
             CFindReplaceDialog *dlg = (CFindReplaceDialog*)FindWindow(NULL, "ffndb find");
             if (!dlg) {
@@ -64,11 +68,17 @@ BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
                 dlg->ShowWindow(SW_SHOW);
             }
             else SwitchToThisWindow(dlg->GetSafeHwnd(), TRUE);
+            return TRUE;
         }
-        return TRUE;
 
-    default: return CDialog::PreTranslateMessage(pMsg);
+        if (pMsg->wParam == VK_F3 && m_strCurFindStr.Compare("") != 0)
+        {
+            FindStrInListCtrl(m_strCurFindStr, m_bIsSearchDown);
+            return TRUE;
+        }
+        break;
     }
+    return CDialog::PreTranslateMessage(pMsg);
 }
 
 BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
@@ -130,7 +140,7 @@ BOOL CffndbdebugDlg::OnInitDialog()
     m_penDraw.CreatePen(PS_SOLID, 2, RGB(128, 128, 128));
 
     //++ create & init list control
-    m_ctrInstructionList.Create(WS_CHILD|WS_VISIBLE|WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS, CRect(9, 87, 356, 527), this, IDC_LST_OPCODE);
+    m_ctrInstructionList.Create(WS_CHILD|WS_VISIBLE|WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS|WS_TABSTOP, CRect(9, 87, 356, 527), this, IDC_LST_OPCODE);
     m_ctrInstructionList.SetExtendedStyle(m_ctrInstructionList.GetExtendedStyle()|LVS_EX_FULLROWSELECT|LVS_EX_GRIDLINES);
     m_ctrInstructionList.InsertColumn(0, "b"       , LVCFMT_LEFT, 18 );
     m_ctrInstructionList.InsertColumn(1, "pc"      , LVCFMT_LEFT, 40 );
@@ -379,36 +389,93 @@ void CffndbdebugDlg::DrawCpuDebugging()
     InvalidateRect(&s_rtCpuInfo, FALSE);
 }
 
+int CffndbdebugDlg::DisAsmByEntry(WORD entry, CString name, int instn)
+{
+    char strasm[64];
+    char strtmp[16];
+    BYTE bytes [ 3];
+    WORD pc  = entry;
+    int  len = 0;
+    int  i   = 0;
+
+    if (m_aPcInstMapTab[pc - 0x8000])
+    {
+        m_ctrInstructionList.SetItemText(m_aPcInstMapTab[pc - 0x8000], 4, name);
+        return instn;
+    }
+
+    while (pc < 0xfffa)
+    {
+        // insert new row
+        instn = m_ctrInstructionList.InsertItem(instn, "");
+
+        // dasm one instruction
+        len   = ndb_cpu_dasm(&(m_pNES->ndb), pc, bytes, strasm);
+
+        // set pc subitem
+        sprintf(strtmp, "%04X", pc);
+        m_ctrInstructionList.SetItemText(instn, 1, strtmp);
+
+        // set opcode subitem
+        for (i=0; i<len; i++) {
+            sprintf(&(strtmp[i*3]), "%02X ", bytes[i]);
+        }
+        m_ctrInstructionList.SetItemText(instn, 2, strtmp);
+
+        // set asm subitem
+        m_ctrInstructionList.SetItemText(instn, 3, strasm);
+
+        // set comments subitem
+        if (pc == entry) m_ctrInstructionList.SetItemText(instn, 4, name);
+
+        m_aPcInstMapTab[pc - 0x8000] = instn;
+        pc += len; instn++;
+    }
+    return instn;
+}
+
 void CffndbdebugDlg::DoNesRomDisAsm()
 {
     WORD rst = bus_readw(m_pNES->cbus, 0xfffc);
     WORD nmi = bus_readw(m_pNES->cbus, 0xfffa);
     WORD irq = bus_readw(m_pNES->cbus, 0xfffe);
-    int  pc  = 0;
-    BYTE bytes [ 3];
-    char strasm[64];
     char strtmp[16];
-    int  len = 0;
-    int  i   = 0;
     int  n   = 0;
 
-    memset(m_aPcInstMapTab, 0, 0x8000);
-    for (pc=rst; pc<0xffff; )
-    {
-        len = ndb_cpu_dasm(&(m_pNES->ndb), pc, bytes, strasm);
-        sprintf(strtmp, "%04X", pc);
-        n = m_ctrInstructionList.InsertItem(n, "");
+    BeginWaitCursor();
 
-        m_ctrInstructionList.SetItemText(n, 1, strtmp);
-        for (i=0; i<len; i++) {
-            sprintf(&(strtmp[i*3]), "%02X ", bytes[i]);
-        }
-        m_ctrInstructionList.SetItemText(n, 2, strtmp);
-        m_ctrInstructionList.SetItemText(n, 3, strasm);
+    // clear pc-instruction map table
+    memset(m_aPcInstMapTab, 0, 0x8000 * sizeof(WORD));
 
-        if (m_aPcInstMapTab) m_aPcInstMapTab[pc - 0x8000] = n;
-        pc += len; n++;
-    }
+    // nmi vector
+    sprintf(strtmp, "%02X %02X", (BYTE)(nmi >> 0), (BYTE)(nmi >> 8));
+    m_ctrInstructionList.InsertItem (0, "");
+    m_ctrInstructionList.SetItemText(0, 1, "FFFA");
+    m_ctrInstructionList.SetItemText(0, 2, strtmp);
+    m_ctrInstructionList.SetItemText(0, 3, "----");
+    m_ctrInstructionList.SetItemText(0, 4, "; nmi vector");
+
+    // reset vector
+    sprintf(strtmp, "%02X %02X", (BYTE)(rst >> 0), (BYTE)(rst >> 8));
+    m_ctrInstructionList.InsertItem (0, "");
+    m_ctrInstructionList.SetItemText(0, 1, "FFFC");
+    m_ctrInstructionList.SetItemText(0, 2, strtmp);
+    m_ctrInstructionList.SetItemText(0, 3, "----");
+    m_ctrInstructionList.SetItemText(0, 4, "; reset vector");
+
+    // irq vector
+    sprintf(strtmp, "%02X %02X", (BYTE)(irq >> 0), (BYTE)(irq >> 8));
+    m_ctrInstructionList.InsertItem (0, "");
+    m_ctrInstructionList.SetItemText(0, 1, "FFFE");
+    m_ctrInstructionList.SetItemText(0, 2, strtmp);
+    m_ctrInstructionList.SetItemText(0, 3, "----");
+    m_ctrInstructionList.SetItemText(0, 4, "; irq vector");
+
+    n = DisAsmByEntry(rst, "; main handler", n);
+    n = DisAsmByEntry(nmi, "; nmi handler" , n);
+    n = DisAsmByEntry(irq, "; irq handler" , n);
+
+    EndWaitCursor();
 }
 
 void CffndbdebugDlg::UpdateCurInstHighLight()
@@ -426,6 +493,8 @@ void CffndbdebugDlg::FindStrInListCtrl(CString str, BOOL down)
     int     n     = m_ctrInstructionList.GetSelectionMark() + d;
     int     total = m_ctrInstructionList.GetItemCount();
     CString find  = str.MakeUpper();
+
+    BeginWaitCursor();
 
     while (n >= 0 && n < total) {
         CString strItem = "";
@@ -448,6 +517,8 @@ void CffndbdebugDlg::FindStrInListCtrl(CString str, BOOL down)
     {
         MessageBox(CString("can't find \"") + str + "\"", "ffndb find", MB_ICONASTERISK|MB_ICONINFORMATION);
     }
+
+    EndWaitCursor();
 }
 
 
