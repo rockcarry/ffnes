@@ -104,60 +104,57 @@ int ndb_cpu_dasm(NDB *ndb, WORD pc, BYTE bytes[3], char *str)
         "CPX", "SBC", "NOP", "ISB", "CPX", "SBC", "INC", "ISB", "INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISB",
         "BEQ", "SBC", " t ", "ISB", "NOP", "SBC", "INC", "ISB", "SED", "SBC", "NOP", "ISB", "NOP", "SBC", "INC", "ISB",
     };
-    static int addr_mode_map[32] = { 1, 7, 1, 7, 2, 2, 2, 2, 0, 1, 0, 1, 4, 4, 4, 4, 10, 8, 9, 8, 3, 3, 3, 3, 0, 6, 0, 6, 5, 5, 5, 5 };
+    static int inst_len_map [32] = { 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3,  2, 2, 1, 2, 3, 3, 3, 3, 1, 3, 1, 3, 3, 3, 3, 3 };
+    static int addr_mode_map[32] = { 0, 7, 0, 7, 2, 2, 2, 2, 0, 1, 0, 1, 4, 4, 4, 4, 10, 8, 9, 8, 0, 3, 3, 3, 0, 6, 0, 6, 0, 5, 5, 5 };
 
-    int am = 0;
+    int am = 0, len = 0;
 
     bytes[0] = bus_readb(ndb->cpu->cbus, pc + 0);
     bytes[1] = bus_readb(ndb->cpu->cbus, pc + 1);
     bytes[2] = bus_readb(ndb->cpu->cbus, pc + 2);
 
-    // addressing mode
-    am = addr_mode_map[bytes[0] & 0x1f];
+    // instruction length & addressing mode
+    len = inst_len_map [bytes[0] & 0x1f];
+    am  = addr_mode_map[bytes[0] & 0x1f];
 
-    // for special opcode
+    // instruction length for spcial opcode
     switch (bytes[0])
     {
-    case 0x00:
-    case 0x40:
-    case 0x60:
-    case 0x64:
-    case 0x74:
-    case 0x89:
-    case 0xd4: am =  0; break;
-
-    case 0x96:
-    case 0x97:
-    case 0xb6:
-    case 0xb7: am = 11; break;
-
-    case 0x9e:
-    case 0x9f:
-    case 0xbe:
-    case 0xbf: am =  6; break;
-
-    case 0x20: am =  4; break;
-    case 0x6c: am = 12; break;
+    case 0x00: case 0x40: case 0x60: case 0x02: case 0x22: case 0x42: case 0x62: len = 1; break;
+    case 0x20:                                                                   len = 3; break;
     }
 
-    // for different addressing mode
+    // addressing mode for spcial opcode
+    switch (bytes[0])
+    {
+    case 0x20:                                             am =  4; break;
+    case 0xa0: case 0xc0: case 0xe0: case 0xa2:            am =  1; break;
+    case 0x04: case 0x44: case 0x64: case 0x89: case 0x0c: am =  0; break;
+    case 0x6c:                                             am = 12; break;
+    case 0x94: case 0xb4:                                  am =  3; break;
+    case 0x9c: case 0xbc:                                  am =  5; break;
+    case 0x96: case 0xb6: case 0x97: case 0xb7:            am = 11; break;
+    case 0x9e: case 0xbe: case 0x9f: case 0xbf:            am =  6; break;
+    }
+
+    // for different am
     switch (am)
     {
-    case  0: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                     ); return 1; // Implied
-    case  1: sprintf(str, "%s #%02X"       , s_opcode_strs[bytes[0]], bytes[1]           ); return 2; // immediate
-    case  2: sprintf(str, "%s $%02X"       , s_opcode_strs[bytes[0]], bytes[1]           ); return 2; // zeropage
-    case  3: sprintf(str, "%s $%02X, X"    , s_opcode_strs[bytes[0]], bytes[1]           ); return 2; // zeropage,x
-    case  4: sprintf(str, "%s $%02X%02X"   , s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); return 3; // absolute
-    case  5: sprintf(str, "%s $%02X%02X, X", s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); return 3; // absolute,x
-    case  6: sprintf(str, "%s $%02X%02X, Y", s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); return 3; // absolute,y
-    case  7: sprintf(str, "%s ($%02X, X)"  , s_opcode_strs[bytes[0]], bytes[1]           ); return 2; // (indir,x)
-    case  8: sprintf(str, "%s ($%02X), Y"  , s_opcode_strs[bytes[0]], bytes[1]           ); return 2; // (indir),y
-    case  9: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                     ); return 1; // ?
-    case 10: sprintf(str, "%s $%04X"       , s_opcode_strs[bytes[0]], pc+2+(char)bytes[1]); return 2; // relative
-    case 11: sprintf(str, "%s $%02X, Y"    , s_opcode_strs[bytes[0]], bytes[1]           ); return 2; // zeropage,y
-    case 12: sprintf(str, "%s ($%02X%02X)" , s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); return 3; // indirect, JMP ()
-    default: return -1; // this will never happen
+    case  0: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                     ); break; // Implied
+    case  1: sprintf(str, "%s #%02X"       , s_opcode_strs[bytes[0]], bytes[1]           ); break; // immediate
+    case  2: sprintf(str, "%s $%02X"       , s_opcode_strs[bytes[0]], bytes[1]           ); break; // zeropage
+    case  3: sprintf(str, "%s $%02X, X"    , s_opcode_strs[bytes[0]], bytes[1]           ); break; // zeropage,x
+    case  4: sprintf(str, "%s $%02X%02X"   , s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // absolute
+    case  5: sprintf(str, "%s $%02X%02X, X", s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // absolute,x
+    case  6: sprintf(str, "%s $%02X%02X, Y", s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // absolute,y
+    case  7: sprintf(str, "%s ($%02X, X)"  , s_opcode_strs[bytes[0]], bytes[1]           ); break; // (indir,x)
+    case  8: sprintf(str, "%s ($%02X), Y"  , s_opcode_strs[bytes[0]], bytes[1]           ); break; // (indir),y
+    case  9: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                     ); break; // ?
+    case 10: sprintf(str, "%s $%04X"       , s_opcode_strs[bytes[0]], pc+2+(char)bytes[1]); break; // relative
+    case 11: sprintf(str, "%s $%02X, Y"    , s_opcode_strs[bytes[0]], bytes[1]           ); break; // zeropage,y
+    case 12: sprintf(str, "%s ($%02X%02X)" , s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // indirect, JMP ()
     }
+    return len;
 }
 
 static void ndb_dump_cpu_regs0(NDB *ndb, char *str)
