@@ -43,37 +43,39 @@ BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
     switch (pMsg->message)
     {
     case WM_KEYDOWN:
-        if (::GetFocus() == m_ctrInstructionList.GetSafeHwnd()
-           && (pMsg->wParam == VK_HOME || pMsg->wParam == VK_END)
-           && GetKeyState(VK_CONTROL) < 0 )
+        if (::GetFocus() == m_ctrInstructionList.GetSafeHwnd())
         {
-            int n = (pMsg->wParam == VK_HOME) ? 0 : m_ctrInstructionList.GetItemCount() - 1;
-            m_ctrInstructionList.EnsureVisible(n, FALSE);
-            m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(n), 0, LVIS_SELECTED);
-            m_ctrInstructionList.SetItemState (n, LVIS_SELECTED, LVIS_SELECTED);
-            return TRUE;
-        }
-
-        if (  pMsg->wParam == 'F' && GetKeyState(VK_CONTROL) < 0
-           || pMsg->wParam == VK_F3 && m_strCurFindStr.Compare("") == 0 )
-        {
-            CFindReplaceDialog *dlg = (CFindReplaceDialog*)FindWindow(NULL, "ffndb find");
-            if (!dlg) {
-                DWORD flags = FR_HIDEMATCHCASE|FR_HIDEWHOLEWORD;
-                if (m_bIsSearchDown) flags |= FR_DOWN;
-                dlg = new CFindReplaceDialog();
-                dlg->Create(TRUE, m_strCurFindStr, NULL, flags, this);
-                dlg->SetWindowText("ffndb find");
-                dlg->ShowWindow(SW_SHOW);
+            if (  (pMsg->wParam == VK_HOME || pMsg->wParam == VK_END)
+                && GetKeyState(VK_CONTROL) < 0 )
+            {
+                int n = (pMsg->wParam == VK_HOME) ? 0 : m_ctrInstructionList.GetItemCount() - 1;
+                m_ctrInstructionList.EnsureVisible(n, FALSE);
+                m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(n), 0, LVIS_SELECTED);
+                m_ctrInstructionList.SetItemState (n, LVIS_SELECTED, LVIS_SELECTED);
+                return TRUE;
             }
-            else SwitchToThisWindow(dlg->GetSafeHwnd(), TRUE);
-            return TRUE;
-        }
 
-        if (pMsg->wParam == VK_F3 && m_strCurFindStr.Compare("") != 0)
-        {
-            FindStrInListCtrl(m_strCurFindStr, m_bIsSearchDown);
-            return TRUE;
+            if (  pMsg->wParam == 'F' && GetKeyState(VK_CONTROL) < 0
+               || pMsg->wParam == VK_F3 && m_strCurFindStr.Compare("") == 0 )
+            {
+                CFindReplaceDialog *dlg = (CFindReplaceDialog*)FindWindow(NULL, "ffndb find");
+                if (!dlg) {
+                    DWORD flags = FR_HIDEMATCHCASE|FR_HIDEWHOLEWORD;
+                    if (m_bIsSearchDown) flags |= FR_DOWN;
+                    dlg = new CFindReplaceDialog();
+                    dlg->Create(TRUE, m_strCurFindStr, NULL, flags, this);
+                    dlg->SetWindowText("ffndb find");
+                    dlg->ShowWindow(SW_SHOW);
+                }
+                else SwitchToThisWindow(dlg->GetSafeHwnd(), TRUE);
+                return TRUE;
+            }
+
+            if (pMsg->wParam == VK_F3 && m_strCurFindStr.Compare("") != 0)
+            {
+                FindStrInListCtrl(m_strCurFindStr, m_bIsSearchDown);
+                return TRUE;
+            }
         }
         break;
     }
