@@ -21,6 +21,7 @@ CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
 {
     // init varibles
     m_pNES            = pnes;
+    m_pDASM           = NULL;
     m_bEnableTracking = FALSE;
     m_bIsSearchDown   = TRUE;
 }
@@ -124,6 +125,9 @@ BOOL CffndbdebugDlg::OnInitDialog()
     }
     else pwnd->SetWindowText("enable cpu tracking");
 
+    // allcate dasm
+    m_pDASM = new DASM();
+
     // create dc
     m_cdcDraw.CreateCompatibleDC(NULL);
 
@@ -174,6 +178,9 @@ void CffndbdebugDlg::OnDestroy()
     m_fntDraw.DeleteObject();
     m_penDraw.DeleteObject();
 
+    // delete m_pDASM
+    delete m_pDASM;
+
     // delete self
     delete this;
 }
@@ -202,7 +209,7 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
         switch (m_nDebugType)
         {
         case DT_DEBUG_CPU:
-            UpdateCurInstHighLight();
+            if (m_bEnableTracking) UpdateCurInstHighLight();
             DrawCpuDebugging();
             break;
         }
@@ -289,13 +296,9 @@ void CffndbdebugDlg::OnBnClickedBtnCpuGoto()
 void CffndbdebugDlg::OnBnClickedBtnCpuStep()
 {
     DWORD nsteps = 1;
-    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_NSTEPS, &nsteps);
-    if (!m_bEnableTracking)
-    {
-        m_bEnableTracking = TRUE;
-        CWnd *pwnd = GetDlgItem(IDC_BTN_CPU_TRACKING);
-        pwnd->SetWindowText("disable cpu tracking");
-    }
+    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_NSTEPS, &nsteps); // run 1 step
+    while (!m_pNES->ndb.stop) Sleep(20); // wait for cpu stop
+    UpdateCurInstHighLight(); // update cursor high light for instruction list
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuTracking()
@@ -323,7 +326,9 @@ LONG CffndbdebugDlg::OnFindReplace(WPARAM wparam, LPARAM lparam)
     return 0;
 }
 
-
+///////////////////////////////////////////////
+// private methods
+///////////////////////////////////////////////
 void CffndbdebugDlg::DrawGrid(int m, int n, int *x, int *y)
 {
     for (int i=0; i<n; i++)
@@ -399,102 +404,39 @@ void CffndbdebugDlg::DrawCpuDebugging()
     InvalidateRect(&s_rtCpuInfo, FALSE);
 }
 
-int CffndbdebugDlg::DisAsmByEntry(WORD entry, CString name, int instn)
-{
-    char strasm[64];
-    char strtmp[16];
-    BYTE bytes [ 3];
-    WORD pc  = entry;
-    int  len = 0;
-    int  i   = 0;
-
-    if (m_aPcInstMapTab[pc - 0x8000])
-    {
-        m_ctrInstructionList.SetItemText(m_aPcInstMapTab[pc - 0x8000], 4, name);
-        return instn;
-    }
-
-    while (pc < 0xfffa)
-    {
-        // insert new row
-        instn = m_ctrInstructionList.InsertItem(instn, "");
-
-        // dasm one instruction
-        len   = ndb_cpu_dasm(&(m_pNES->ndb), pc, bytes, strasm);
-
-        // set pc subitem
-        sprintf(strtmp, "%04X", pc);
-        m_ctrInstructionList.SetItemText(instn, 1, strtmp);
-
-        // set opcode subitem
-        for (i=0; i<len; i++) {
-            sprintf(&(strtmp[i*3]), "%02X ", bytes[i]);
-        }
-        m_ctrInstructionList.SetItemText(instn, 2, strtmp);
-
-        // set asm subitem
-        m_ctrInstructionList.SetItemText(instn, 3, strasm);
-
-        // set comments subitem
-        if (pc == entry) m_ctrInstructionList.SetItemText(instn, 4, name);
-
-        m_aPcInstMapTab[pc - 0x8000] = instn;
-        pc += len; instn++;
-    }
-    return instn;
-}
-
 void CffndbdebugDlg::DoNesRomDisAsm()
 {
-    WORD rst = bus_readw(m_pNES->cbus, 0xfffc);
-    WORD nmi = bus_readw(m_pNES->cbus, 0xfffa);
-    WORD irq = bus_readw(m_pNES->cbus, 0xfffe);
-    char strtmp[16];
-    int  n   = 0;
+    char str[64];
+    int  n, i;
 
     BeginWaitCursor();
+    ndb_dasm_nes_rom(&(m_pNES->ndb), m_pDASM);
+    m_ctrInstructionList.InsertItem(0, "{");
+    for (n=1; n<m_pDASM->curinstn; n++)
+    {
+        m_ctrInstructionList.InsertItem(n, "");
 
-    // clear pc-instruction map table
-    memset(m_aPcInstMapTab, 0, 0x8000 * sizeof(WORD));
+        sprintf(str, "%04X", m_pDASM->instlist[n].pc);
+        m_ctrInstructionList.SetItemText(n, 1, str);
 
-    // nmi vector
-    sprintf(strtmp, "%02X %02X", (BYTE)(nmi >> 0), (BYTE)(nmi >> 8));
-    m_ctrInstructionList.InsertItem (0, "");
-    m_ctrInstructionList.SetItemText(0, 1, "FFFA");
-    m_ctrInstructionList.SetItemText(0, 2, strtmp);
-    m_ctrInstructionList.SetItemText(0, 3, "----");
-    m_ctrInstructionList.SetItemText(0, 4, "; nmi vector");
+        for (i=0; i<m_pDASM->instlist[n].len; i++) {
+            sprintf(&(str[i*3]), "%02X ", m_pDASM->instlist[n].bytes[i]);
+        }
+        m_ctrInstructionList.SetItemText(n, 2, str);
 
-    // reset vector
-    sprintf(strtmp, "%02X %02X", (BYTE)(rst >> 0), (BYTE)(rst >> 8));
-    m_ctrInstructionList.InsertItem (0, "");
-    m_ctrInstructionList.SetItemText(0, 1, "FFFC");
-    m_ctrInstructionList.SetItemText(0, 2, strtmp);
-    m_ctrInstructionList.SetItemText(0, 3, "----");
-    m_ctrInstructionList.SetItemText(0, 4, "; reset vector");
-
-    // irq vector
-    sprintf(strtmp, "%02X %02X", (BYTE)(irq >> 0), (BYTE)(irq >> 8));
-    m_ctrInstructionList.InsertItem (0, "");
-    m_ctrInstructionList.SetItemText(0, 1, "FFFE");
-    m_ctrInstructionList.SetItemText(0, 2, strtmp);
-    m_ctrInstructionList.SetItemText(0, 3, "----");
-    m_ctrInstructionList.SetItemText(0, 4, "; irq vector");
-
-    n = DisAsmByEntry(rst, "; main handler", n);
-    n = DisAsmByEntry(nmi, "; nmi handler" , n);
-    n = DisAsmByEntry(irq, "; irq handler" , n);
-
+        m_ctrInstructionList.SetItemText(n, 3, m_pDASM->instlist[n].asmstr );
+        m_ctrInstructionList.SetItemText(n, 4, m_pDASM->instlist[n].comment);
+    }
+    m_ctrInstructionList.InsertItem(n, "}");
     EndWaitCursor();
 }
 
 void CffndbdebugDlg::UpdateCurInstHighLight()
 {
-    if (!m_bEnableTracking) return;
-    int nCurInst = m_aPcInstMapTab[m_pNES->cpu.pc - 0x8000];
-    m_ctrInstructionList.EnsureVisible(nCurInst, FALSE);
-    m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(nCurInst), 0, LVIS_SELECTED);
-    m_ctrInstructionList.SetItemState (nCurInst, LVIS_SELECTED, LVIS_SELECTED);
+    int n = ndb_dasm_pc2instn(&(m_pNES->ndb), m_pDASM, m_pNES->cpu.pc);
+    m_ctrInstructionList.EnsureVisible(n, FALSE);
+    m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(n), 0, LVIS_SELECTED);
+    m_ctrInstructionList.SetItemState (n, LVIS_SELECTED, LVIS_SELECTED);
 }
 
 void CffndbdebugDlg::FindStrInListCtrl(CString str, BOOL down)
@@ -508,9 +450,9 @@ void CffndbdebugDlg::FindStrInListCtrl(CString str, BOOL down)
 
     while (n >= 0 && n < total) {
         CString strItem = "";
-        strItem += m_ctrInstructionList.GetItemText(n, 1);
-        strItem += m_ctrInstructionList.GetItemText(n, 2);
-        strItem += m_ctrInstructionList.GetItemText(n, 3);
+        strItem += m_ctrInstructionList.GetItemText(n, 1) + "|";
+        strItem += m_ctrInstructionList.GetItemText(n, 2) + "|";
+        strItem += m_ctrInstructionList.GetItemText(n, 3) + "|";
         strItem += m_ctrInstructionList.GetItemText(n, 4);
         strItem.MakeUpper();
         if (strItem.Find(find) != -1) break;

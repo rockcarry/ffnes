@@ -11,7 +11,9 @@ joypad_setkey
 
 ndb_reset
 ndb_cpu_runto
-ndb_cpu_dasm
+ndb_dasm_one_inst
+ndb_dasm_nes_rom
+ndb_dasm_pc2instn
 ndb_dump_info
 
 bus_readb

@@ -67,10 +67,6 @@ flags.
 #define IRQ_FLAG  (1 << 0)
 #define NMI_FLAG  (1 << 1)
 
-#define NMI_VECTOR  0xfffa
-#define RST_VECTOR  0xfffc
-#define IRQ_VECTOR  0xfffe
-
 #define C_FLAG  (1 << 0)
 #define Z_FLAG  (1 << 1)
 #define I_FLAG  (1 << 2)

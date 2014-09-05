@@ -29,25 +29,32 @@ public:
     #define NDB_REFRESH_TIMER 1
     #define NDB_DIASM_TIMER   2
 
-protected:
+private:
     NES    *m_pNES;
+    DASM   *m_pDASM;
     int     m_nDebugType;
     CBitmap m_bmpCpuInfo;
     CDC     m_cdcDraw;
     CFont   m_fntDraw;
     CPen    m_penDraw;
-    WORD    m_aPcInstMapTab[0x8000];
     BOOL    m_bEnableTracking;
-    CString m_strCurFindStr;
     BOOL    m_bIsSearchDown;
+    CString m_strCurFindStr;
 
-protected:
+private:
     void DrawGrid(int m, int n, int *x, int *y);
     void DrawCpuDebugging();
-    int  DisAsmByEntry(WORD entry, CString name, int instn);
     void DoNesRomDisAsm();
     void UpdateCurInstHighLight();
     void FindStrInListCtrl(CString str, BOOL down);
+
+private:
+    //++ mfc control variables
+    int       m_nCpuStopCond;
+    CString   m_strCpuStopNSteps;
+    CString   m_strCpuStopToPC;
+    CListCtrl m_ctrInstructionList;
+    //-- mfc control variables
 
 protected:
     virtual BOOL OnInitDialog();
@@ -69,10 +76,4 @@ protected:
     afx_msg void OnBnClickedBtnCpuStep();
     afx_msg void OnBnClickedBtnCpuTracking();
     afx_msg LONG OnFindReplace(WPARAM wParam, LPARAM lParam);
-
-private:
-    int       m_nCpuStopCond;
-    CString   m_strCpuStopNSteps;
-    CString   m_strCpuStopToPC;
-    CListCtrl m_ctrInstructionList;
 };

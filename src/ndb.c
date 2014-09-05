@@ -83,7 +83,7 @@ void ndb_cpu_runto(NDB *ndb, int cond, void *param)
     }
 }
 
-int ndb_cpu_dasm(NDB *ndb, WORD pc, BYTE bytes[3], char *str)
+int ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment, int *btype, WORD *entry)
 {
     static char *s_opcode_strs[256] =
     {
@@ -154,7 +154,92 @@ int ndb_cpu_dasm(NDB *ndb, WORD pc, BYTE bytes[3], char *str)
     case 11: sprintf(str, "%s $%02X, Y"    , s_opcode_strs[bytes[0]], bytes[1]           ); break; // zeropage,y
     case 12: sprintf(str, "%s ($%02X%02X)" , s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // indirect, JMP ()
     }
+
+    if (TRUE)             { *btype = NDB_DBT_NO_BRANCH ; *entry = 0;                                 } // default
+    if (bytes[0] == 0x4c) { *btype = NDB_DBT_JMP_DIRECT; *entry = (bytes[2] << 8) | (bytes[1] << 0); } // JMP
+    if (bytes[0] == 0x6c) {                                                                            // JMP () ++
+        *entry = (bytes[2] << 8) | (bytes[1] << 0);
+        *entry = bus_readw(ndb->cpu->cbus, *entry);
+        if (*entry > 0x8000) *btype = NDB_DBT_JMP_DIRECT;
+    }                                                                                                  // JMP () --
+    if (bytes[0] == 0x20) { *btype = NDB_DBT_CALL_SUB  ; *entry = (bytes[2] << 8) | (bytes[1] << 0); } // JSR
+    if (am == 10)         { *btype = NDB_DBT_JMP_ONCOND; *entry = (pc + 2 + (char)bytes[1]);         } // BPL BMI BVC BVS BCC BCS BNE BEQ
+
+    //++ for instruction comment ++//
+    // todo..
+    //-- for instruction comment --//
+
     return len;
+}
+
+static void ndb_dasm_by_entry(NDB *ndb, DASM *dasm, WORD entry)
+{
+    int  len;
+    WORD pc;
+    int  branchtype;
+    WORD branchentry;
+
+    if (entry < 0x8000 || dasm->pc2instn_maptab[entry - 0x8000] != 0) return;
+
+    for (pc=entry; pc<0xfffa; pc+=len)
+    {
+        // dasm one instruction
+        len = ndb_dasm_one_inst(ndb, pc,
+            dasm->instlist[dasm->curinstn].bytes,
+            dasm->instlist[dasm->curinstn].asmstr,
+            dasm->instlist[dasm->curinstn].comment,
+            &branchtype, &branchentry);
+        dasm->instlist[dasm->curinstn].pc  = pc;
+        dasm->instlist[dasm->curinstn].len = len;
+
+        if (dasm->pc2instn_maptab[pc - 0x8000] == 0)
+        {
+            dasm->pc2instn_maptab[pc - 0x8000] = dasm->curinstn++;
+
+            if (branchentry && dasm->pc2instn_maptab[pc - 0x8000] == 0)
+            {
+                switch (branchtype)
+                {
+                case NDB_DBT_JMP_DIRECT:
+                    ndb_dasm_by_entry(ndb, dasm, branchentry);
+                    goto done;
+
+                case NDB_DBT_JMP_ONCOND:
+                case NDB_DBT_CALL_SUB:
+                    ndb_dasm_by_entry(ndb, dasm, pc + len   );
+                    ndb_dasm_by_entry(ndb, dasm, branchentry);
+                    goto done;
+                }
+            }
+        }
+    }
+
+done:
+    return;
+}
+
+static int cmp_inst_item_by_pc(const void *item1, const void *item2)
+{
+    return *((WORD*)item1) - *((WORD*)item2);
+}
+
+void ndb_dasm_nes_rom(NDB *ndb, DASM *dasm)
+{
+    memset(dasm, 0, sizeof(DASM));
+    dasm->instlist[dasm->curinstn++].pc = 0;
+
+    ndb_dasm_by_entry(ndb, dasm, bus_readw(ndb->cpu->cbus, RST_VECTOR));
+    ndb_dasm_by_entry(ndb, dasm, bus_readw(ndb->cpu->cbus, NMI_VECTOR));
+    ndb_dasm_by_entry(ndb, dasm, bus_readw(ndb->cpu->cbus, IRQ_VECTOR));
+
+    // quick sort instlist
+    qsort(dasm->instlist, dasm->curinstn, sizeof(dasm->instlist[0]), cmp_inst_item_by_pc);
+}
+
+int ndb_dasm_pc2instn(NDB *ndb, DASM *dasm, WORD pc)
+{
+    if (pc < 0x8000) return 0;
+    else return dasm->pc2instn_maptab[pc - 0x8000];
 }
 
 static void ndb_dump_cpu_regs0(NDB *ndb, char *str)

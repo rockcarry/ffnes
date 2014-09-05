@@ -5,6 +5,11 @@
 #include "stdefine.h"
 #include "bus.h"
 
+// 常量定义
+#define NMI_VECTOR  0xfffa
+#define RST_VECTOR  0xfffc
+#define IRQ_VECTOR  0xfffe
+
 // 类型定义
 typedef struct {
     WORD pc;
