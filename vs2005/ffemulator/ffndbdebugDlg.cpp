@@ -474,6 +474,8 @@ void CffndbdebugDlg::DoNesRomDisAsm()
 
     BeginWaitCursor();
     ndb_dasm_nes_rom(&(m_pNES->ndb), m_pDASM);
+    m_ctrInstructionList.SetRedraw(FALSE);
+    m_ctrInstructionList.DeleteAllItems();
     m_ctrInstructionList.InsertItem(0, "{");
     for (n=1; n<m_pDASM->curinstn; n++)
     {
@@ -491,6 +493,7 @@ void CffndbdebugDlg::DoNesRomDisAsm()
         m_ctrInstructionList.SetItemText(n, 4, m_pDASM->instlist[n].comment);
     }
     m_ctrInstructionList.InsertItem(n, "}");
+    m_ctrInstructionList.SetRedraw(TRUE);
     EndWaitCursor();
 }
 
