@@ -9,7 +9,6 @@
 enum {
     NDB_CPU_KEEP_RUNNING, // cpu keep running
     NDB_CPU_RUN_NSTEPS,   // cpu run n instructions then stop
-    NDB_CPU_STOP_PCEQU,   // cpu keep running, but when pc == xxxx will stop
 };
 
 enum {
@@ -33,11 +32,10 @@ typedef struct
     CPU  *cpu;
     int   stop;
     int   cond;
-    BYTE  param[32];
-
-    // for saving debugging status
-    int save_stop;
-    int save_cond;
+    WORD  savepc;      // save current pc
+    BYTE  params [32]; // params for cond stop
+    WORD  bpoints[16]; // totally 16 break points
+    WORD  watches[16]; // totally 16 watch variables
 } NDB;
 
 typedef struct
@@ -60,10 +58,6 @@ typedef struct
 void ndb_init (NDB *ndb, CPU *cpu);
 void ndb_free (NDB *ndb);
 void ndb_reset(NDB *ndb);
-
-// save & restore debugging status
-void ndb_save   (NDB *ndb);
-void ndb_restore(NDB *ndb);
 
 // debug cpu
 void ndb_cpu_debug(NDB *ndb);

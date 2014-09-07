@@ -20,23 +20,13 @@ void ndb_reset(NDB *ndb)
     ndb->cond = 0;
 }
 
-// save & restore debugging status
-void ndb_save(NDB *ndb)
-{
-    ndb->save_cond = ndb->cond;
-    ndb->save_stop = ndb->stop;
-}
-
-void ndb_restore(NDB *ndb)
-{
-    ndb->cond = ndb->save_cond;
-    ndb->stop = ndb->save_stop;
-}
-
 void ndb_cpu_debug(NDB *ndb)
 {
-    WORD *wparam = (WORD*)ndb->param;
-    LONG *lparam = (LONG*)ndb->param;
+    WORD *wparam = (WORD*)ndb->params;
+    LONG *lparam = (LONG*)ndb->params;
+
+    // save current pc
+    ndb->savepc = ndb->cpu->pc;
 
     switch (ndb->cond)
     {
@@ -48,10 +38,6 @@ void ndb_cpu_debug(NDB *ndb)
         if (*lparam > 0) (*lparam)--;
         ndb->stop = (*lparam > 0) ? 0 : 1;
         break;
-
-    case NDB_CPU_STOP_PCEQU:
-        ndb->stop = (ndb->cpu->pc == *wparam) ? 1 : 0;
-        break;
     }
 
     // while loop make ndb spin here
@@ -60,8 +46,8 @@ void ndb_cpu_debug(NDB *ndb)
 
 void ndb_cpu_runto(NDB *ndb, int cond, void *param)
 {
-    WORD *wparam = (WORD*)ndb->param;
-    LONG *lparam = (LONG*)ndb->param;
+    WORD *wparam = (WORD*)ndb->params;
+    LONG *lparam = (LONG*)ndb->params;
 
     ndb->cond = cond;
     switch (cond)
@@ -74,11 +60,6 @@ void ndb_cpu_runto(NDB *ndb, int cond, void *param)
         *lparam = *(LONG*)param;
         if (*lparam <= 0) ndb->stop = 1;
         else              ndb->stop = 0;
-        break;
-
-    case NDB_CPU_STOP_PCEQU:
-        *wparam = *(WORD*)param;
-        ndb->stop = 0;
         break;
     }
 }

@@ -17,7 +17,6 @@ CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
     : CDialog(CffndbdebugDlg::IDD, pParent)
     , m_nCpuStopCond(0)
     , m_strCpuStopNSteps("1")
-    , m_strCpuStopToPC("FFFF")
 {
     // init varibles
     m_pNES            = pnes;
@@ -35,7 +34,6 @@ void CffndbdebugDlg::DoDataExchange(CDataExchange* pDX)
     CDialog::DoDataExchange(pDX);
     DDX_Radio  (pDX, IDC_RDO_CPU_KEEP_RUNNING, m_nCpuStopCond      );
     DDX_Text   (pDX, IDC_EDT_NSTEPS          , m_strCpuStopNSteps  );
-    DDX_Text   (pDX, IDC_EDT_PC              , m_strCpuStopToPC    );
     DDX_Control(pDX, IDC_LST_OPCODE          , m_ctrInstructionList);
 }
 
@@ -285,11 +283,6 @@ void CffndbdebugDlg::OnBnClickedBtnCpuGoto()
         lparam = atoi(m_strCpuStopNSteps);
         ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, &lparam);
         break;
-
-    case NDB_CPU_STOP_PCEQU:
-        wparam = (WORD)strtoul(m_strCpuStopToPC, NULL, 16);
-        ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, &wparam);
-        break;
     }
 }
 
@@ -433,7 +426,7 @@ void CffndbdebugDlg::DoNesRomDisAsm()
 
 void CffndbdebugDlg::UpdateCurInstHighLight()
 {
-    int n = ndb_dasm_pc2instn(&(m_pNES->ndb), m_pDASM, m_pNES->cpu.pc);
+    int n = ndb_dasm_pc2instn(&(m_pNES->ndb), m_pDASM, m_pNES->ndb.savepc);
     m_ctrInstructionList.EnsureVisible(n, FALSE);
     m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(n), 0, LVIS_SELECTED);
     m_ctrInstructionList.SetItemState (n, LVIS_SELECTED, LVIS_SELECTED);

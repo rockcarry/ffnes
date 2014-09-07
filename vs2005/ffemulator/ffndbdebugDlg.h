@@ -52,7 +52,6 @@ private:
     //++ mfc control variables
     int       m_nCpuStopCond;
     CString   m_strCpuStopNSteps;
-    CString   m_strCpuStopToPC;
     CListCtrl m_ctrInstructionList;
     //-- mfc control variables
 

@@ -12,13 +12,11 @@
 #define IDC_GRP_CPU_CONTROL             1004
 #define IDC_RDO_CPU_KEEP_RUNNING        1005
 #define IDC_RDO_CPU_RUN_NSTEPS          1006
-#define IDC_RDO_CPU_RUN_TOPC            1007
-#define IDC_EDT_NSTEPS                  1008
-#define IDC_EDT_PC                      1009
-#define IDC_BTN_CPU_GOTO                1010
-#define IDC_BTN_CPU_STEP                1011
-#define IDC_BTN_CPU_TRACKING            1012
-#define IDC_LST_OPCODE                  1013
+#define IDC_EDT_NSTEPS                  1007
+#define IDC_BTN_CPU_GOTO                1008
+#define IDC_BTN_CPU_STEP                1009
+#define IDC_BTN_CPU_TRACKING            1010
+#define IDC_LST_OPCODE                  1011
 
 
 // Next default values for new objects

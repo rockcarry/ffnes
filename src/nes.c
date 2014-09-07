@@ -15,9 +15,6 @@ static void nes_do_reset(NES* nes)
 
     // reset joypad
     joypad_reset(&(nes->pad));
-
-    // restore ndb debugging status
-    ndb_restore(&(nes->ndb));
 }
 
 static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
@@ -242,9 +239,9 @@ void nes_free(NES *nes)
 
 void nes_reset(NES *nes)
 {
-    ndb_save (&(nes->ndb));
-    ndb_reset(&(nes->ndb));
-    nes->request_reset = 1;
+    // set ndb cpu always running
+    ndb_cpu_runto(&(nes->ndb), 0, NULL);
+    nes->request_reset = 1; // request reset
 }
 
 void nes_run  (NES *nes) { nes->isrunning = 1;   SetEvent(nes->hNesEvent); }
