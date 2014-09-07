@@ -88,14 +88,15 @@ BEGIN
     PUSHBUTTON      "run/pause",IDC_BTN_NES_RUN_PAUSE,74,20,50,18
     PUSHBUTTON      "debug cpu",IDC_BTN_NES_DEBUG_CPU,130,20,50,18
     PUSHBUTTON      "debug ppu",IDC_BTN_NES_DEBUG_PPU,186,20,50,18
-    CONTROL         "cpu keep running",IDC_RDO_CPU_KEEP_RUNNING,"Button",BS_AUTORADIOBUTTON | WS_GROUP,251,286,71,10
-    CONTROL         "cpu run N steps",IDC_RDO_CPU_RUN_NSTEPS,"Button",BS_AUTORADIOBUTTON,251,300,66,10
-    EDITTEXT        IDC_EDT_NSTEPS,320,298,46,12,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "cpu keep running",IDC_RDO_CPU_KEEP_RUNNING,"Button",BS_AUTORADIOBUTTON | WS_GROUP,251,279,71,10
+    CONTROL         "cpu run N steps",IDC_RDO_CPU_RUN_NSTEPS,"Button",BS_AUTORADIOBUTTON,251,293,66,10
+    EDITTEXT        IDC_EDT_NSTEPS,320,291,46,12,ES_AUTOHSCROLL | ES_NUMBER
     PUSHBUTTON      "run",IDC_BTN_CPU_GOTO,373,285,38,25
     PUSHBUTTON      "step",IDC_BTN_CPU_STEP,414,285,38,25
     PUSHBUTTON      "enable/disable cpu tracking",IDC_BTN_CPU_TRACKING,455,285,38,25,BS_MULTILINE
     GROUPBOX        "general control",IDC_STATIC,6,7,493,40
     GROUPBOX        "cpu control",IDC_GRP_CPU_CONTROL,243,267,255,58
+    CONTROL         "cpu run to break points",IDC_RDO_CPU_RUN_BPOINTS,"Button",BS_AUTORADIOBUTTON,251,307,90,10
 END
 
 
@@ -134,6 +135,25 @@ BEGIN
     BLOCK "VarFileInfo"
     BEGIN
         VALUE "Translation", 0x409, 1252
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU1 MENU
+BEGIN
+    POPUP "popup"
+    BEGIN
+        MENUITEM "Add &Break Point     Ctrl+B", ID_ADDBREAKPOINT
+        MENUITEM "&Delete Break Point  Ctrl+D", ID_DELBREAKPOINT
+        MENUITEM SEPARATOR
+        MENUITEM "Select &All          Ctrl+A", ID_DASMLIST_SELECTALL
+        MENUITEM "&Copy                Ctrl+C", ID_DASMLIST_COPY
+        MENUITEM "&Edit                Ctrl+E", ID_DASMLIST_EDIT
     END
 END
 

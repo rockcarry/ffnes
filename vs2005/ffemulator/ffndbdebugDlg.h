@@ -57,7 +57,7 @@ private:
 
 protected:
     virtual BOOL OnInitDialog();
-    virtual void DoDataExchange(CDataExchange* pDX);
+    virtual void DoDataExchange(CDataExchange *pDX);
     virtual BOOL PreTranslateMessage(MSG* pMsg);
 
 protected:
@@ -75,4 +75,7 @@ protected:
     afx_msg void OnBnClickedBtnCpuStep();
     afx_msg void OnBnClickedBtnCpuTracking();
     afx_msg LONG OnFindReplace(WPARAM wParam, LPARAM lParam);
+    afx_msg void OnRclickListDasm(NMHDR *pNMHDR, LRESULT *pResult);
+    afx_msg void OnAddbreakpoint();
+    afx_msg void OnDelbreakpoint();
 };

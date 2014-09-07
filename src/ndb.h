@@ -9,6 +9,7 @@
 enum {
     NDB_CPU_KEEP_RUNNING, // cpu keep running
     NDB_CPU_RUN_NSTEPS,   // cpu run n instructions then stop
+    NDB_CPU_RUN_BPOINTS,  // cpu run to break points
 };
 
 enum {
@@ -32,10 +33,14 @@ typedef struct
     CPU  *cpu;
     int   stop;
     int   cond;
-    WORD  savepc;      // save current pc
+    WORD  curpc;       // current pc
     BYTE  params [32]; // params for cond stop
     WORD  bpoints[16]; // totally 16 break points
     WORD  watches[16]; // totally 16 watch variables
+
+    // for save & restore
+    int   save_stop;
+    int   save_cond;
 } NDB;
 
 typedef struct
@@ -59,6 +64,10 @@ void ndb_init (NDB *ndb, CPU *cpu);
 void ndb_free (NDB *ndb);
 void ndb_reset(NDB *ndb);
 
+// save & restore
+void ndb_save   (NDB *ndb);
+void ndb_restore(NDB *ndb);
+
 // debug cpu
 void ndb_cpu_debug(NDB *ndb);
 void ndb_cpu_runto(NDB *ndb, int cond, void *param);
@@ -67,6 +76,12 @@ void ndb_cpu_runto(NDB *ndb, int cond, void *param);
 int  ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment, int *btype, WORD *entry);
 void ndb_dasm_nes_rom (NDB *ndb, DASM *dasm);
 int  ndb_dasm_pc2instn(NDB *ndb, DASM *dasm, WORD pc);
+
+// break point & watch
+BOOL ndb_add_bpoint(NDB *ndb, WORD bpoint);
+void ndb_del_bpoint(NDB *ndb, WORD bpoint);
+BOOL ndb_add_watch (NDB *ndb, WORD watch );
+void ndb_del_watch (NDB *ndb, WORD watch );
 
 // ndb dump info
 void ndb_dump_info(NDB *ndb, int type, char *str);

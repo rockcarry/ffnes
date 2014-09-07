@@ -18,15 +18,31 @@ void ndb_reset(NDB *ndb)
 {
     ndb->stop = 0;
     ndb->cond = 0;
+    memset(ndb->params , 0   , sizeof(ndb->params ));
+    memset(ndb->bpoints, 0xff, sizeof(ndb->bpoints));
+    memset(ndb->watches, 0xff, sizeof(ndb->watches));
+}
+
+void ndb_save(NDB *ndb)
+{
+    ndb->save_stop = ndb->stop;
+    ndb->save_cond = ndb->cond;
+}
+
+void ndb_restore(NDB *ndb)
+{
+    ndb->stop = ndb->save_stop;
+    ndb->cond = ndb->save_cond;
 }
 
 void ndb_cpu_debug(NDB *ndb)
 {
     WORD *wparam = (WORD*)ndb->params;
     LONG *lparam = (LONG*)ndb->params;
+    int   i;
 
     // save current pc
-    ndb->savepc = ndb->cpu->pc;
+    ndb->curpc = ndb->cpu->pc;
 
     switch (ndb->cond)
     {
@@ -37,6 +53,17 @@ void ndb_cpu_debug(NDB *ndb)
     case NDB_CPU_RUN_NSTEPS:
         if (*lparam > 0) (*lparam)--;
         ndb->stop = (*lparam > 0) ? 0 : 1;
+        break;
+
+    case NDB_CPU_RUN_BPOINTS:
+        for (i=0; i<16; i++)
+        {
+            if (ndb->curpc == ndb->bpoints[i])
+            {
+                ndb->stop = 1;
+                break;
+            }
+        }
         break;
     }
 
@@ -60,6 +87,10 @@ void ndb_cpu_runto(NDB *ndb, int cond, void *param)
         *lparam = *(LONG*)param;
         if (*lparam <= 0) ndb->stop = 1;
         else              ndb->stop = 0;
+        break;
+
+    case NDB_CPU_RUN_BPOINTS:
+        ndb->stop = 0;
         break;
     }
 }
@@ -221,6 +252,58 @@ int ndb_dasm_pc2instn(NDB *ndb, DASM *dasm, WORD pc)
 {
     if (pc < 0x8000) return 0;
     else return dasm->pc2instn_maptab[pc - 0x8000];
+}
+
+BOOL ndb_add_bpoint(NDB *ndb, WORD bpoint)
+{
+    int i, free = -1;
+    for (i=0; i<16; i++)
+    {
+        if (ndb->bpoints[i] == bpoint) return TRUE;
+        if (ndb->bpoints[i] == 0xffff && free == -1) free = i;
+    }
+    if (free != -1)
+    {
+        ndb->bpoints[free] = bpoint;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+void ndb_del_bpoint(NDB *ndb, WORD bpoint)
+{
+    int i;
+    for (i=0; i<16; i++)
+    {
+        if (ndb->bpoints[i] == bpoint) break;
+    }
+    if (i < 16) ndb->bpoints[i] = 0xffff;
+}
+
+BOOL ndb_add_watch(NDB *ndb, WORD watch)
+{
+    int i, free = -1;
+    for (i=0; i<16; i++)
+    {
+        if (ndb->watches[i] == watch) return TRUE;
+        if (ndb->watches[i] == 0xffff && free == -1) free = i;
+    }
+    if (free != -1)
+    {
+        ndb->watches[free] = watch;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+void ndb_del_watch(NDB *ndb, WORD watch)
+{
+    int i;
+    for (i=0; i<16; i++)
+    {
+        if (ndb->watches[i] == watch) break;
+    }
+    if (i < 16) ndb->watches[i] = 0xffff;
 }
 
 static void ndb_dump_cpu_regs0(NDB *ndb, char *str)

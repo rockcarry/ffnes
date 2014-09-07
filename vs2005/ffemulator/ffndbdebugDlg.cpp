@@ -75,6 +75,18 @@ BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
                 FindStrInListCtrl(m_strCurFindStr, m_bIsSearchDown);
                 return TRUE;
             }
+
+            if (pMsg->wParam == 'B' && GetKeyState(VK_CONTROL) < 0)
+            {
+                OnAddbreakpoint();
+                return TRUE;
+            }
+
+            if (pMsg->wParam == 'D' && GetKeyState(VK_CONTROL) < 0)
+            {
+                OnDelbreakpoint();
+                return TRUE;
+            }
         }
         break;
     }
@@ -85,14 +97,17 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_WM_DESTROY()
     ON_WM_PAINT()
     ON_WM_TIMER()
-    ON_BN_CLICKED(IDC_BTN_NES_RESET    , &CffndbdebugDlg::OnBnClickedBtnNesReset)
-    ON_BN_CLICKED(IDC_BTN_NES_RUN_PAUSE, &CffndbdebugDlg::OnBnClickedBtnNesRunPause)
-    ON_BN_CLICKED(IDC_BTN_NES_DEBUG_CPU, &CffndbdebugDlg::OnBnClickedBtnNesDebugCpu)
-    ON_BN_CLICKED(IDC_BTN_NES_DEBUG_PPU, &CffndbdebugDlg::OnBnClickedBtnNesDebugPpu)
-    ON_BN_CLICKED(IDC_BTN_CPU_GOTO     , &CffndbdebugDlg::OnBnClickedBtnCpuGoto)
-    ON_BN_CLICKED(IDC_BTN_CPU_STEP     , &CffndbdebugDlg::OnBnClickedBtnCpuStep)
-    ON_BN_CLICKED(IDC_BTN_CPU_TRACKING , &CffndbdebugDlg::OnBnClickedBtnCpuTracking)
-    ON_REGISTERED_MESSAGE(WM_FINDREPLACE, OnFindReplace)
+    ON_BN_CLICKED(IDC_BTN_NES_RESET     , &CffndbdebugDlg::OnBnClickedBtnNesReset)
+    ON_BN_CLICKED(IDC_BTN_NES_RUN_PAUSE , &CffndbdebugDlg::OnBnClickedBtnNesRunPause)
+    ON_BN_CLICKED(IDC_BTN_NES_DEBUG_CPU , &CffndbdebugDlg::OnBnClickedBtnNesDebugCpu)
+    ON_BN_CLICKED(IDC_BTN_NES_DEBUG_PPU , &CffndbdebugDlg::OnBnClickedBtnNesDebugPpu)
+    ON_BN_CLICKED(IDC_BTN_CPU_GOTO      , &CffndbdebugDlg::OnBnClickedBtnCpuGoto)
+    ON_BN_CLICKED(IDC_BTN_CPU_STEP      , &CffndbdebugDlg::OnBnClickedBtnCpuStep)
+    ON_BN_CLICKED(IDC_BTN_CPU_TRACKING  , &CffndbdebugDlg::OnBnClickedBtnCpuTracking)
+    ON_REGISTERED_MESSAGE(WM_FINDREPLACE, &CffndbdebugDlg::OnFindReplace)
+    ON_NOTIFY(NM_RCLICK, IDC_LST_OPCODE , &CffndbdebugDlg::OnRclickListDasm)
+    ON_COMMAND(ID_ADDBREAKPOINT         , &CffndbdebugDlg::OnAddbreakpoint)
+    ON_COMMAND(ID_DELBREAKPOINT         , &CffndbdebugDlg::OnDelbreakpoint)
 END_MESSAGE_MAP()
 
 // CffndbdebugDlg message handlers
@@ -283,6 +298,10 @@ void CffndbdebugDlg::OnBnClickedBtnCpuGoto()
         lparam = atoi(m_strCpuStopNSteps);
         ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, &lparam);
         break;
+
+    case NDB_CPU_RUN_BPOINTS:
+        ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, NULL);
+        break;
     }
 }
 
@@ -317,6 +336,57 @@ LONG CffndbdebugDlg::OnFindReplace(WPARAM wparam, LPARAM lparam)
     }
 
     return 0;
+}
+
+void CffndbdebugDlg::OnRclickListDasm(NMHDR *pNMHDR, LRESULT *pResult)
+{
+    DWORD  dwPos = GetMessagePos();
+    CPoint point(LOWORD(dwPos), HIWORD(dwPos));
+
+    CMenu  menu;
+    menu.LoadMenu(IDR_MENU1);
+    menu.GetSubMenu(0)->TrackPopupMenu(TPM_LEFTALIGN|TPM_RIGHTBUTTON, point.x, point.y, this);
+    *pResult = 0;
+}
+
+void CffndbdebugDlg::OnAddbreakpoint()
+{
+    POSITION pos = m_ctrInstructionList.GetFirstSelectedItemPosition();
+    if (pos)
+    {
+        while (pos)
+        {
+            int   n  = 0;
+            DWORD pc = 0;
+            n = m_ctrInstructionList.GetNextSelectedItem(pos);
+            sscanf(m_ctrInstructionList.GetItemText(n, 1), "%x", &pc);
+
+            m_ctrInstructionList.SetItemText(n, 0, "B");
+            if (!ndb_add_bpoint(&(m_pNES->ndb), (WORD)pc))
+            {
+                MessageBox(CString("only support 16 break points !"), "ffndb find", MB_ICONASTERISK|MB_ICONINFORMATION);
+                break;
+            }
+        }
+    }
+}
+
+void CffndbdebugDlg::OnDelbreakpoint()
+{
+    POSITION pos = m_ctrInstructionList.GetFirstSelectedItemPosition();
+    if (pos)
+    {
+        while (pos)
+        {
+            int   n  = 0;
+            DWORD pc = 0;
+            n = m_ctrInstructionList.GetNextSelectedItem(pos);
+            sscanf(m_ctrInstructionList.GetItemText(n, 1), "%x", &pc);
+
+            m_ctrInstructionList.SetItemText(n, 0, "");
+            ndb_del_bpoint(&(m_pNES->ndb), (WORD)pc);
+        }
+    }
 }
 
 ///////////////////////////////////////////////
@@ -426,7 +496,7 @@ void CffndbdebugDlg::DoNesRomDisAsm()
 
 void CffndbdebugDlg::UpdateCurInstHighLight()
 {
-    int n = ndb_dasm_pc2instn(&(m_pNES->ndb), m_pDASM, m_pNES->ndb.savepc);
+    int n = ndb_dasm_pc2instn(&(m_pNES->ndb), m_pDASM, m_pNES->ndb.curpc);
     m_ctrInstructionList.EnsureVisible(n, FALSE);
     m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(n), 0, LVIS_SELECTED);
     m_ctrInstructionList.SetItemState (n, LVIS_SELECTED, LVIS_SELECTED);
@@ -465,5 +535,6 @@ void CffndbdebugDlg::FindStrInListCtrl(CString str, BOOL down)
 
     EndWaitCursor();
 }
+
 
 
