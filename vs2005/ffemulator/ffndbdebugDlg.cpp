@@ -134,9 +134,9 @@ BOOL CffndbdebugDlg::OnInitDialog()
 
     pwnd = GetDlgItem(IDC_BTN_CPU_TRACKING);
     if (m_bEnableTracking) {
-        pwnd->SetWindowText("disable cpu tracking");
+        pwnd->SetWindowText("disable pc tracking");
     }
-    else pwnd->SetWindowText("enable cpu tracking");
+    else pwnd->SetWindowText("enable pc tracking");
 
     // allcate dasm
     m_pDASM = new DASM();
@@ -318,9 +318,9 @@ void CffndbdebugDlg::OnBnClickedBtnCpuTracking()
     CWnd *pwnd = GetDlgItem(IDC_BTN_CPU_TRACKING);
     m_bEnableTracking = !m_bEnableTracking;
     if (m_bEnableTracking) {
-        pwnd->SetWindowText("disable cpu tracking");
+        pwnd->SetWindowText("disable pc tracking");
     }
-    else pwnd->SetWindowText("enable cpu tracking");
+    else pwnd->SetWindowText("enable pc tracking");
 }
 
 LONG CffndbdebugDlg::OnFindReplace(WPARAM wparam, LPARAM lparam)
