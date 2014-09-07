@@ -64,17 +64,17 @@ flags.
 */
 
 // 常量定义
-#define IRQ_FLAG  (1 << 0)
-#define NMI_FLAG  (1 << 1)
+#define IRQ_FLAG    (1 << 0)
+#define NMI_FLAG    (1 << 1)
 
-#define C_FLAG  (1 << 0)
-#define Z_FLAG  (1 << 1)
-#define I_FLAG  (1 << 2)
-#define D_FLAG  (1 << 3)
-#define B_FLAG  (1 << 4)
-#define R_FLAG  (1 << 5)
-#define O_FLAG  (1 << 6)
-#define N_FLAG  (1 << 7)
+#define C_FLAG      (1 << 0)
+#define Z_FLAG      (1 << 1)
+#define I_FLAG      (1 << 2)
+#define D_FLAG      (1 << 3)
+#define B_FLAG      (1 << 4)
+#define R_FLAG      (1 << 5)
+#define O_FLAG      (1 << 6)
+#define N_FLAG      (1 << 7)
 
 //++ basic ++//
 #define RAM         (cpu->cram)
@@ -110,26 +110,26 @@ flags.
 //-- basic --//
 
 //++ addressing mode ++//
-#define MR_IM() do { DT = READB(PC++);                                               } while (0)
-#define MR_ZP() do { EA = READB(PC++); DT = ZPRDB(EA);                               } while (0)
-#define MR_ZX() do { DT = READB(PC++); EA = (BYTE)(DT + XI); DT = ZPRDB(EA);         } while (0)
-#define MR_ZY() do { DT = READB(PC++); EA = (BYTE)(DT + YI); DT = ZPRDB(EA);         } while (0)
-#define MR_AB() do { EA = READW(PC); PC += 2; DT = READB(EA);                        } while (0)
-#define MR_AX() do { ET = READW(PC); PC += 2; EA = ET + XI; DT = READB(EA);          } while (0)
-#define MR_AY() do { ET = READW(PC); PC += 2; EA = ET + YI; DT = READB(EA);          } while (0)
-#define MR_IX() do { DT = READB(PC++); EA = ZPRDW(DT + XI); DT = READB(EA);          } while (0)
-#define MR_IY() do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI; DT = READB(EA); } while (0)
-#define EA_ZP() do { EA = READB(PC++);                                               } while (0)
-#define EA_ZX() do { DT = READB(PC++); EA = (BYTE)(DT + XI);                         } while (0)
-#define EA_ZY() do { DT = READB(PC++); EA = (BYTE)(DT + YI);                         } while (0)
-#define EA_AB() do { EA = READW(PC); PC += 2;                                        } while (0)
-#define EA_AX() do { ET = READW(PC); PC += 2; EA = ET + XI;                          } while (0)
-#define EA_AY() do { ET = READW(PC); PC += 2; EA = ET + YI;                          } while (0)
-#define EA_IX() do { DT = READB(PC++); EA = ZPRDW(DT + XI);                          } while (0)
-#define EA_IY() do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI;                 } while (0)
-#define MW_ZP() do { ZPWRB(EA, DT);                                                  } while (0)
-#define MW_EA() do { WRITEB(EA, DT);                                                 } while (0)
-#define CHECK_EA() do { if ((ET & 0xFF00) != (EA & 0xFF00)) cclk--;                  } while (0)
+#define MR_IM()    do { DT = READB(PC++);                                               } while (0)
+#define MR_ZP()    do { EA = READB(PC++); DT = ZPRDB(EA);                               } while (0)
+#define MR_ZX()    do { DT = READB(PC++); EA = (BYTE)(DT + XI); DT = ZPRDB(EA);         } while (0)
+#define MR_ZY()    do { DT = READB(PC++); EA = (BYTE)(DT + YI); DT = ZPRDB(EA);         } while (0)
+#define MR_AB()    do { EA = READW(PC); PC += 2; DT = READB(EA);                        } while (0)
+#define MR_AX()    do { ET = READW(PC); PC += 2; EA = ET + XI; DT = READB(EA);          } while (0)
+#define MR_AY()    do { ET = READW(PC); PC += 2; EA = ET + YI; DT = READB(EA);          } while (0)
+#define MR_IX()    do { DT = READB(PC++); EA = ZPRDW(DT + XI); DT = READB(EA);          } while (0)
+#define MR_IY()    do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI; DT = READB(EA); } while (0)
+#define EA_ZP()    do { EA = READB(PC++);                                               } while (0)
+#define EA_ZX()    do { DT = READB(PC++); EA = (BYTE)(DT + XI);                         } while (0)
+#define EA_ZY()    do { DT = READB(PC++); EA = (BYTE)(DT + YI);                         } while (0)
+#define EA_AB()    do { EA = READW(PC); PC += 2;                                        } while (0)
+#define EA_AX()    do { ET = READW(PC); PC += 2; EA = ET + XI;                          } while (0)
+#define EA_AY()    do { ET = READW(PC); PC += 2; EA = ET + YI;                          } while (0)
+#define EA_IX()    do { DT = READB(PC++); EA = ZPRDW(DT + XI);                          } while (0)
+#define EA_IY()    do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI;                 } while (0)
+#define MW_ZP()    do { ZPWRB(EA, DT);                                                  } while (0)
+#define MW_EA()    do { WRITEB(EA, DT);                                                 } while (0)
+#define CHECK_EA() do { if ((ET & 0xFF00) != (EA & 0xFF00)) cclk--;                     } while (0)
 //-- addressing mode --//
 
 //++ instruction ++//
@@ -137,104 +137,104 @@ flags.
 #define AND() do { AX &= DT; SET_ZN_FLAG(AX); } while (0)
 #define EOR() do { AX ^= DT; SET_ZN_FLAG(AX); } while (0)
 
-#define ADC() do { \
-    WT = AX + DT + (PS & C_FLAG); \
-    TST_FLAG(WT > 0xFF, C_FLAG);  \
+#define ADC() do {                  \
+    WT = AX + DT + (PS & C_FLAG);   \
+    TST_FLAG(WT > 0xFF, C_FLAG);    \
     TST_FLAG(~(AX^DT) & (AX^WT) & 0x80, O_FLAG); \
-    AX = (BYTE)WT;          \
-    SET_ZN_FLAG(AX);        \
+    AX = (BYTE)WT;                  \
+    SET_ZN_FLAG(AX);                \
 } while (0)
 
-#define CMP() do { \
-    WT = (WORD)AX - (WORD)DT; \
+#define CMP() do {                  \
+    WT = (WORD)AX - (WORD)DT;       \
     TST_FLAG((WT & 0x8000) == 0, C_FLAG); \
-    SET_ZN_FLAG((BYTE)WT);  \
+    SET_ZN_FLAG((BYTE)WT);          \
 } while (0)
 
-#define SBC() do { \
+#define SBC() do {                  \
     WT = AX - DT - (~PS & C_FLAG);  \
     TST_FLAG((AX^DT) & (AX^WT) & 0x80, O_FLAG); \
     TST_FLAG(WT < 0x100, C_FLAG);   \
-    AX = (BYTE)WT;          \
-    SET_ZN_FLAG(AX);        \
+    AX = (BYTE)WT;                  \
+    SET_ZN_FLAG(AX);                \
 } while (0)
 
-#define SLO() do { \
+#define SLO() do {                  \
     TST_FLAG(DT & 0x80, C_FLAG);    \
-    DT <<= 1;               \
-    AX  |= DT;              \
-    SET_ZN_FLAG(AX);        \
+    DT <<= 1;                       \
+    AX  |= DT;                      \
+    SET_ZN_FLAG(AX);                \
 } while (0)
 
-#define RLA() do { \
-    if (PS & C_FLAG) {     \
+#define RLA() do {                  \
+    if (PS & C_FLAG) {              \
         TST_FLAG(DT & 0x80, C_FLAG);\
-        DT = (DT << 1) | 1; \
-    } else {                \
+        DT = (DT << 1) | 1;         \
+    } else {                        \
         TST_FLAG(DT & 0x80, C_FLAG);\
-        DT <<= 1;           \
-    }                       \
-    AX &= DT;               \
-    SET_ZN_FLAG(AX);        \
+        DT <<= 1;                   \
+    }                               \
+    AX &= DT;                       \
+    SET_ZN_FLAG(AX);                \
 } while (0)
 
-#define SRE() do { \
+#define SRE() do {                  \
     TST_FLAG(DT & 0x01, C_FLAG);    \
-    DT >>= 1;               \
-    AX  ^= DT;              \
-    SET_ZN_FLAG(AX);        \
+    DT >>= 1;                       \
+    AX  ^= DT;                      \
+    SET_ZN_FLAG(AX);                \
 } while (0)
 
-#define RRA() do { \
-    if (PS & C_FLAG) {      \
+#define RRA() do {                  \
+    if (PS & C_FLAG) {              \
         TST_FLAG(DT & 0x01, C_FLAG);\
         DT = (DT >> 1) | 0x80;      \
-    } else {                \
+    } else {                        \
         TST_FLAG(DT & 0x01, C_FLAG);\
-        DT >>= 1;           \
-    }                       \
-    ADC();                  \
+        DT >>= 1;                   \
+    }                               \
+    ADC();                          \
 } while (0)
 
-#define ASL() do { \
+#define ASL() do {                  \
     TST_FLAG(DT & 0x80, C_FLAG );   \
-    DT <<= 1;               \
-    SET_ZN_FLAG(DT);        \
+    DT <<= 1;                       \
+    SET_ZN_FLAG(DT);                \
 } while (0)
 
-#define ROL() do { \
-    if (PS & C_FLAG ) {     \
+#define ROL() do {                  \
+    if (PS & C_FLAG ) {             \
         TST_FLAG(DT & 0x80, C_FLAG);\
         DT = (DT << 1) | 0x01;      \
-    } else {                \
+    } else {                        \
         TST_FLAG(DT & 0x80, C_FLAG);\
-        DT <<= 1;           \
-    }                       \
-    SET_ZN_FLAG(DT);        \
+        DT <<= 1;                   \
+    }                               \
+    SET_ZN_FLAG(DT);                \
 } while (0)
 
-#define LSR() do { \
+#define LSR() do {                  \
     TST_FLAG(DT & 0x01, C_FLAG);    \
-    DT >>= 1;               \
-    SET_ZN_FLAG(DT);        \
+    DT >>= 1;                       \
+    SET_ZN_FLAG(DT);                \
 } while (0)
 
-#define ROR() do { \
-    if (PS & C_FLAG) {      \
+#define ROR() do {                  \
+    if (PS & C_FLAG) {              \
         TST_FLAG(DT & 0x01, C_FLAG);\
         DT = (DT >> 1) | 0x80;      \
-    } else {                \
+    } else {                        \
         TST_FLAG(DT & 0x01, C_FLAG);\
-        DT >>= 1;           \
-    }                       \
-    SET_ZN_FLAG(DT);        \
+        DT >>= 1;                   \
+    }                               \
+    SET_ZN_FLAG(DT);                \
 } while (0)
 //-- instruction --//
 
 #define LDA() do { AX = DT; SET_ZN_FLAG(AX); } while (0)
 #define LDX() do { XI = DT; SET_ZN_FLAG(XI); } while (0)
 #define LDY() do { YI = DT; SET_ZN_FLAG(YI); } while (0)
-#define LAX() do { AX = DT; XI = DT; SET_ZN_FLAG(AX); } while (0)
+#define LAX() do { AX = DT; XI = DT; SET_ZN_FLAG(AX);           } while (0)
 #define LXA() do { AX = XI = ((AX|0xEE) & DT); SET_ZN_FLAG(AX); } while (0)
 #define LAS() do { AX = XI = SP = (SP & DT); SET_ZN_FLAG(AX);   } while (0)
 
@@ -242,21 +242,21 @@ flags.
 #define STX() do { DT = XI;      } while (0)
 #define STY() do { DT = YI;      } while (0)
 #define SAX() do { DT = AX & XI; } while (0)
-#define SHA() do { DT = AX & XI & (BYTE)((EA >> 8) + 1); } while (0)
-#define SHY() do { DT = YI & (BYTE)((EA>>8)+1);          } while (0)
-#define SHX() do { DT = XI & (BYTE)((EA>>8)+1);          } while (0)
+#define SHA() do { DT = AX & XI & (BYTE)((EA >> 8) + 1);      } while (0)
+#define SHY() do { DT = YI & (BYTE)((EA>>8)+1);               } while (0)
+#define SHX() do { DT = XI & (BYTE)((EA>>8)+1);               } while (0)
 #define SHS() do { SP = AX & XI; DT = SP & (BYTE)((EA>>8)+1); } while (0)
 
-#define CPX() do { \
-    WT = (WORD)XI - (WORD)DT;   \
-    TST_FLAG((WT&0x8000)==0, C_FLAG);   \
-    SET_ZN_FLAG((BYTE)WT);      \
+#define CPX() do {                  \
+    WT = (WORD)XI - (WORD)DT;       \
+    TST_FLAG((WT&0x8000)==0, C_FLAG); \
+    SET_ZN_FLAG((BYTE)WT);          \
 } while (0)
 
-#define CPY() do { \
-    WT = (WORD)YI - (WORD)DT;   \
-    TST_FLAG((WT&0x8000)==0, C_FLAG);   \
-    SET_ZN_FLAG((BYTE)WT);      \
+#define CPY() do {                  \
+    WT = (WORD)YI - (WORD)DT;       \
+    TST_FLAG((WT&0x8000)==0, C_FLAG); \
+    SET_ZN_FLAG((BYTE)WT);          \
 } while (0)
 
 #define INC() do { DT++; SET_ZN_FLAG(DT); } while (0)
@@ -270,9 +270,9 @@ flags.
 #define ISB() do { DT++; SBC(); } while (0)
 
 #define BIT() do { \
-    TST_FLAG((DT & AX) == 0, Z_FLAG);   \
-    TST_FLAG( DT & 0x80, N_FLAG);       \
-    TST_FLAG( DT & 0x40, O_FLAG);       \
+    TST_FLAG((DT & AX) == 0, Z_FLAG); \
+    TST_FLAG( DT & 0x80, N_FLAG);     \
+    TST_FLAG( DT & 0x40, O_FLAG);     \
 } while (0)
 
 #define BRK() do { \
@@ -310,18 +310,18 @@ flags.
 #define PHA() do { PUSH(AX);                    } while (0)
 #define PLA() do { AX = POP(); SET_ZN_FLAG(AX); } while (0)
 
-#define JMP_4C() do { \
+#define JMP_4C() do {       \
     PC = READW(PC);         \
 } while (0)
 
-#define JMP_6C() do { \
+#define JMP_6C() do {       \
     WT = READW(PC);         \
     EA = READB(WT);         \
-    WT = (WT&0xFF00)|((WT+1)&0x00FF);   \
+    WT = (WT&0xFF00)|((WT+1)&0x00FF); \
     PC = EA + (READB(WT) << 8); \
 } while (0)
 
-#define REL_JUMP() do { \
+#define REL_JUMP() do {     \
     ET = PC;                \
     EA = PC + (char)DT;     \
     PC = EA;                \
@@ -353,20 +353,20 @@ flags.
 #define TXS() do { SP = XI;                  } while (0)
 #define TSX() do { XI = SP; SET_ZN_FLAG(XI); } while (0)
 
-#define ANC() do { \
+#define ANC() do {          \
     AX &= DT;               \
     SET_ZN_FLAG(AX);        \
     TST_FLAG(PS & N_FLAG, C_FLAG);  \
 } while (0)
 
-#define ASR() do { \
+#define ASR() do {          \
     DT &= AX;               \
     TST_FLAG(DT & 0x01, C_FLAG );   \
     AX  = DT >> 1;          \
     SET_ZN_FLAG(AX);        \
 } while (0)
 
-#define ARR() do { \
+#define ARR() do {          \
     DT &= AX;               \
     AX  = (DT >> 1)|((PS&C_FLAG) << 7); \
     SET_ZN_FLAG(AX);        \
@@ -374,12 +374,12 @@ flags.
     TST_FLAG((AX>>6)^(AX>>5), O_FLAG ); \
 } while (0)
 
-#define ANE() do { \
+#define ANE() do {          \
     AX = (AX|0xEE) & XI & DT;   \
     SET_ZN_FLAG(AX);        \
 } while (0)
 
-#define SBX() do { \
+#define SBX() do {          \
     WT = (AX&XI) - DT;      \
     TST_FLAG(WT < 0x100, C_FLAG);   \
     XI = WT & 0xFF;         \
