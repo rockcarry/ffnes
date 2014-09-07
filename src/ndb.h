@@ -31,6 +31,7 @@ enum {
 typedef struct
 {
     CPU  *cpu;
+    BOOL  enable;
     int   stop;
     int   cond;
     WORD  curpc;       // current pc
@@ -39,6 +40,7 @@ typedef struct
     WORD  watches[16]; // totally 16 watch variables
 
     // for save & restore
+    BOOL  save_enable;
     int   save_stop;
     int   save_cond;
 } NDB;
@@ -63,6 +65,7 @@ typedef struct
 void ndb_init (NDB *ndb, CPU *cpu);
 void ndb_free (NDB *ndb);
 void ndb_reset(NDB *ndb);
+void ndb_debug(NDB *ndb, BOOL en);
 
 // save & restore
 void ndb_save   (NDB *ndb);

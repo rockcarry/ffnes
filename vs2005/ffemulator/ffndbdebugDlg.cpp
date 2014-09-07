@@ -125,6 +125,9 @@ void CffndbdebugDlg::OnCancel()
 
 BOOL CffndbdebugDlg::OnInitDialog()
 {
+    // enable ndb debugging
+    ndb_debug(&(m_pNES->ndb), TRUE);
+
     // update button
     CWnd *pwnd = GetDlgItem(IDC_BTN_NES_RUN_PAUSE);
     if (m_pNES->isrunning) {
@@ -194,6 +197,9 @@ void CffndbdebugDlg::OnDestroy()
     // delete m_pDASM
     delete m_pDASM;
 
+    // disable ndb debugging
+    ndb_debug(&(m_pNES->ndb), FALSE);
+
     // delete self
     delete this;
 }
@@ -222,7 +228,13 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
         switch (m_nDebugType)
         {
         case DT_DEBUG_CPU:
-            if (m_bEnableTracking) UpdateCurInstHighLight();
+            // update cursor of list control for ffndb pc tracking
+            if (m_bEnableTracking)
+            {
+                UpdateCurInstHighLight();
+            }
+
+            // draw cpu debug info
             DrawCpuDebugging();
             break;
         }
@@ -364,7 +376,7 @@ void CffndbdebugDlg::OnAddbreakpoint()
             m_ctrInstructionList.SetItemText(n, 0, "B");
             if (!ndb_add_bpoint(&(m_pNES->ndb), (WORD)pc))
             {
-                MessageBox(CString("only support 16 break points !"), "ffndb find", MB_ICONASTERISK|MB_ICONINFORMATION);
+                MessageBox("only support 16 break points !", "ffndb find", MB_ICONASTERISK|MB_ICONINFORMATION);
                 break;
             }
         }

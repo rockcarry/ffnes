@@ -244,6 +244,7 @@ void nes_reset(NES *nes)
 {
     // set ndb cpu always running
     ndb_save     (&(nes->ndb));
+    ndb_debug    (&(nes->ndb), FALSE);
     ndb_cpu_runto(&(nes->ndb), 0, NULL);
     nes->request_reset = 1; // request reset
 }

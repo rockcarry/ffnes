@@ -16,23 +16,31 @@ void ndb_free(NDB *ndb)
 
 void ndb_reset(NDB *ndb)
 {
-    ndb->stop = 0;
-    ndb->cond = 0;
+    ndb->enable = 0;
+    ndb->stop   = 0;
+    ndb->cond   = 0;
     memset(ndb->params , 0   , sizeof(ndb->params ));
     memset(ndb->bpoints, 0xff, sizeof(ndb->bpoints));
     memset(ndb->watches, 0xff, sizeof(ndb->watches));
 }
 
+void ndb_debug(NDB *ndb, BOOL en)
+{
+    ndb->enable = en;
+}
+
 void ndb_save(NDB *ndb)
 {
-    ndb->save_stop = ndb->stop;
-    ndb->save_cond = ndb->cond;
+    ndb->save_enable = ndb->enable;
+    ndb->save_stop   = ndb->stop;
+    ndb->save_cond   = ndb->cond;
 }
 
 void ndb_restore(NDB *ndb)
 {
-    ndb->stop = ndb->save_stop;
-    ndb->cond = ndb->save_cond;
+    ndb->enable = ndb->save_enable;
+    ndb->stop   = ndb->save_stop;
+    ndb->cond   = ndb->save_cond;
 }
 
 void ndb_cpu_debug(NDB *ndb)
@@ -40,6 +48,9 @@ void ndb_cpu_debug(NDB *ndb)
     WORD *wparam = (WORD*)ndb->params;
     LONG *lparam = (LONG*)ndb->params;
     int   i;
+
+    // if ndb debug is disabled
+    if (!ndb->enable) return;
 
     // save current pc
     ndb->curpc = ndb->cpu->pc;

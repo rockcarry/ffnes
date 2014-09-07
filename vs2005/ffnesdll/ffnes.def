@@ -10,6 +10,7 @@ joypad_reset
 joypad_setkey
 
 ndb_reset
+ndb_debug
 ndb_cpu_runto
 ndb_dasm_one_inst
 ndb_dasm_nes_rom
