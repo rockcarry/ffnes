@@ -97,25 +97,24 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_WM_DESTROY()
     ON_WM_PAINT()
     ON_WM_TIMER()
-    ON_BN_CLICKED(IDC_BTN_NES_RESET     , &CffndbdebugDlg::OnBnClickedBtnNesReset)
-    ON_BN_CLICKED(IDC_BTN_NES_RUN_PAUSE , &CffndbdebugDlg::OnBnClickedBtnNesRunPause)
-    ON_BN_CLICKED(IDC_BTN_NES_DEBUG_CPU , &CffndbdebugDlg::OnBnClickedBtnNesDebugCpu)
-    ON_BN_CLICKED(IDC_BTN_NES_DEBUG_PPU , &CffndbdebugDlg::OnBnClickedBtnNesDebugPpu)
-    ON_BN_CLICKED(IDC_BTN_CPU_GOTO      , &CffndbdebugDlg::OnBnClickedBtnCpuGoto)
-    ON_BN_CLICKED(IDC_BTN_CPU_STEP      , &CffndbdebugDlg::OnBnClickedBtnCpuStep)
-    ON_BN_CLICKED(IDC_BTN_CPU_TRACKING  , &CffndbdebugDlg::OnBnClickedBtnCpuTracking)
-    ON_REGISTERED_MESSAGE(WM_FINDREPLACE, &CffndbdebugDlg::OnFindReplace)
-    ON_NOTIFY(NM_RCLICK, IDC_LST_OPCODE , &CffndbdebugDlg::OnRclickListDasm)
-    ON_COMMAND(ID_ADDBREAKPOINT         , &CffndbdebugDlg::OnAddbreakpoint)
-    ON_COMMAND(ID_DELBREAKPOINT         , &CffndbdebugDlg::OnDelbreakpoint)
+    ON_BN_CLICKED(IDC_BTN_NES_RESET       , &CffndbdebugDlg::OnBnClickedBtnNesReset)
+    ON_BN_CLICKED(IDC_BTN_NES_RUN_PAUSE   , &CffndbdebugDlg::OnBnClickedBtnNesRunPause)
+    ON_BN_CLICKED(IDC_BTN_NES_DEBUG_CPU   , &CffndbdebugDlg::OnBnClickedBtnNesDebugCpu)
+    ON_BN_CLICKED(IDC_BTN_NES_DEBUG_PPU   , &CffndbdebugDlg::OnBnClickedBtnNesDebugPpu)
+    ON_BN_CLICKED(IDC_RDO_CPU_KEEP_RUNNING, &CffndbdebugDlg::OnBnClickedRdoCpuKeepRunning)
+    ON_BN_CLICKED(IDC_RDO_CPU_RUN_NSTEPS  , &CffndbdebugDlg::OnBnClickedRdoCpuRunNsteps)
+    ON_BN_CLICKED(IDC_RDO_CPU_RUN_BPOINTS , &CffndbdebugDlg::OnBnClickedRdoCpuRunBpoints)
+    ON_BN_CLICKED(IDC_BTN_CPU_STEP        , &CffndbdebugDlg::OnBnClickedBtnCpuStep)
+    ON_BN_CLICKED(IDC_BTN_CPU_TRACKING    , &CffndbdebugDlg::OnBnClickedBtnCpuTracking)
+    ON_REGISTERED_MESSAGE(WM_FINDREPLACE  , &CffndbdebugDlg::OnFindReplace)
+    ON_NOTIFY(NM_RCLICK, IDC_LST_OPCODE   , &CffndbdebugDlg::OnRclickListDasm)
+    ON_COMMAND(ID_ADDBREAKPOINT           , &CffndbdebugDlg::OnAddbreakpoint)
+    ON_COMMAND(ID_DELBREAKPOINT           , &CffndbdebugDlg::OnDelbreakpoint)
+
 END_MESSAGE_MAP()
 
 // CffndbdebugDlg message handlers
-void CffndbdebugDlg::OnOK()
-{
-    CDialog::OnOK();
-    DestroyWindow();
-}
+void CffndbdebugDlg::OnOK() {}
 
 void CffndbdebugDlg::OnCancel()
 {
@@ -293,28 +292,22 @@ void CffndbdebugDlg::OnBnClickedBtnNesDebugPpu()
     Invalidate(TRUE);
 }
 
-void CffndbdebugDlg::OnBnClickedBtnCpuGoto()
+void CffndbdebugDlg::OnBnClickedRdoCpuKeepRunning()
 {
-    WORD   wparam = 0;
-    DWORD dwparam = 0;
-    LONG   lparam = 0;
+    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_KEEP_RUNNING, NULL);
+}
 
+void CffndbdebugDlg::OnBnClickedRdoCpuRunNsteps()
+{
+    LONG lparam = 0;
     UpdateData(TRUE);
-    switch (m_nCpuStopCond)
-    {
-    case NDB_CPU_KEEP_RUNNING:
-        ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, NULL);
-        break;
+    lparam = atoi(m_strCpuStopNSteps);
+    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_NSTEPS, &lparam);
+}
 
-    case NDB_CPU_RUN_NSTEPS:
-        lparam = atoi(m_strCpuStopNSteps);
-        ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, &lparam);
-        break;
-
-    case NDB_CPU_RUN_BPOINTS:
-        ndb_cpu_runto(&(m_pNES->ndb), m_nCpuStopCond, NULL);
-        break;
-    }
+void CffndbdebugDlg::OnBnClickedRdoCpuRunBpoints()
+{
+    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_BPOINTS, NULL);
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuStep()
@@ -550,6 +543,4 @@ void CffndbdebugDlg::FindStrInListCtrl(CString str, BOOL down)
 
     EndWaitCursor();
 }
-
-
 
