@@ -6,7 +6,7 @@
 #include "ffndbdebugDlg.h"
 
 // 内部常量定义
-static RECT s_rtCpuInfo    = { 362, 87, 750, 425 };
+static RECT s_rtCpuInfo    = { 362, 85, 750, 378 };
 static int  WM_FINDREPLACE = RegisterWindowMessage(FINDMSGSTRING);
 
 // CffndbdebugDlg dialog
@@ -16,6 +16,7 @@ IMPLEMENT_DYNAMIC(CffndbdebugDlg, CDialog)
 CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
     : CDialog(CffndbdebugDlg::IDD, pParent)
     , m_nCpuStopCond(0)
+    , m_strWatchAddr("2000")
     , m_strCpuStopNSteps("1")
 {
     // init varibles
@@ -33,6 +34,7 @@ void CffndbdebugDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialog::DoDataExchange(pDX);
     DDX_Radio  (pDX, IDC_RDO_CPU_KEEP_RUNNING, m_nCpuStopCond      );
+    DDX_Text   (pDX, IDC_EDT_WATCH           , m_strWatchAddr      );
     DDX_Text   (pDX, IDC_EDT_NSTEPS          , m_strCpuStopNSteps  );
     DDX_Control(pDX, IDC_LST_OPCODE          , m_ctrInstructionList);
 }
@@ -101,6 +103,10 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_BN_CLICKED(IDC_BTN_NES_RUN_PAUSE   , &CffndbdebugDlg::OnBnClickedBtnNesRunPause)
     ON_BN_CLICKED(IDC_BTN_NES_DEBUG_CPU   , &CffndbdebugDlg::OnBnClickedBtnNesDebugCpu)
     ON_BN_CLICKED(IDC_BTN_NES_DEBUG_PPU   , &CffndbdebugDlg::OnBnClickedBtnNesDebugPpu)
+    ON_BN_CLICKED(IDC_BTN_ADD_WATCH       , &CffndbdebugDlg::OnBnClickedBtnAddWatch)
+    ON_BN_CLICKED(IDC_BTN_DEL_WATCH       , &CffndbdebugDlg::OnBnClickedBtnDelWatch)
+    ON_BN_CLICKED(IDC_BTN_DEL_ALL_WATCH   , &CffndbdebugDlg::OnBnClickedBtnDelAllWatch)
+    ON_BN_CLICKED(IDC_BTN_DEL_ALL_BPOINT  , &CffndbdebugDlg::OnBnClickedBtnDelAllBpoint)
     ON_BN_CLICKED(IDC_RDO_CPU_KEEP_RUNNING, &CffndbdebugDlg::OnBnClickedRdoCpuKeepRunning)
     ON_BN_CLICKED(IDC_RDO_CPU_RUN_NSTEPS  , &CffndbdebugDlg::OnBnClickedRdoCpuRunNsteps)
     ON_BN_CLICKED(IDC_RDO_CPU_RUN_BPOINTS , &CffndbdebugDlg::OnBnClickedRdoCpuRunBpoints)
@@ -110,7 +116,6 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_NOTIFY(NM_RCLICK, IDC_LST_OPCODE   , &CffndbdebugDlg::OnRclickListDasm)
     ON_COMMAND(ID_ADDBREAKPOINT           , &CffndbdebugDlg::OnAddbreakpoint)
     ON_COMMAND(ID_DELBREAKPOINT           , &CffndbdebugDlg::OnDelbreakpoint)
-
 END_MESSAGE_MAP()
 
 // CffndbdebugDlg message handlers
@@ -160,7 +165,7 @@ BOOL CffndbdebugDlg::OnInitDialog()
     m_penDraw.CreatePen(PS_SOLID, 2, RGB(128, 128, 128));
 
     //++ create & init list control
-    m_ctrInstructionList.Create(WS_CHILD|WS_VISIBLE|WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS|WS_TABSTOP, CRect(9, 87, 356, 527), this, IDC_LST_OPCODE);
+    m_ctrInstructionList.Create(WS_CHILD|WS_VISIBLE|WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS|WS_TABSTOP, CRect(9, 85, 356, 527), this, IDC_LST_OPCODE);
     m_ctrInstructionList.SetExtendedStyle(m_ctrInstructionList.GetExtendedStyle()|LVS_EX_FULLROWSELECT|LVS_EX_GRIDLINES);
     m_ctrInstructionList.InsertColumn(0, "b"       , LVCFMT_LEFT, 18 );
     m_ctrInstructionList.InsertColumn(1, "pc"      , LVCFMT_LEFT, 40 );
@@ -271,7 +276,7 @@ void CffndbdebugDlg::OnBnClickedBtnNesDebugCpu()
     // for debug type
     m_nDebugType = DT_DEBUG_CPU;
 
-    for (int i=IDC_GRP_CPU_CONTROL; i<=IDC_LST_OPCODE; i++)
+    for (int i=IDC_GRP_WATCH_BPOINT; i<=IDC_LST_OPCODE; i++)
     {
         CWnd *pwnd = GetDlgItem(i);
         pwnd->ShowWindow(SW_SHOW);
@@ -284,12 +289,40 @@ void CffndbdebugDlg::OnBnClickedBtnNesDebugPpu()
     // for debug type
     m_nDebugType = DT_DEBUG_PPU;
 
-    for (int i=IDC_GRP_CPU_CONTROL; i<=IDC_LST_OPCODE; i++)
+    for (int i=IDC_GRP_WATCH_BPOINT; i<=IDC_LST_OPCODE; i++)
     {
         CWnd *pwnd = GetDlgItem(i);
         pwnd->ShowWindow(SW_HIDE);
     }
     Invalidate(TRUE);
+}
+
+void CffndbdebugDlg::OnBnClickedBtnAddWatch()
+{
+    DWORD addr;
+    UpdateData(TRUE);
+    sscanf(m_strWatchAddr, "%x", &addr);
+    ndb_add_watch(&(m_pNES->ndb), (WORD)addr);
+    m_strWatchAddr.Format("%04X", ++addr);
+    UpdateData(FALSE);
+}
+
+void CffndbdebugDlg::OnBnClickedBtnDelWatch()
+{
+    DWORD addr;
+    UpdateData(TRUE);
+    sscanf(m_strWatchAddr, "%x", &addr);
+    ndb_del_watch(&(m_pNES->ndb), (WORD)addr);
+}
+
+void CffndbdebugDlg::OnBnClickedBtnDelAllWatch()
+{
+    ndb_del_all_watches(&(m_pNES->ndb));
+}
+
+void CffndbdebugDlg::OnBnClickedBtnDelAllBpoint()
+{
+    ndb_del_all_bpoints(&(m_pNES->ndb));
 }
 
 void CffndbdebugDlg::OnBnClickedRdoCpuKeepRunning()
@@ -448,7 +481,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
     // draw stack info
     {
         char stackinfo[128] = {0};
-        rect.left = 6; rect.top += 28;
+        rect.left = 6; rect.top += 29;
         ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_STACK0, stackinfo);
         m_cdcDraw.DrawText(stackinfo, -1, &rect, 0);
         rect.left = 6; rect.top += 22;
@@ -468,7 +501,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
         char bpwv[256];
         int  i;
 
-        rect.left = 6; rect.top += 30;
+        rect.left = 6; rect.top += 29;
         m_cdcDraw.DrawText("break points:", -1, &rect, 0);
         for (i=0; i<2; i++) {
             rect.left = 6; rect.top += 22;
@@ -478,7 +511,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
         for (i=0; i<5; i++) gridy[i] += 127;
         DrawGrid(9, 3, gridx, gridy);
 
-        rect.left = 6; rect.top += 30;
+        rect.left = 6; rect.top += 29;
         m_cdcDraw.DrawText("watches:", -1, &rect, 0);
         for (i=0; i<4; i++) {
             rect.left = 6; rect.top += 22;
@@ -571,4 +604,5 @@ void CffndbdebugDlg::FindStrInListCtrl(CString str, BOOL down)
 
     EndWaitCursor();
 }
+
 

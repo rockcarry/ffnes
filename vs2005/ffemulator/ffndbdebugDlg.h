@@ -51,6 +51,7 @@ private:
 private:
     //++ mfc control variables
     int       m_nCpuStopCond;
+    CString   m_strWatchAddr;
     CString   m_strCpuStopNSteps;
     CListCtrl m_ctrInstructionList;
     //-- mfc control variables
@@ -71,6 +72,10 @@ protected:
     afx_msg void OnBnClickedBtnNesRunPause();
     afx_msg void OnBnClickedBtnNesDebugCpu();
     afx_msg void OnBnClickedBtnNesDebugPpu();
+    afx_msg void OnBnClickedBtnAddWatch();
+    afx_msg void OnBnClickedBtnDelWatch();
+    afx_msg void OnBnClickedBtnDelAllWatch();
+    afx_msg void OnBnClickedBtnDelAllBpoint();
     afx_msg void OnBnClickedRdoCpuKeepRunning();
     afx_msg void OnBnClickedRdoCpuRunNsteps();
     afx_msg void OnBnClickedRdoCpuRunBpoints();

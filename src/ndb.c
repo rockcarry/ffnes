@@ -317,6 +317,16 @@ void ndb_del_watch(NDB *ndb, WORD watch)
     if (i < 16) ndb->watches[i] = 0xffff;
 }
 
+void ndb_del_all_bpoints(NDB *ndb)
+{
+    memset(ndb->bpoints, 0xff, sizeof(ndb->bpoints));
+}
+
+void ndb_del_all_watches(NDB *ndb)
+{
+    memset(ndb->watches, 0xff, sizeof(ndb->watches));
+}
+
 static void ndb_dump_cpu_regs0(NDB *ndb, char *str)
 {
     strcpy(str, " pc   ax  xi  yi  sp     ps");

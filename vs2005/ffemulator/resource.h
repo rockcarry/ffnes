@@ -10,14 +10,20 @@
 #define IDC_BTN_NES_RUN_PAUSE           1001
 #define IDC_BTN_NES_DEBUG_CPU           1002
 #define IDC_BTN_NES_DEBUG_PPU           1003
-#define IDC_GRP_CPU_CONTROL             1004
-#define IDC_RDO_CPU_KEEP_RUNNING        1005
-#define IDC_RDO_CPU_RUN_NSTEPS          1006
-#define IDC_RDO_CPU_RUN_BPOINTS         1007
-#define IDC_EDT_NSTEPS                  1008
-#define IDC_BTN_CPU_STEP                1009
-#define IDC_BTN_CPU_TRACKING            1010
-#define IDC_LST_OPCODE                  1011
+#define IDC_GRP_WATCH_BPOINT            1004
+#define IDC_EDT_WATCH                   1005
+#define IDC_BTN_ADD_WATCH               1006
+#define IDC_BTN_DEL_WATCH               1007
+#define IDC_BTN_DEL_ALL_WATCH           1008
+#define IDC_BTN_DEL_ALL_BPOINT          1009
+#define IDC_GRP_CPU_CONTROL             1010
+#define IDC_RDO_CPU_KEEP_RUNNING        1011
+#define IDC_RDO_CPU_RUN_NSTEPS          1012
+#define IDC_RDO_CPU_RUN_BPOINTS         1013
+#define IDC_EDT_NSTEPS                  1014
+#define IDC_BTN_CPU_STEP                1015
+#define IDC_BTN_CPU_TRACKING            1016
+#define IDC_LST_OPCODE                  1017
 #define ID_DELBREAKPOINT                32771
 #define ID_ADDBREAKPOINT                32772
 #define ID_DASMLIST_SELECTALL           32773
@@ -30,7 +36,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32776
-#define _APS_NEXT_CONTROL_VALUE         1012
+#define _APS_NEXT_CONTROL_VALUE         1018
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

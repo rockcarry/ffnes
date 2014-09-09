@@ -19,6 +19,8 @@ ndb_add_bpoint
 ndb_del_bpoint
 ndb_add_watch
 ndb_del_watch
+ndb_del_all_bpoints
+ndb_del_all_watches
 ndb_dump_info
 
 bus_readb
