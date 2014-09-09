@@ -461,6 +461,34 @@ void CffndbdebugDlg::DrawCpuDebugging()
         DrawGrid(17, 2, gridx, gridy);
     }
 
+    // draw breakpoints & watches
+    {
+        int gridx[] = { 3+40*0, 3+40*1, 3+40*2, 3+40*3, 3+40*4, 3+40*5, 3+40*6, 3+40*7, 3+40*8, 3+40*9 };
+        int gridy[] = { 0, 22, 44, 66, 88 };
+        char bpwv[256];
+        int  i;
+
+        rect.left = 6; rect.top += 30;
+        m_cdcDraw.DrawText("break points:", -1, &rect, 0);
+        for (i=0; i<2; i++) {
+            rect.left = 6; rect.top += 22;
+            ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_BREAK_POINT0 + i, bpwv);
+            m_cdcDraw.DrawText(bpwv, -1, &rect, 0);
+        }
+        for (i=0; i<5; i++) gridy[i] += 127;
+        DrawGrid(9, 3, gridx, gridy);
+
+        rect.left = 6; rect.top += 30;
+        m_cdcDraw.DrawText("watches:", -1, &rect, 0);
+        for (i=0; i<4; i++) {
+            rect.left = 6; rect.top += 22;
+            ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_WATCH0 + i, bpwv);
+            m_cdcDraw.DrawText(bpwv, -1, &rect, 0);
+        }
+        for (i=0; i<5; i++) gridy[i] += 72;
+        DrawGrid(10, 5, gridx, gridy);
+    }
+
     // draw edge
     rect.left = rect.top = 0;
     m_cdcDraw.DrawEdge(&rect, EDGE_ETCHED, BF_RECT);

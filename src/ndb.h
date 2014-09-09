@@ -13,11 +13,17 @@ enum {
 };
 
 enum {
-    NDB_DUMP_CPU_REGS0 , // dump cpu regs info0
-    NDB_DUMP_CPU_REGS1 , // dump cpu regs info1
-    NDB_DUMP_CPU_STACK0, // dump cpu stack info0
-    NDB_DUMP_CPU_STACK1, // dump cpu stack info1
-    NDB_DUMP_CPU_VECTOR, // dump cpu rst & nmi & irq vector
+    NDB_DUMP_CPU_REGS0 ,  // dump cpu regs info0
+    NDB_DUMP_CPU_REGS1 ,  // dump cpu regs info1
+    NDB_DUMP_CPU_STACK0,  // dump cpu stack info0
+    NDB_DUMP_CPU_STACK1,  // dump cpu stack info1
+    NDB_DUMP_CPU_VECTOR,  // dump cpu rst & nmi & irq vector
+    NDB_DUMP_BREAK_POINT0,// dump cpu rst & nmi & irq vector
+    NDB_DUMP_BREAK_POINT1,// dump cpu rst & nmi & irq vector
+    NDB_DUMP_WATCH0,      // dump cpu rst & nmi & irq vector
+    NDB_DUMP_WATCH1,      // dump cpu rst & nmi & irq vector
+    NDB_DUMP_WATCH2,      // dump cpu rst & nmi & irq vector
+    NDB_DUMP_WATCH3,      // dump cpu rst & nmi & irq vector
 };
 
 enum {

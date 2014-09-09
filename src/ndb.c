@@ -374,14 +374,67 @@ static void ndb_dump_cpu_vector(NDB *ndb, char *str)
         bus_readw(ndb->cpu->cbus, 0xfffe));
 }
 
+static void ndb_dump_break_point(NDB *ndb, int type, char *str)
+{
+    WORD *bps = ndb->bpoints;
+    int   i;
+
+    if (type == NDB_DUMP_BREAK_POINT1) bps += 8;
+    for (i=0; i<8; i++)
+    {
+        if (bps[i] == 0xffff) {
+            sprintf(str+i*5, "---- ");
+        }
+        else sprintf(str+i*5, "%04X ", bps[i]);
+    }
+}
+
+static void ndb_dump_watch(NDB *ndb, int type, char *str)
+{
+    WORD *wts = ndb->watches;
+    BYTE  byte;
+    int   i;
+
+    if (type == NDB_DUMP_WATCH2 || type == NDB_DUMP_WATCH3) wts += 8;
+
+    if (type == NDB_DUMP_WATCH0 || type == NDB_DUMP_WATCH2)
+    {
+        sprintf(str, "addr "); str += 5;
+        for (i=0; i<8; i++)
+        {
+            if (wts[i] == 0xffff) sprintf(str+i*5, "---- ");
+            else sprintf(str+i*5, "%04X ", wts[i]);
+        }
+    }
+    else
+    {
+        sprintf(str, "data "); str += 5;
+        for (i=0; i<8; i++)
+        {
+            if (wts[i] == 0xffff) sprintf(str+i*5, " --  ");
+            else
+            {
+                byte = bus_readb(ndb->cpu->cbus, wts[i]);
+                sprintf(str+i*5, " %02X  ", byte);
+            }
+        }
+    }
+}
+
 void ndb_dump_info(NDB *ndb, int type, char *str)
 {
     switch (type)
     {
-    case NDB_DUMP_CPU_REGS0 : ndb_dump_cpu_regs0 (ndb, str); break;
-    case NDB_DUMP_CPU_REGS1 : ndb_dump_cpu_regs1 (ndb, str); break;
-    case NDB_DUMP_CPU_STACK0: ndb_dump_cpu_stack0(ndb, str); break;
-    case NDB_DUMP_CPU_STACK1: ndb_dump_cpu_stack1(ndb, str); break;
-    case NDB_DUMP_CPU_VECTOR: ndb_dump_cpu_vector(ndb, str); break;
+    case NDB_DUMP_CPU_REGS0   : ndb_dump_cpu_regs0  (ndb, str); break;
+    case NDB_DUMP_CPU_REGS1   : ndb_dump_cpu_regs1  (ndb, str); break;
+    case NDB_DUMP_CPU_STACK0  : ndb_dump_cpu_stack0 (ndb, str); break;
+    case NDB_DUMP_CPU_STACK1  : ndb_dump_cpu_stack1 (ndb, str); break;
+    case NDB_DUMP_CPU_VECTOR  : ndb_dump_cpu_vector (ndb, str); break;
+    case NDB_DUMP_BREAK_POINT0:
+    case NDB_DUMP_BREAK_POINT1: ndb_dump_break_point(ndb, type, str); break;
+    case NDB_DUMP_WATCH0      :
+    case NDB_DUMP_WATCH1      :
+    case NDB_DUMP_WATCH2      :
+    case NDB_DUMP_WATCH3      : ndb_dump_watch      (ndb, type, str); break;
     }
 }
