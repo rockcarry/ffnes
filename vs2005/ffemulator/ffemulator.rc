@@ -121,13 +121,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "TODO: <Company name>"
-            VALUE "FileDescription", "TODO: <File description>"
+            VALUE "CompanyName", "rockcarry"
+            VALUE "FileDescription", "ffnes is a nes emulator."
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "ffemulator.exe"
-            VALUE "LegalCopyright", "TODO: (c) <Company name>.  All rights reserved."
+            VALUE "LegalCopyright", "(c) rockcarry.  All rights reserved."
             VALUE "OriginalFilename", "ffemulator.exe"
-            VALUE "ProductName", "TODO: <Product name>"
+            VALUE "ProductName", "ffnes"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
