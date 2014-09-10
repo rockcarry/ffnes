@@ -89,6 +89,24 @@ BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
                 OnDelbreakpoint();
                 return TRUE;
             }
+
+            if (pMsg->wParam == 'A' && GetKeyState(VK_CONTROL) < 0)
+            {
+                OnDasmlistSelectall();
+                return TRUE;
+            }
+
+            if (pMsg->wParam == 'C' && GetKeyState(VK_CONTROL) < 0)
+            {
+                OnDasmlistCopy();
+                return TRUE;
+            }
+
+            if (pMsg->wParam == 'E' && GetKeyState(VK_CONTROL) < 0)
+            {
+                OnDasmlistEdit();
+                return TRUE;
+            }
         }
         break;
     }
@@ -116,6 +134,9 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_NOTIFY(NM_RCLICK, IDC_LST_OPCODE   , &CffndbdebugDlg::OnRclickListDasm)
     ON_COMMAND(ID_ADDBREAKPOINT           , &CffndbdebugDlg::OnAddbreakpoint)
     ON_COMMAND(ID_DELBREAKPOINT           , &CffndbdebugDlg::OnDelbreakpoint)
+    ON_COMMAND(ID_DASMLIST_SELECTALL      , &CffndbdebugDlg::OnDasmlistSelectall)
+    ON_COMMAND(ID_DASMLIST_COPY           , &CffndbdebugDlg::OnDasmlistCopy)
+    ON_COMMAND(ID_DASMLIST_EDIT           , &CffndbdebugDlg::OnDasmlistEdit)
 END_MESSAGE_MAP()
 
 // CffndbdebugDlg message handlers
@@ -426,6 +447,63 @@ void CffndbdebugDlg::OnDelbreakpoint()
         }
     }
 }
+
+void CffndbdebugDlg::OnDasmlistSelectall()
+{
+    int total = m_ctrInstructionList.GetItemCount();
+    for (int i=0; i<total; i++) {
+        m_ctrInstructionList.SetItemState(i, LVIS_SELECTED, LVIS_SELECTED);
+    }
+}
+
+void CffndbdebugDlg::OnDasmlistCopy()
+{
+    BeginWaitCursor();
+    if (::OpenClipboard(m_hWnd) && ::EmptyClipboard())
+    {
+        int    total = m_ctrInstructionList.GetSelectedCount();
+        size_t cbStr = total * sizeof(char) * 50;
+        HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, cbStr);
+        if (!hMem)
+        {
+            CloseClipboard();
+            return;
+        }
+
+        LPTSTR lpDest = (LPTSTR)GlobalLock(hMem);
+        POSITION pos = m_ctrInstructionList.GetFirstSelectedItemPosition();
+        if (pos)
+        {
+            while (pos)
+            {
+                int n = m_ctrInstructionList.GetNextSelectedItem(pos);
+
+                int len = sprintf(lpDest, "%-6.4s %-10.8s %-12.12s\r\n",
+                    m_ctrInstructionList.GetItemText(n, 1),
+                    m_ctrInstructionList.GetItemText(n, 2),
+                    m_ctrInstructionList.GetItemText(n, 3));
+                lpDest += len;
+                cbStr  -= len;
+                if (cbStr < 0) break;
+            }
+        }
+        GlobalUnlock(hMem);
+
+        if (!SetClipboardData(CF_TEXT, hMem))
+        {
+            CloseClipboard();
+            return;
+        }
+        CloseClipboard();
+    }
+    EndWaitCursor();
+}
+
+void CffndbdebugDlg::OnDasmlistEdit()
+{
+    // TODO: Add your command handler code here
+}
+
 
 ///////////////////////////////////////////////
 // private methods

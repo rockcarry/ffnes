@@ -85,4 +85,7 @@ protected:
     afx_msg void OnRclickListDasm(NMHDR *pNMHDR, LRESULT *pResult);
     afx_msg void OnAddbreakpoint();
     afx_msg void OnDelbreakpoint();
+    afx_msg void OnDasmlistSelectall();
+    afx_msg void OnDasmlistCopy();
+    afx_msg void OnDasmlistEdit();
 };
