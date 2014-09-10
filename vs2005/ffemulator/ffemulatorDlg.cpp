@@ -114,7 +114,7 @@ BOOL CffemulatorDlg::OnInitDialog()
     y = y > 0 ? y : 0;
     MoveWindow(x, y, w, h, FALSE);
 
-    TCHAR file[MAX_PATH] = {0};
+    char file[MAX_PATH] = {0};
     CFileDialog dlg(TRUE, NULL, NULL, 0, "nes rom file (*.nes)|*.nes||");
     if (dlg.DoModal() != IDOK) OnOK();
 

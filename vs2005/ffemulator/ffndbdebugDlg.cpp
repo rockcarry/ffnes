@@ -478,13 +478,12 @@ void CffndbdebugDlg::OnDasmlistCopy()
             {
                 int n = m_ctrInstructionList.GetNextSelectedItem(pos);
 
-                int len = sprintf(lpDest, "%-6.4s %-10.8s %-12.12s\r\n",
+                int len = sprintf_s(lpDest, cbStr, "%-6.4s %-10.8s %-12.12s\r\n",
                     m_ctrInstructionList.GetItemText(n, 1),
                     m_ctrInstructionList.GetItemText(n, 2),
                     m_ctrInstructionList.GetItemText(n, 3));
                 lpDest += len;
                 cbStr  -= len;
-                if (cbStr < 0) break;
             }
         }
         GlobalUnlock(hMem);
@@ -574,9 +573,9 @@ void CffndbdebugDlg::DrawCpuDebugging()
 
     // draw breakpoints & watches
     {
-        int gridx[] = { 3+40*0, 3+40*1, 3+40*2, 3+40*3, 3+40*4, 3+40*5, 3+40*6, 3+40*7, 3+40*8, 3+40*9 };
-        int gridy[] = { 0, 22, 44, 66, 88 };
-        char bpwv[256];
+        int  gridx[] = { 3+40*0, 3+40*1, 3+40*2, 3+40*3, 3+40*4, 3+40*5, 3+40*6, 3+40*7, 3+40*8, 3+40*9 };
+        int  gridy[] = { 0, 22, 44, 66, 88 };
+        char bpwv[128];
         int  i;
 
         rect.left = 6; rect.top += 29;
@@ -613,7 +612,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
 
 void CffndbdebugDlg::DoNesRomDisAsm()
 {
-    char str[64];
+    char str[32];
     int  n, i;
 
     BeginWaitCursor();
