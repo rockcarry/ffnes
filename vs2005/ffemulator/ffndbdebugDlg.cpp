@@ -354,12 +354,20 @@ void CffndbdebugDlg::OnBnClickedBtnDelWatch()
 
 void CffndbdebugDlg::OnBnClickedBtnDelAllWatch()
 {
-    ndb_del_all_watches(&(m_pNES->ndb));
+    for (int i=0; i<16; i++ )
+    {
+        m_pNES->ndb.watches[i] = 0xffff;
+    }
 }
 
 void CffndbdebugDlg::OnBnClickedBtnDelAllBpoint()
 {
-    ndb_del_all_bpoints(&(m_pNES->ndb));
+    for (int i=0; i<16; i++)
+    {
+        int n = ndb_dasm_pc2instn(&(m_pNES->ndb), m_pDASM, m_pNES->ndb.bpoints[i]);
+        if (n) m_ctrInstructionList.SetItemText(n, 0, "");
+        m_pNES->ndb.bpoints[i] = 0xffff;
+    }
 }
 
 void CffndbdebugDlg::OnBnClickedRdoCpuKeepRunning()

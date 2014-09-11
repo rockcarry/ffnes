@@ -92,8 +92,6 @@ BOOL ndb_add_bpoint(NDB *ndb, WORD bpoint);
 void ndb_del_bpoint(NDB *ndb, WORD bpoint);
 BOOL ndb_add_watch (NDB *ndb, WORD watch );
 void ndb_del_watch (NDB *ndb, WORD watch );
-void ndb_del_all_bpoints(NDB *ndb);
-void ndb_del_all_watches(NDB *ndb);
 
 // ndb dump info
 void ndb_dump_info(NDB *ndb, int type, char *str);
