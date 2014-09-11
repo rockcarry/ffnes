@@ -5,12 +5,24 @@
 // 内部函数实现
 static void mmc_switch_pbank0(MMC *mmc, int bank)
 {
+    //++ if bank switched, set ndb.banksw 1 to notify ndb ++//
+    NES *nes = container_of(mmc, NES, mmc);
+    if (mmc->bank8000 != -1 && mmc->bank8000 != bank) nes->ndb.banksw = 0x8000;
+    mmc->bank8000 = bank;
+    //-- if bank switched, set ndb.banksw 1 to notify ndb --//
+
     bank = (bank == -1) ? (mmc->cart->prom_count - 1) : bank; // -1 is special, means the last bank
     mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
 }
 
 static void mmc_switch_pbank1(MMC *mmc, int bank)
 {
+    //++ if bank switched, set ndb.banksw 1 to notify ndb ++//
+    NES *nes = container_of(mmc, NES, mmc);
+    if (mmc->bankc000 != -1 && mmc->bankc000 != bank) nes->ndb.banksw = 0xc000;
+    mmc->bankc000 = bank;
+    //-- if bank switched, set ndb.banksw 1 to notify ndb --//
+
     bank = (bank == -1) ? (mmc->cart->prom_count - 1) : bank; // -1 is special, means the last bank
     mmc->cbus[7].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
 }
@@ -156,5 +168,7 @@ void mmc_reset(MMC *mmc)
 {
     MAPPER *mapper;
     mapper = g_mapper_list[mmc->number];
+    mmc->bank8000 = -1;
+    mmc->bankc000 = -1;
     if (mapper && mapper->reset) mapper->reset(mmc);
 }

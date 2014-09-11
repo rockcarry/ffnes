@@ -14,6 +14,8 @@ typedef struct {
     int          number; // mapper number
     BYTE chrram[0x2000]; // some cartridge don't have CHR-ROM
                          // but use 8KB CHR-RAM instead of it
+    int        bank8000;
+    int        bankc000;
 } MMC;
 
 // º¯ÊıÉùÃ÷

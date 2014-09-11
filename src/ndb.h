@@ -38,6 +38,7 @@ typedef struct
 {
     CPU  *cpu;
     BOOL  enable;
+    BOOL  banksw;
     int   stop;
     int   cond;
     WORD  curpc;       // current pc

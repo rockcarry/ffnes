@@ -18,6 +18,7 @@ CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
     , m_nCpuStopCond(0)
     , m_strWatchAddr("2000")
     , m_strCpuStopNSteps("1")
+    , m_bCheckAutoDasm(FALSE)
 {
     // init varibles
     m_pNES            = pnes;
@@ -36,7 +37,7 @@ void CffndbdebugDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Radio  (pDX, IDC_RDO_CPU_KEEP_RUNNING, m_nCpuStopCond      );
     DDX_Text   (pDX, IDC_EDT_WATCH           , m_strWatchAddr      );
     DDX_Text   (pDX, IDC_EDT_NSTEPS          , m_strCpuStopNSteps  );
-    DDX_Control(pDX, IDC_LST_OPCODE          , m_ctrInstructionList);
+    DDX_Check  (pDX, IDC_CHECK_AUTO_DASM     , m_bCheckAutoDasm    );
 }
 
 BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
@@ -253,6 +254,21 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
         switch (m_nDebugType)
         {
         case DT_DEBUG_CPU:
+            //++ if bank switch occured, we need redo disassembly ++//
+            if (  m_pNES->ndb.banksw == 0x8000 && m_pNES->ndb.curpc <  0xc0000
+               || m_pNES->ndb.banksw == 0xc000 && m_pNES->ndb.curpc >= 0xc0000)
+            {
+                UpdateData(TRUE);
+                if (m_bCheckAutoDasm)
+                {
+                    KillTimer(NDB_REFRESH_TIMER);
+                    DoNesRomDisAsm(); // redo dasm
+                    m_pNES->ndb.banksw = 0;
+                    SetTimer(NDB_REFRESH_TIMER, 50, NULL);
+                }
+            }
+            //-- if bank switch occured, we need redo disassembly --//
+
             // update cursor of list control for ffndb pc tracking
             if (m_bEnableTracking)
             {
@@ -370,6 +386,16 @@ void CffndbdebugDlg::OnBnClickedBtnCpuStep()
     ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_NSTEPS, &nsteps); // run 1 step
     while (!m_pNES->ndb.stop) Sleep(20); // wait for cpu stop
     UpdateCurInstHighLight(); // update cursor high light for instruction list
+
+    //++ if bank switch occured, we need redo disassembly ++//
+    if (m_pNES->ndb.banksw)
+    {
+        MessageBox("nes mapper makes bank switch, need to redo disassembly!",
+            "ffndb dasm", MB_ICONASTERISK|MB_ICONINFORMATION);
+        DoNesRomDisAsm(); // redo dasm
+        m_pNES->ndb.banksw = 0;
+    }
+    //-- if bank switch occured, we need redo disassembly --//
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuTracking()

@@ -53,6 +53,7 @@ private:
     int       m_nCpuStopCond;
     CString   m_strWatchAddr;
     CString   m_strCpuStopNSteps;
+    BOOL      m_bCheckAutoDasm;
     CListCtrl m_ctrInstructionList;
     //-- mfc control variables
 

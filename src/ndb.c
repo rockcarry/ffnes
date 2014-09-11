@@ -17,6 +17,7 @@ void ndb_free(NDB *ndb)
 void ndb_reset(NDB *ndb)
 {
     ndb->enable = 0;
+    ndb->banksw = 0;
     ndb->stop   = 0;
     ndb->cond   = 0;
     memset(ndb->params , 0   , sizeof(ndb->params ));
