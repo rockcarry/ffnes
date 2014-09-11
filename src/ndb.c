@@ -128,7 +128,7 @@ int ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment
         "CPX", "SBC", "NOP", "ISB", "CPX", "SBC", "INC", "ISB", "INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISB",
         "BEQ", "SBC", " t ", "ISB", "NOP", "SBC", "INC", "ISB", "SED", "SBC", "NOP", "ISB", "NOP", "SBC", "INC", "ISB",
     };
-    static int inst_len_map [32] = { 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3,  2, 2, 1, 2, 3, 3, 3, 3, 1, 3, 1, 3, 3, 3, 3, 3 };
+    static int inst_len_map [32] = { 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3,  2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3 };
     static int addr_mode_map[32] = { 0, 7, 0, 7, 2, 2, 2, 2, 0, 1, 0, 1, 4, 4, 4, 4, 10, 8, 9, 8, 0, 3, 3, 3, 0, 6, 0, 6, 0, 5, 5, 5 };
 
     int am = 0, len = 0;
