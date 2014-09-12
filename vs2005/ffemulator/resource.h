@@ -21,11 +21,13 @@
 #define IDC_RDO_CPU_RUN_NSTEPS          1012
 #define IDC_RDO_CPU_RUN_BPOINTS         1013
 #define IDC_EDT_NSTEPS                  1014
-#define IDC_BTN_CPU_STEP                1015
-#define IDC_BTN_CPU_TRACKING            1016
-#define IDC_CHECK_AUTO_DASM             1017
-#define IDC_EDT_LIST_CTRL               1018
-#define IDC_LST_OPCODE                  1019
+#define IDC_BTN_CPU_STEP_IN             1015
+#define IDC_BTN_CPU_STEP_OUT            1016
+#define IDC_BTN_CPU_STEP_OVER           1017
+#define IDC_BTN_CPU_TRACKING            1018
+#define IDC_CHECK_AUTO_DASM             1019
+#define IDC_EDT_LIST_CTRL               1020
+#define IDC_LST_OPCODE                  1021
 #define ID_DELBREAKPOINT                32771
 #define ID_ADDBREAKPOINT                32772
 #define ID_DASMLIST_SELECTALL           32773
@@ -38,7 +40,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32776
-#define _APS_NEXT_CONTROL_VALUE         1020
+#define _APS_NEXT_CONTROL_VALUE         1022
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

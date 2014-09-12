@@ -85,7 +85,9 @@ protected:
     afx_msg void OnBnClickedRdoCpuKeepRunning();
     afx_msg void OnBnClickedRdoCpuRunNsteps();
     afx_msg void OnBnClickedRdoCpuRunBpoints();
-    afx_msg void OnBnClickedBtnCpuStep();
+    afx_msg void OnBnClickedBtnCpuStepIn();
+    afx_msg void OnBnClickedBtnCpuStepOut();
+    afx_msg void OnBnClickedBtnCpuStepOver();
     afx_msg void OnBnClickedBtnCpuTracking();
     afx_msg LONG OnFindReplace(WPARAM wParam, LPARAM lParam);
     afx_msg void OnRclickListDasm(NMHDR *pNMHDR, LRESULT *pResult);

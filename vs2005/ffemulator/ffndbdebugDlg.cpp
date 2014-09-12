@@ -139,7 +139,9 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_BN_CLICKED(IDC_RDO_CPU_KEEP_RUNNING, &CffndbdebugDlg::OnBnClickedRdoCpuKeepRunning)
     ON_BN_CLICKED(IDC_RDO_CPU_RUN_NSTEPS  , &CffndbdebugDlg::OnBnClickedRdoCpuRunNsteps)
     ON_BN_CLICKED(IDC_RDO_CPU_RUN_BPOINTS , &CffndbdebugDlg::OnBnClickedRdoCpuRunBpoints)
-    ON_BN_CLICKED(IDC_BTN_CPU_STEP        , &CffndbdebugDlg::OnBnClickedBtnCpuStep)
+    ON_BN_CLICKED(IDC_BTN_CPU_STEP_IN     , &CffndbdebugDlg::OnBnClickedBtnCpuStepIn)
+    ON_BN_CLICKED(IDC_BTN_CPU_STEP_OUT    , &CffndbdebugDlg::OnBnClickedBtnCpuStepOut)
+    ON_BN_CLICKED(IDC_BTN_CPU_STEP_OVER   , &CffndbdebugDlg::OnBnClickedBtnCpuStepOver)
     ON_BN_CLICKED(IDC_BTN_CPU_TRACKING    , &CffndbdebugDlg::OnBnClickedBtnCpuTracking)
     ON_REGISTERED_MESSAGE(WM_FINDREPLACE  , &CffndbdebugDlg::OnFindReplace)
     ON_NOTIFY(NM_RCLICK, IDC_LST_OPCODE   , &CffndbdebugDlg::OnRclickListDasm)
@@ -400,7 +402,7 @@ void CffndbdebugDlg::OnBnClickedRdoCpuRunBpoints()
     ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_BPOINTS, NULL);
 }
 
-void CffndbdebugDlg::OnBnClickedBtnCpuStep()
+void CffndbdebugDlg::OnBnClickedBtnCpuStepIn()
 {
     DWORD nsteps = 1;
     ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_NSTEPS, &nsteps); // run 1 step
@@ -416,6 +418,16 @@ void CffndbdebugDlg::OnBnClickedBtnCpuStep()
         m_pNES->ndb.banksw = 0;
     }
     //-- if bank switch occured, we need redo disassemble --//
+}
+
+void CffndbdebugDlg::OnBnClickedBtnCpuStepOut()
+{
+    // TODO: Add your control notification handler code here
+}
+
+void CffndbdebugDlg::OnBnClickedBtnCpuStepOver()
+{
+    // TODO: Add your control notification handler code here
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuTracking()
@@ -794,7 +806,5 @@ void CffndbdebugDlg::FindStrInListCtrl(CString str, BOOL down)
 
     EndWaitCursor();
 }
-
-
 
 
