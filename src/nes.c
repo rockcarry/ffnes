@@ -129,15 +129,10 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     // create PRG-ROM 0
     nes->prom0.type = MEM_ROM;
     nes->prom0.size = NES_PRGROM_SIZE;
-    nes->prom0.data = nes->cart.buf_prom;
 
     // create PRG-ROM 1
     nes->prom1.type = MEM_ROM;
     nes->prom1.size = NES_PRGROM_SIZE;
-    nes->prom1.data = nes->cart.buf_prom;
-    if (nes->cart.prom_count > 1) {
-        nes->prom1.data += NES_PRGROM_SIZE;
-    }
 
     // init nes cbus
     bus_setmem(nes->cbus, 0, 0x0000, 0x1FFF, &(nes->cram   ));
@@ -197,7 +192,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     cpu_init(&(nes->cpu), nes->cbus );
     ppu_init(&(nes->ppu), nes->extra);
     apu_init(&(nes->apu), nes->extra);
-    ndb_init(&(nes->ndb),&(nes->cpu));
+    ndb_init(&(nes->ndb), nes       );
 
     // init joypad
     joypad_init  (&(nes->pad));

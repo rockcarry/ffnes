@@ -3,7 +3,6 @@
 
 // 包含头文件
 #include "stdefine.h"
-#include "cpu.h"
 
 // 常量定义
 enum {
@@ -18,12 +17,13 @@ enum {
     NDB_DUMP_CPU_STACK0,  // dump cpu stack info0
     NDB_DUMP_CPU_STACK1,  // dump cpu stack info1
     NDB_DUMP_CPU_VECTOR,  // dump cpu rst & nmi & irq vector
-    NDB_DUMP_BREAK_POINT0,// dump cpu rst & nmi & irq vector
-    NDB_DUMP_BREAK_POINT1,// dump cpu rst & nmi & irq vector
-    NDB_DUMP_WATCH0,      // dump cpu rst & nmi & irq vector
-    NDB_DUMP_WATCH1,      // dump cpu rst & nmi & irq vector
-    NDB_DUMP_WATCH2,      // dump cpu rst & nmi & irq vector
-    NDB_DUMP_WATCH3,      // dump cpu rst & nmi & irq vector
+    NDB_DUMP_BREAK_POINT0,// dump cpu break points info0
+    NDB_DUMP_BREAK_POINT1,// dump cpu break points info1
+    NDB_DUMP_WATCH0,      // dump cpu watches info0
+    NDB_DUMP_WATCH1,      // dump cpu watches info1
+    NDB_DUMP_WATCH2,      // dump cpu watches info2
+    NDB_DUMP_WATCH3,      // dump cpu watches info3
+    NDB_DUMP_BANKSW,      // dump cpu bank switch info
 };
 
 enum {
@@ -34,10 +34,15 @@ enum {
     NDB_DBT_STOP_DASM,  // stop disassemble
 };
 
+// 类型声明
+struct tagNES;
+
 // 类型定义
-typedef struct
+typedef struct tagNDB
 {
-    CPU  *cpu;
+    // pointer to nes
+    struct tagNES *nes;
+
     BOOL  enable;
     BOOL  banksw;
     int   stop;
@@ -70,7 +75,7 @@ typedef struct
 } DASM;
 
 // 函数声明
-void ndb_init (NDB *ndb, CPU *cpu);
+void ndb_init (NDB *ndb, void *nes);
 void ndb_free (NDB *ndb);
 void ndb_reset(NDB *ndb);
 void ndb_debug(NDB *ndb, BOOL en);

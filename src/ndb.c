@@ -1,11 +1,11 @@
 // 包含头文件
 #include <stdio.h>
-#include "ndb.h"
+#include "nes.h"
 
 // 函数实现
-void ndb_init(NDB *ndb, CPU *cpu)
+void ndb_init(NDB *ndb, void *nes)
 {
-    ndb->cpu = cpu;
+    ndb->nes = nes;
     ndb_reset(ndb);
 }
 
@@ -54,7 +54,7 @@ void ndb_cpu_debug(NDB *ndb)
     if (!ndb->enable) return;
 
     // save current pc
-    ndb->curpc = ndb->cpu->pc;
+    ndb->curpc = ndb->nes->cpu.pc;
 
     switch (ndb->cond)
     {
@@ -133,9 +133,9 @@ int ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment
 
     int am = 0, len = 0;
 
-    bytes[0] = bus_readb(ndb->cpu->cbus, pc + 0);
-    bytes[1] = bus_readb(ndb->cpu->cbus, pc + 1);
-    bytes[2] = bus_readb(ndb->cpu->cbus, pc + 2);
+    bytes[0] = bus_readb(ndb->nes->cbus, pc + 0);
+    bytes[1] = bus_readb(ndb->nes->cbus, pc + 1);
+    bytes[2] = bus_readb(ndb->nes->cbus, pc + 2);
 
     // instruction length & addressing mode
     len = inst_len_map [bytes[0] & 0x1f];
@@ -185,7 +185,7 @@ int ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment
         *entry = (bytes[2] << 8) | (bytes[1] << 0);
         if (*entry > 0x8000) {
             *btype = NDB_DBT_JMP_DIRECT;
-            *entry = bus_readw(ndb->cpu->cbus, *entry);
+            *entry = bus_readw(ndb->nes->cbus, *entry);
         }
     }                                                                                                  // JMP () --
     if (bytes[0] == 0x20) { *btype = NDB_DBT_CALL_SUB  ; *entry = (bytes[2] << 8) | (bytes[1] << 0); } // JSR
@@ -351,12 +351,12 @@ static void ndb_dump_cpu_regs1(NDB *ndb, char *str)
     int  i;
 
     sprintf(str, "%04X  %02X  %02X  %02X  %02X  ",
-        ndb->cpu->pc, ndb->cpu->ax, ndb->cpu->xi, ndb->cpu->yi, ndb->cpu->sp);
+        ndb->nes->cpu.pc, ndb->nes->cpu.ax, ndb->nes->cpu.xi, ndb->nes->cpu.yi, ndb->nes->cpu.sp);
 
     str += strlen(str);
     for (i=7; i>=0; i--)
     {
-        if (ndb->cpu->ps & (1 << i)) {
+        if (ndb->nes->cpu.ps & (1 << i)) {
             *str++ = psflag_chars[i];
         }
         else *str++ = '-';
@@ -366,7 +366,7 @@ static void ndb_dump_cpu_regs1(NDB *ndb, char *str)
 
 static void ndb_dump_cpu_stack0(NDB *ndb, char *str)
 {
-    int  top    = 0x100 + ndb->cpu->sp;
+    int  top    = 0x100 + ndb->nes->cpu.sp;
     int  bottom = (top & 0xfff0) + 0xf;
 
     sprintf(str, "%02X                   stack                   %02X",
@@ -375,7 +375,7 @@ static void ndb_dump_cpu_stack0(NDB *ndb, char *str)
 
 static void ndb_dump_cpu_stack1(NDB *ndb, char *str)
 {
-    int  top     = 0x100 + ndb->cpu->sp;
+    int  top     = 0x100 + ndb->nes->cpu.sp;
     int  bottom  = (top & 0xfff0) + 0xf;
     char byte[8] = {0};
     int  i;
@@ -383,7 +383,7 @@ static void ndb_dump_cpu_stack1(NDB *ndb, char *str)
     str[0] = '\0';
     for (i=bottom; i>bottom-16; i--)
     {
-        if (i > top) sprintf(byte, "%02X ", ndb->cpu->cram[i]);
+        if (i > top) sprintf(byte, "%02X ", ndb->nes->cpu.cram[i]);
         else         sprintf(byte, "-- ");
         strcat (str, byte);
     }
@@ -392,9 +392,9 @@ static void ndb_dump_cpu_stack1(NDB *ndb, char *str)
 static void ndb_dump_cpu_vector(NDB *ndb, char *str)
 {
     sprintf(str, "reset: %04X\nnmi  : %04X\nirq  : %04X",
-        bus_readw(ndb->cpu->cbus, 0xfffc),
-        bus_readw(ndb->cpu->cbus, 0xfffa),
-        bus_readw(ndb->cpu->cbus, 0xfffe));
+        bus_readw(ndb->nes->cbus, 0xfffc),
+        bus_readw(ndb->nes->cbus, 0xfffa),
+        bus_readw(ndb->nes->cbus, 0xfffe));
 }
 
 static void ndb_dump_break_point(NDB *ndb, int type, char *str)
@@ -437,11 +437,16 @@ static void ndb_dump_watch(NDB *ndb, int type, char *str)
             if (wts[i] == 0xffff) sprintf(str+i*5, " --  ");
             else
             {
-                byte = bus_readb(ndb->cpu->cbus, wts[i]);
+                byte = bus_readb(ndb->nes->cbus, wts[i]);
                 sprintf(str+i*5, " %02X  ", byte);
             }
         }
     }
+}
+
+static void ndb_dump_banksw(NDB *ndb, char *str)
+{
+    sprintf(str, "banksw:\r\n8000 %2d\r\nC000 %2d", ndb->nes->mmc.bank8000, ndb->nes->mmc.bankc000);
 }
 
 void ndb_dump_info(NDB *ndb, int type, char *str)
@@ -459,5 +464,6 @@ void ndb_dump_info(NDB *ndb, int type, char *str)
     case NDB_DUMP_WATCH1      :
     case NDB_DUMP_WATCH2      :
     case NDB_DUMP_WATCH3      : ndb_dump_watch      (ndb, type, str); break;
+    case NDB_DUMP_BANKSW      : ndb_dump_banksw     (ndb, str); break;
     }
 }

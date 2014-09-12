@@ -719,6 +719,14 @@ void CffndbdebugDlg::DrawCpuDebugging()
         DrawGrid(10, 5, gridx, gridy);
     }
 
+    // draw bank switch info
+    {
+        char banksw[128];
+        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_BANKSW, banksw);
+        rect.left = 327; rect.top = 125;
+        m_cdcDraw.DrawText(banksw, -1, &rect, DT_LEFT);
+    }
+
     // draw edge
     rect.left = rect.top = 0;
     m_cdcDraw.DrawEdge(&rect, EDGE_ETCHED, BF_RECT);

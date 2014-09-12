@@ -38,13 +38,15 @@
 // nes max bus size
 #define NES_MAX_BUS_SIZE  10
 
+// 类型声明
+struct tagNDB;
+
 // 类型定义
-typedef struct {
+typedef struct tagNES {
     CPU cpu;  // 6502
     PPU ppu;  // 2c02
     APU apu;  // 2a03
     MMC mmc;  // mmc
-    NDB ndb;  // ndb
     CARTRIDGE cart;
     JOYPAD    pad ;
     DWORD     extra;
@@ -77,6 +79,9 @@ typedef struct {
     HANDLE hNesThread;
     HANDLE hNesEvent;
     BOOL   bExitThread;
+
+    // ndb object
+    struct tagNDB ndb;
 } NES;
 
 // 函数声明

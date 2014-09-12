@@ -43,6 +43,28 @@ typedef struct
     void (*wcb1 )(MEM *pm, int addr, BYTE byte);
 } MAPPER;
 
+//++ mapper000 实现 ++//
+static void mapper000_reset(MMC *mmc)
+{
+    mmc_switch_pbank0(mmc, 0); // prom0 - first bank
+    mmc_switch_pbank1(mmc,-1); // prom1 - last  bank
+}
+
+static void mapper000_init(MMC *mmc)
+{
+    mapper000_reset(mmc);
+}
+
+static MAPPER mapper000 =
+{
+    mapper000_init,
+    NULL,
+    mapper000_reset,
+    NULL,
+    NULL,
+};
+//-- mapper000 实现 --//
+
 //++ mapper002 实现 ++//
 static void mapper002_reset(MMC *mmc)
 {
@@ -136,7 +158,7 @@ static MAPPER mapper003 =
 //++ mapper list ++//
 static MAPPER *g_mapper_list[256] =
 {
-    NULL,
+    &mapper000,
     NULL,
     &mapper002,
     &mapper003,
@@ -161,7 +183,7 @@ void mmc_free(MMC *mmc)
 {
     MAPPER *mapper;
     mapper = g_mapper_list[mmc->number];
-    if (mapper && mapper->init) mapper->free(mmc);
+    if (mapper && mapper->free) mapper->free(mmc);
 }
 
 void mmc_reset(MMC *mmc)
