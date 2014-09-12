@@ -183,11 +183,14 @@ int ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment
     if (bytes[0] == 0x4c) { *btype = NDB_DBT_JMP_DIRECT; *entry = (bytes[2] << 8) | (bytes[1] << 0); } // JMP
     if (bytes[0] == 0x6c) {                                                                            // JMP () ++
         *entry = (bytes[2] << 8) | (bytes[1] << 0);
-        *entry = bus_readw(ndb->cpu->cbus, *entry);
-        if (*entry > 0x8000) *btype = NDB_DBT_JMP_DIRECT;
+        if (*entry > 0x8000) {
+            *btype = NDB_DBT_JMP_DIRECT;
+            *entry = bus_readw(ndb->cpu->cbus, *entry);
+        }
     }                                                                                                  // JMP () --
     if (bytes[0] == 0x20) { *btype = NDB_DBT_CALL_SUB  ; *entry = (bytes[2] << 8) | (bytes[1] << 0); } // JSR
     if (am == 10)         { *btype = NDB_DBT_JMP_ONCOND; *entry = (pc + 2 + (char)bytes[1]);         } // BPL BMI BVC BVS BCC BCS BNE BEQ
+    if (bytes[0] == 0x00 || bytes[0] == 0x40 || bytes[0] == 0x60) { *btype = NDB_DBT_STOP_DASM;      } // BRK RTI RTS
 
     //++ for instruction comment ++//
     // todo..
@@ -216,26 +219,32 @@ static void ndb_dasm_by_entry(NDB *ndb, DASM *dasm, WORD entry)
         dasm->instlist[dasm->curinstn].pc  = pc;
         dasm->instlist[dasm->curinstn].len = len;
 
-        if (dasm->pc2instn_maptab[pc - 0x8000] == 0)
+        // if this position of pc is already disassemblied
+        if (dasm->pc2instn_maptab[pc - 0x8000]) break;
+
+        // mark this pc for disassembly
+        dasm->pc2instn_maptab[pc - 0x8000] = 1;
+        dasm->curinstn++; // next instn
+
+        // for branchtype == NDB_DBT_STOP_DASM
+        if (branchtype == NDB_DBT_STOP_DASM) break;
+
+        //++ for jump, branch or call sub instruction
+        if (branchentry > 0x8000 && dasm->pc2instn_maptab[branchentry - 0x8000] == 0)
         {
-            dasm->pc2instn_maptab[pc - 0x8000] = dasm->curinstn++;
-
-            if (branchentry && dasm->pc2instn_maptab[pc - 0x8000] == 0)
+            switch (branchtype)
             {
-                switch (branchtype)
-                {
-                case NDB_DBT_JMP_DIRECT:
-                    ndb_dasm_by_entry(ndb, dasm, branchentry);
-                    goto done;
+            case NDB_DBT_JMP_DIRECT:
+                ndb_dasm_by_entry(ndb, dasm, branchentry);
+                goto done;
 
-                case NDB_DBT_JMP_ONCOND:
-                case NDB_DBT_CALL_SUB:
-                    ndb_dasm_by_entry(ndb, dasm, pc + len   );
-                    ndb_dasm_by_entry(ndb, dasm, branchentry);
-                    goto done;
-                }
+            case NDB_DBT_JMP_ONCOND:
+            case NDB_DBT_CALL_SUB:
+                ndb_dasm_by_entry(ndb, dasm, branchentry);
+                break;
             }
         }
+        //-- for jump, branch or call sub instruction
     }
 
 done:
@@ -249,15 +258,18 @@ static int cmp_inst_item_by_pc(const void *item1, const void *item2)
 
 void ndb_dasm_nes_rom(NDB *ndb, DASM *dasm)
 {
-    memset(dasm, 0, sizeof(DASM));
-    dasm->instlist[dasm->curinstn++].pc = 0;
+    int i;
 
+    memset(dasm, 0, sizeof(DASM));
     ndb_dasm_by_entry(ndb, dasm, bus_readw(ndb->cpu->cbus, RST_VECTOR));
     ndb_dasm_by_entry(ndb, dasm, bus_readw(ndb->cpu->cbus, NMI_VECTOR));
     ndb_dasm_by_entry(ndb, dasm, bus_readw(ndb->cpu->cbus, IRQ_VECTOR));
 
     // quick sort instlist
     qsort(dasm->instlist, dasm->curinstn, sizeof(dasm->instlist[0]), cmp_inst_item_by_pc);
+
+    // make pc to instrution index map table
+    for (i=0; i<dasm->curinstn; i++) dasm->pc2instn_maptab[dasm->instlist[i].pc - 0x8000] = i;
 }
 
 int ndb_dasm_pc2instn(NDB *ndb, DASM *dasm, WORD pc)
