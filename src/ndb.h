@@ -31,7 +31,7 @@ enum {
     NDB_DBT_JMP_DIRECT, // jump directly
     NDB_DBT_JMP_ONCOND, // jump on condition
     NDB_DBT_CALL_SUB,   // call subroutine (JSR)
-    NDB_DBT_STOP_DASM,  // stop disassembly
+    NDB_DBT_STOP_DASM,  // stop disassemble
 };
 
 // 类型定义

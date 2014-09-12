@@ -9,6 +9,7 @@ extern "C" {
 
 // CffndbdebugDlg dialog
 
+#include "afxwin.h"
 class CffndbdebugDlg : public CDialog
 {
     DECLARE_DYNAMIC(CffndbdebugDlg)
@@ -40,6 +41,8 @@ private:
     BOOL    m_bEnableTracking;
     BOOL    m_bIsSearchDown;
     CString m_strCurFindStr;
+    int     m_nCurEditItemRow;
+    int     m_nCurEditItemCol;
 
 private:
     void DrawGrid(int m, int n, int *x, int *y);
@@ -55,6 +58,7 @@ private:
     CString   m_strCpuStopNSteps;
     BOOL      m_bCheckAutoDasm;
     CListCtrl m_ctrInstructionList;
+    CEdit     m_edtListCtrl;
     //-- mfc control variables
 
 protected:
@@ -84,6 +88,8 @@ protected:
     afx_msg void OnBnClickedBtnCpuTracking();
     afx_msg LONG OnFindReplace(WPARAM wParam, LPARAM lParam);
     afx_msg void OnRclickListDasm(NMHDR *pNMHDR, LRESULT *pResult);
+    afx_msg void OnDclickListDasm(NMHDR *pNMHDR, LRESULT *pResult);
+    afx_msg void OnEnKillfocusEdtListCtrl();
     afx_msg void OnAddbreakpoint();
     afx_msg void OnDelbreakpoint();
     afx_msg void OnDasmlistSelectall();

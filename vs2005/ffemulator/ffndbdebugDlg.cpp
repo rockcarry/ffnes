@@ -7,6 +7,7 @@
 
 // 内部常量定义
 static RECT s_rtCpuInfo    = { 362, 85, 750, 378 };
+static RECT s_rtListCtrl   = { 9  , 85, 356, 527 };
 static int  WM_FINDREPLACE = RegisterWindowMessage(FINDMSGSTRING);
 
 // CffndbdebugDlg dialog
@@ -38,6 +39,7 @@ void CffndbdebugDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Text   (pDX, IDC_EDT_WATCH           , m_strWatchAddr      );
     DDX_Text   (pDX, IDC_EDT_NSTEPS          , m_strCpuStopNSteps  );
     DDX_Check  (pDX, IDC_CHECK_AUTO_DASM     , m_bCheckAutoDasm    );
+    DDX_Control(pDX, IDC_EDT_LIST_CTRL       , m_edtListCtrl       );
 }
 
 BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
@@ -109,6 +111,14 @@ BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
                 return TRUE;
             }
         }
+        if (::GetFocus() == m_edtListCtrl.GetSafeHwnd())
+        {
+            if (pMsg->wParam == VK_RETURN)
+            {
+                OnEnKillfocusEdtListCtrl();
+                return TRUE;
+            }
+        }
         break;
     }
     return CDialog::PreTranslateMessage(pMsg);
@@ -133,6 +143,8 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_BN_CLICKED(IDC_BTN_CPU_TRACKING    , &CffndbdebugDlg::OnBnClickedBtnCpuTracking)
     ON_REGISTERED_MESSAGE(WM_FINDREPLACE  , &CffndbdebugDlg::OnFindReplace)
     ON_NOTIFY(NM_RCLICK, IDC_LST_OPCODE   , &CffndbdebugDlg::OnRclickListDasm)
+    ON_NOTIFY(NM_DBLCLK, IDC_LST_OPCODE   , &CffndbdebugDlg::OnDclickListDasm)
+    ON_EN_KILLFOCUS(IDC_EDT_LIST_CTRL     , &CffndbdebugDlg::OnEnKillfocusEdtListCtrl)
     ON_COMMAND(ID_ADDBREAKPOINT           , &CffndbdebugDlg::OnAddbreakpoint)
     ON_COMMAND(ID_DELBREAKPOINT           , &CffndbdebugDlg::OnDelbreakpoint)
     ON_COMMAND(ID_DASMLIST_SELECTALL      , &CffndbdebugDlg::OnDasmlistSelectall)
@@ -187,7 +199,7 @@ BOOL CffndbdebugDlg::OnInitDialog()
     m_penDraw.CreatePen(PS_SOLID, 2, RGB(128, 128, 128));
 
     //++ create & init list control
-    m_ctrInstructionList.Create(WS_CHILD|WS_VISIBLE|WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS|WS_TABSTOP, CRect(9, 85, 356, 527), this, IDC_LST_OPCODE);
+    m_ctrInstructionList.Create(WS_CHILD|WS_VISIBLE|WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS|WS_TABSTOP, s_rtListCtrl, this, IDC_LST_OPCODE);
     m_ctrInstructionList.SetExtendedStyle(m_ctrInstructionList.GetExtendedStyle()|LVS_EX_FULLROWSELECT|LVS_EX_GRIDLINES);
     m_ctrInstructionList.InsertColumn(0, "b"       , LVCFMT_LEFT, 18 );
     m_ctrInstructionList.InsertColumn(1, "pc"      , LVCFMT_LEFT, 40 );
@@ -254,7 +266,7 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
         switch (m_nDebugType)
         {
         case DT_DEBUG_CPU:
-            //++ if bank switch occured, we need redo disassembly ++//
+            //++ if bank switch occured, we need redo disassemble ++//
             if (  m_pNES->ndb.banksw == 0x8000 && m_pNES->ndb.curpc <  0xc0000
                || m_pNES->ndb.banksw == 0xc000 && m_pNES->ndb.curpc >= 0xc0000)
             {
@@ -267,7 +279,7 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
                     SetTimer(NDB_REFRESH_TIMER, 50, NULL);
                 }
             }
-            //-- if bank switch occured, we need redo disassembly --//
+            //-- if bank switch occured, we need redo disassemble --//
 
             // update cursor of list control for ffndb pc tracking
             if (m_bEnableTracking)
@@ -395,15 +407,15 @@ void CffndbdebugDlg::OnBnClickedBtnCpuStep()
     while (!m_pNES->ndb.stop) Sleep(20); // wait for cpu stop
     UpdateCurInstHighLight(); // update cursor high light for instruction list
 
-    //++ if bank switch occured, we need redo disassembly ++//
+    //++ if bank switch occured, we need redo disassemble ++//
     if (m_pNES->ndb.banksw)
     {
-        MessageBox("nes mapper makes bank switch, need to redo disassembly!",
+        MessageBox("nes mapper makes bank switch, need to redo disassemble!",
             "ffndb dasm", MB_ICONASTERISK|MB_ICONINFORMATION);
         DoNesRomDisAsm(); // redo dasm
         m_pNES->ndb.banksw = 0;
     }
-    //-- if bank switch occured, we need redo disassembly --//
+    //-- if bank switch occured, we need redo disassemble --//
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuTracking()
@@ -440,6 +452,11 @@ void CffndbdebugDlg::OnRclickListDasm(NMHDR *pNMHDR, LRESULT *pResult)
     menu.LoadMenu(IDR_MENU1);
     menu.GetSubMenu(0)->TrackPopupMenu(TPM_LEFTALIGN|TPM_RIGHTBUTTON, point.x, point.y, this);
     *pResult = 0;
+}
+
+void CffndbdebugDlg::OnDclickListDasm(NMHDR *pNMHDR, LRESULT *pResult)
+{
+    OnDasmlistEdit();
 }
 
 void CffndbdebugDlg::OnAddbreakpoint()
@@ -534,8 +551,64 @@ void CffndbdebugDlg::OnDasmlistCopy()
 
 void CffndbdebugDlg::OnDasmlistEdit()
 {
-    // TODO: Add your command handler code here
+    m_nCurEditItemRow = m_ctrInstructionList.GetSelectionMark();
+    m_nCurEditItemCol = 2;
+    if (m_nCurEditItemRow != -1)
+    {
+        CRect rect;
+        m_ctrInstructionList.GetSubItemRect(m_nCurEditItemRow, m_nCurEditItemCol, LVIR_LABEL, rect);
+        rect.top  += s_rtListCtrl.top + 0; rect.bottom += s_rtListCtrl.top ;
+        rect.left += s_rtListCtrl.left+ 6; rect.right  += s_rtListCtrl.left;
+        m_edtListCtrl.SetWindowText(m_ctrInstructionList.GetItemText(m_nCurEditItemRow, m_nCurEditItemCol));
+        m_edtListCtrl.MoveWindow(rect);
+        m_edtListCtrl.ShowWindow(SW_SHOW);
+        m_edtListCtrl.SetFocus();
+        m_edtListCtrl.SetSel(0, -1);
+    }
 }
+
+void CffndbdebugDlg::OnEnKillfocusEdtListCtrl()
+{
+    CString text;
+    m_edtListCtrl.GetWindowText(text);
+    m_edtListCtrl.ShowWindow(SW_HIDE);
+
+    // read bytes from edit control
+    BYTE bytes[8 ] = {0};
+    int n = sscanf_s(text, "%x %x %x %x %x %x", &(bytes[0]), &(bytes[1]), &(bytes[2]), &(bytes[3]), &(bytes[4]), &(bytes[5]));
+
+    // modify rom code
+    WORD pc = m_pDASM->instlist[m_nCurEditItemRow].pc;
+    m_pNES->cbus[6].membank->type = MEM_RAM; m_pNES->cbus[7].membank->type = MEM_RAM;
+    for (int i=0; i<n; i++) bus_writeb(m_pNES->cbus, pc + i, bytes[i]);
+    m_pNES->cbus[6].membank->type = MEM_ROM; m_pNES->cbus[7].membank->type = MEM_ROM;
+
+    // disassemble one instruction
+    int  btype = 0;
+    WORD entry = 0;
+    int  len   = 0;
+    len = ndb_dasm_one_inst(&(m_pNES->ndb), pc,
+        m_pDASM->instlist[m_nCurEditItemRow].bytes,
+        m_pDASM->instlist[m_nCurEditItemRow].asmstr,
+        m_pDASM->instlist[m_nCurEditItemRow].comment, &btype, &entry);
+
+    // after rom modified, if new instruction length is same as old or not
+    if (len == m_pDASM->instlist[m_nCurEditItemRow].len)
+    {
+        char str[16];
+        for (int i=0; i<len; i++) sprintf(&(str[i*3]), "%02X ", m_pDASM->instlist[m_nCurEditItemRow].bytes[i]);
+        m_ctrInstructionList.SetItemText(m_nCurEditItemRow, 2, str);
+        m_ctrInstructionList.SetItemText(m_nCurEditItemRow, 3, m_pDASM->instlist[m_nCurEditItemRow].asmstr );
+        m_ctrInstructionList.SetItemText(m_nCurEditItemRow, 4, m_pDASM->instlist[m_nCurEditItemRow].comment);
+    }
+    else
+    {
+        MessageBox("after rom modified, the new instruction length is not same as old, need to redo disassemble!",
+            "ffndb dasm", MB_ICONASTERISK|MB_ICONINFORMATION);
+        DoNesRomDisAsm();
+    }
+}
+
 
 
 ///////////////////////////////////////////////
@@ -713,5 +786,7 @@ void CffndbdebugDlg::FindStrInListCtrl(CString str, BOOL down)
 
     EndWaitCursor();
 }
+
+
 
 

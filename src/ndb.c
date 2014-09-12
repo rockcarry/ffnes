@@ -222,7 +222,7 @@ static void ndb_dasm_by_entry(NDB *ndb, DASM *dasm, WORD entry)
         // if this position of pc is already disassemblied
         if (dasm->pc2instn_maptab[pc - 0x8000]) break;
 
-        // mark this pc for disassembly
+        // mark this pc for disassemble
         dasm->pc2instn_maptab[pc - 0x8000] = 1;
         dasm->curinstn++; // next instn
 
