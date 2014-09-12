@@ -48,6 +48,7 @@ private:
     void DrawGrid(int m, int n, int *x, int *y);
     void DrawCpuDebugging();
     void DoNesRomDisAsm();
+    void UpdateDasmListControl();
     void UpdateCurInstHighLight();
     void FindStrInListCtrl(CString str, BOOL down);
 

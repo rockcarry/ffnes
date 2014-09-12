@@ -85,7 +85,9 @@ void ndb_cpu_runto(NDB *ndb, int cond, void *param);
 
 // ndb disasm
 int  ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment, int *btype, WORD *entry);
-void ndb_dasm_nes_rom (NDB *ndb, DASM *dasm);
+void ndb_dasm_nes_rom_begin(NDB *ndb, DASM *dasm);
+void ndb_dasm_nes_rom_entry(NDB *ndb, DASM *dasm, WORD entry);
+void ndb_dasm_nes_rom_done (NDB *ndb, DASM *dasm);
 int  ndb_dasm_pc2instn(NDB *ndb, DASM *dasm, WORD pc);
 
 // break point & watch

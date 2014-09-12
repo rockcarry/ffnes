@@ -199,7 +199,7 @@ int ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment
     return len;
 }
 
-static void ndb_dasm_by_entry(NDB *ndb, DASM *dasm, WORD entry)
+void ndb_dasm_nes_rom_entry(NDB *ndb, DASM *dasm, WORD entry)
 {
     int  len;
     WORD pc;
@@ -235,12 +235,12 @@ static void ndb_dasm_by_entry(NDB *ndb, DASM *dasm, WORD entry)
             switch (branchtype)
             {
             case NDB_DBT_JMP_DIRECT:
-                ndb_dasm_by_entry(ndb, dasm, branchentry);
+                ndb_dasm_nes_rom_entry(ndb, dasm, branchentry);
                 goto done;
 
             case NDB_DBT_JMP_ONCOND:
             case NDB_DBT_CALL_SUB:
-                ndb_dasm_by_entry(ndb, dasm, branchentry);
+                ndb_dasm_nes_rom_entry(ndb, dasm, branchentry);
                 break;
             }
         }
@@ -256,14 +256,14 @@ static int cmp_inst_item_by_pc(const void *item1, const void *item2)
     return *((WORD*)item1) - *((WORD*)item2);
 }
 
-void ndb_dasm_nes_rom(NDB *ndb, DASM *dasm)
+void ndb_dasm_nes_rom_begin(NDB *ndb, DASM *dasm)
+{
+    memset(dasm, 0, sizeof(DASM)); // clear all
+}
+
+void ndb_dasm_nes_rom_done(NDB *ndb, DASM *dasm)
 {
     int i;
-
-    memset(dasm, 0, sizeof(DASM));
-    ndb_dasm_by_entry(ndb, dasm, bus_readw(ndb->cpu->cbus, RST_VECTOR));
-    ndb_dasm_by_entry(ndb, dasm, bus_readw(ndb->cpu->cbus, NMI_VECTOR));
-    ndb_dasm_by_entry(ndb, dasm, bus_readw(ndb->cpu->cbus, IRQ_VECTOR));
 
     // quick sort instlist
     qsort(dasm->instlist, dasm->curinstn, sizeof(dasm->instlist[0]), cmp_inst_item_by_pc);

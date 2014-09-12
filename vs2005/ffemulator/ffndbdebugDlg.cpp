@@ -593,7 +593,8 @@ void CffndbdebugDlg::OnEnKillfocusEdtListCtrl()
         m_pDASM->instlist[m_nCurEditItemRow].comment, &btype, &entry);
 
     // after rom modified, if new instruction length is same as old or not
-    if (len == m_pDASM->instlist[m_nCurEditItemRow].len)
+    if (  len == m_pDASM->instlist[m_nCurEditItemRow].len
+       && n   == m_pDASM->instlist[m_nCurEditItemRow].len)
     {
         char str[16];
         for (int i=0; i<len; i++) sprintf(&(str[i*3]), "%02X ", m_pDASM->instlist[m_nCurEditItemRow].bytes[i]);
@@ -717,23 +718,19 @@ void CffndbdebugDlg::DrawCpuDebugging()
     InvalidateRect(&s_rtCpuInfo, FALSE);
 }
 
-void CffndbdebugDlg::DoNesRomDisAsm()
+void CffndbdebugDlg::UpdateDasmListControl()
 {
     char str[32];
-    int  n, i;
-
-    BeginWaitCursor();
-    ndb_dasm_nes_rom(&(m_pNES->ndb), m_pDASM);
     m_ctrInstructionList.SetRedraw(FALSE);
     m_ctrInstructionList.DeleteAllItems();
-    for (n=0; n<m_pDASM->curinstn; n++)
+    for (int n=0; n<m_pDASM->curinstn; n++)
     {
         m_ctrInstructionList.InsertItem(n, "");
 
         sprintf(str, "%04X", m_pDASM->instlist[n].pc);
         m_ctrInstructionList.SetItemText(n, 1, str);
 
-        for (i=0; i<m_pDASM->instlist[n].len; i++) {
+        for (int i=0; i<m_pDASM->instlist[n].len; i++) {
             sprintf(&(str[i*3]), "%02X ", m_pDASM->instlist[n].bytes[i]);
         }
         m_ctrInstructionList.SetItemText(n, 2, str);
@@ -742,6 +739,17 @@ void CffndbdebugDlg::DoNesRomDisAsm()
         m_ctrInstructionList.SetItemText(n, 4, m_pDASM->instlist[n].comment);
     }
     m_ctrInstructionList.SetRedraw(TRUE);
+}
+
+void CffndbdebugDlg::DoNesRomDisAsm()
+{
+    BeginWaitCursor();
+    ndb_dasm_nes_rom_begin(&(m_pNES->ndb), m_pDASM);
+    ndb_dasm_nes_rom_entry(&(m_pNES->ndb), m_pDASM, bus_readw(m_pNES->cbus, RST_VECTOR));
+    ndb_dasm_nes_rom_entry(&(m_pNES->ndb), m_pDASM, bus_readw(m_pNES->cbus, NMI_VECTOR));
+    ndb_dasm_nes_rom_entry(&(m_pNES->ndb), m_pDASM, bus_readw(m_pNES->cbus, IRQ_VECTOR));
+    ndb_dasm_nes_rom_done (&(m_pNES->ndb), m_pDASM);
+    UpdateDasmListControl();
     EndWaitCursor();
 }
 
