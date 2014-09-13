@@ -187,10 +187,9 @@ BOOL CffndbdebugDlg::OnInitDialog()
     m_cdcDraw.CreateCompatibleDC(NULL);
 
     // create bitmap
-    m_bmpCpuInfo.CreateBitmap(
-        s_rtCpuInfo.right - s_rtCpuInfo.left,
-        s_rtCpuInfo.bottom - s_rtCpuInfo.top,
-        1, 32, NULL);
+    RECT rect = {0};
+    GetClientRect(&rect);
+    m_bmpCpuInfo.CreateBitmap(rect.right, rect.bottom, 1, 32, NULL);
 
     // create font
     m_fntDraw.CreateFont(12, 0, 0, 0, FW_NORMAL, FALSE, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
@@ -252,9 +251,9 @@ void CffndbdebugDlg::OnPaint()
         int savedc = m_cdcDraw.SaveDC();
         m_cdcDraw.SelectObject(&m_bmpCpuInfo);
         dc.BitBlt(s_rtCpuInfo.left, s_rtCpuInfo.top,
-            s_rtCpuInfo.right - s_rtCpuInfo.left,
-            s_rtCpuInfo.bottom - s_rtCpuInfo.top,
-            &m_cdcDraw, 0, 0, SRCCOPY);
+                  s_rtCpuInfo.right - s_rtCpuInfo.left,
+                  s_rtCpuInfo.bottom - s_rtCpuInfo.top,
+                  &m_cdcDraw, 0, 0, SRCCOPY);
         m_cdcDraw.RestoreDC(savedc);
     }
 }
