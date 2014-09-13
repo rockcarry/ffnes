@@ -187,9 +187,17 @@ BOOL CffndbdebugDlg::OnInitDialog()
     m_cdcDraw.CreateCompatibleDC(NULL);
 
     // create bitmap
-    RECT rect = {0};
-    GetClientRect(&rect);
-    m_bmpCpuInfo.CreateBitmap(rect.right, rect.bottom, 1, 32, NULL);
+    RECT rect = {0}; GetClientRect(&rect);
+    BITMAPINFO bmpinfo = {0};
+    bmpinfo.bmiHeader.biSize        =  sizeof(BITMAPINFOHEADER);
+    bmpinfo.bmiHeader.biWidth       =  rect.right;
+    bmpinfo.bmiHeader.biHeight      = -rect.bottom;
+    bmpinfo.bmiHeader.biPlanes      =  1;
+    bmpinfo.bmiHeader.biBitCount    =  32;
+    bmpinfo.bmiHeader.biCompression =  BI_RGB;
+    HBITMAP hbmp   = CreateDIBSection(m_cdcDraw.GetSafeHdc(), &bmpinfo, DIB_RGB_COLORS, (void**)&m_bmpDrawBuf, NULL, 0);
+    BITMAP  bitmap = {0}; GetObject(hbmp, sizeof(BITMAP), &bitmap); m_bmpDrawStride = bitmap.bmWidthBytes;
+    m_bmpDrawBmp = CBitmap::FromHandle(hbmp);
 
     // create font
     m_fntDraw.CreateFont(12, 0, 0, 0, FW_NORMAL, FALSE, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
@@ -228,9 +236,9 @@ void CffndbdebugDlg::OnDestroy()
 
     // delete dc & object
     m_cdcDraw.DeleteDC();
-    m_bmpCpuInfo.DeleteObject();
     m_fntDraw.DeleteObject();
     m_penDraw.DeleteObject();
+    m_bmpDrawBmp->DeleteObject();
 
     // delete m_pDASM
     delete m_pDASM;
@@ -249,7 +257,7 @@ void CffndbdebugDlg::OnPaint()
     if (m_nDebugType == DT_DEBUG_CPU)
     {
         int savedc = m_cdcDraw.SaveDC();
-        m_cdcDraw.SelectObject(&m_bmpCpuInfo);
+        m_cdcDraw.SelectObject(m_bmpDrawBmp);
         dc.BitBlt(s_rtCpuInfo.left, s_rtCpuInfo.top,
                   s_rtCpuInfo.right - s_rtCpuInfo.left,
                   s_rtCpuInfo.bottom - s_rtCpuInfo.top,
@@ -652,7 +660,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
     // save dc
     int savedc = m_cdcDraw.SaveDC();
 
-    m_cdcDraw.SelectObject(&m_bmpCpuInfo);
+    m_cdcDraw.SelectObject(m_bmpDrawBmp);
     m_cdcDraw.SelectObject(&m_fntDraw);
     m_cdcDraw.SelectObject(&m_penDraw);
     m_cdcDraw.FillSolidRect(&rect, RGB(255, 255, 255));

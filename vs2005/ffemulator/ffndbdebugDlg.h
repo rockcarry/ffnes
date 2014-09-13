@@ -34,7 +34,9 @@ private:
     NES    *m_pNES;
     DASM   *m_pDASM;
     int     m_nDebugType;
-    CBitmap m_bmpCpuInfo;
+    CBitmap*m_bmpDrawBmp;
+    void   *m_bmpDrawBuf;
+    LONG    m_bmpDrawStride;
     CDC     m_cdcDraw;
     CFont   m_fntDraw;
     CPen    m_penDraw;
