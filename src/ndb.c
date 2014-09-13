@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include "nes.h"
 
+// 内部函数声明
+static int ndb_cal_inst_len(BYTE opcode);
+static int ndb_cal_inst_adm(BYTE opcode);
+
 // 函数实现
 void ndb_init(NDB *ndb, void *nes)
 {
@@ -16,95 +20,167 @@ void ndb_free(NDB *ndb)
 
 void ndb_reset(NDB *ndb)
 {
-    ndb->enable = 0;
-    ndb->banksw = 0;
-    ndb->stop   = 0;
-    ndb->cond   = 0;
-    memset(ndb->params , 0   , sizeof(ndb->params ));
+    ndb->enable     = 0;
+    ndb->banksw     = 0;
+    ndb->stop       = 0;
+    ndb->cond       = 0;
+    ndb->pcstacktop = 0;
     memset(ndb->bpoints, 0xff, sizeof(ndb->bpoints));
     memset(ndb->watches, 0xff, sizeof(ndb->watches));
 }
 
-void ndb_debug(NDB *ndb, BOOL en)
+void ndb_set_debug(NDB *ndb, int mode)
 {
-    ndb->enable = en;
-}
-
-void ndb_save(NDB *ndb)
-{
-    ndb->save_enable = ndb->enable;
-    ndb->save_stop   = ndb->stop;
-    ndb->save_cond   = ndb->cond;
-}
-
-void ndb_restore(NDB *ndb)
-{
-    ndb->enable = ndb->save_enable;
-    ndb->stop   = ndb->save_stop;
-    ndb->cond   = ndb->save_cond;
+    switch (mode)
+    {
+    case NDB_DEBUG_MODE_DISABLE:
+        ndb->save_enable = ndb->enable;
+        ndb->enable      = 0;
+        ndb->stop        = 0;
+        break;
+    case NDB_DEBUG_MODE_ENABLE:
+        ndb->enable      = 1;
+        break;
+    case NDB_DEBUG_MODE_RESTART:
+        ndb->pcstacktop  = 0;
+        ndb->enable      = ndb->save_enable;
+        break;
+    }
 }
 
 void ndb_cpu_debug(NDB *ndb)
 {
-    WORD *wparam = (WORD*)ndb->params;
-    LONG *lparam = (LONG*)ndb->params;
-    int   i;
+    int i;
 
     // if ndb debug is disabled
     if (!ndb->enable) return;
 
-    // save current pc
-    ndb->curpc = ndb->nes->cpu.pc;
+    // save current pc & current opcode
+    ndb->curpc     = ndb->nes->cpu.pc;
+    ndb->curopcode = bus_readb(ndb->nes->cbus, ndb->curpc);
+
+    if (ndb->curopcode == 0x00 || ndb->curopcode == 0x20) // BRK & JSR
+    {
+        if (ndb->pcstacktop < 128) ndb->pcstackbuf[ndb->pcstacktop++] = ndb->curpc + 2;
+    }
+    else if (ndb->curopcode == 0x40 || ndb->curopcode == 0x60) // RTI & RTS
+    {
+        if (ndb->pcstacktop > 0) ndb->pcstacktop--;
+    }
 
     switch (ndb->cond)
     {
-    case NDB_CPU_KEEP_RUNNING:
-        ndb->stop = 0;
-        break;
-
     case NDB_CPU_RUN_NSTEPS:
-        if (*lparam > 0) (*lparam)--;
-        ndb->stop = (*lparam > 0) ? 0 : 1;
+        if (ndb->nsteps > 0) ndb->nsteps--;
+        ndb->stop = (ndb->nsteps > 0) ? 0 : 1;
         break;
 
-    case NDB_CPU_RUN_BPOINTS:
-        for (i=0; i<16; i++)
+    case NDB_CPU_RUN_STEP_IN:
+        ndb->stop = 1;
+        break;
+
+    case NDB_CPU_RUN_STEP_OUT:
+        if (ndb->pcstepout != 0xffff)
         {
-            if (ndb->curpc == ndb->bpoints[i])
+            if (  ndb->curpc == ndb->pcstepout + 0
+               || ndb->curpc == ndb->pcstepout + 1)
             {
                 ndb->stop = 1;
-                break;
             }
         }
         break;
+
+    case NDB_CPU_RUN_STEP_OVER:
+        if (ndb->pcstepover != 0xffff)
+        {
+            if (ndb->curpc == ndb->pcstepover) ndb->stop = 1;
+        }
+        else ndb->stop = 1;
+        break;
     }
+
+    //++ for break points
+    for (i=0; i<16; i++)
+    {
+        if (ndb->curpc == ndb->bpoints[i])
+        {
+            ndb->stop = 1;
+            break;
+        }
+    }
+    //-- for break points
 
     // while loop make ndb spin here
     while (ndb->stop) Sleep(20);
 }
 
-void ndb_cpu_runto(NDB *ndb, int cond, void *param)
+void ndb_cpu_runto(NDB *ndb, int cond, DWORD dwparam)
 {
-    WORD *wparam = (WORD*)ndb->params;
-    LONG *lparam = (LONG*)ndb->params;
-
+    // save for cond
     ndb->cond = cond;
+
     switch (cond)
     {
-    case NDB_CPU_KEEP_RUNNING:
+    case NDB_CPU_RUN_NSTEPS:
+        ndb->nsteps = (int)dwparam;
+        if (ndb->nsteps <= 0) ndb->stop = 1;
+        else                  ndb->stop = 0;
+        break;
+
+    case NDB_CPU_RUN_STEP_OUT:
+        if (ndb->pcstacktop > 0)
+        {
+            ndb->pcstepout = ndb->pcstackbuf[ndb->pcstacktop - 1];
+        }
+        else ndb->pcstepout = 0xffff;
         ndb->stop = 0;
         break;
 
-    case NDB_CPU_RUN_NSTEPS:
-        *lparam = *(LONG*)param;
-        if (*lparam <= 0) ndb->stop = 1;
-        else              ndb->stop = 0;
+    case NDB_CPU_RUN_STEP_OVER:
+        if (ndb->curopcode == 0x00 || ndb->curopcode == 0x20)
+        {
+            ndb->pcstepover = ndb->curpc + ndb_cal_inst_len(ndb->curopcode);
+        }
+        else ndb->pcstepover = 0xffff;
+        ndb->stop = 0;
         break;
 
-    case NDB_CPU_RUN_BPOINTS:
+    default:
         ndb->stop = 0;
         break;
     }
+}
+
+static int ndb_cal_inst_len(BYTE opcode)
+{
+    static int inst_len_map[32] = { 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3,  2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3 };
+           int len = inst_len_map[opcode & 0x1f];
+    // instruction length for spcial opcode
+    switch (opcode)
+    {
+    case 0x00: case 0x40: case 0x60: case 0x02: case 0x22: case 0x42: case 0x62: len = 1; break;
+    case 0x20:                                                                   len = 3; break;
+    }
+    return len;
+}
+
+static int ndb_cal_inst_adm(BYTE opcode)
+{
+    static int inst_adm_map[32] = { 0, 7, 0, 7, 2, 2, 2, 2, 0, 1, 0, 1, 4, 4, 4, 4, 10, 8, 9, 8, 0, 3, 3, 3, 0, 6, 0, 6, 0, 5, 5, 5 };
+           int adm = inst_adm_map[opcode & 0x1f];
+    // instruction addressing mode for spcial opcode
+    switch (opcode)
+    {
+    case 0x20:                                             adm =  4; break;
+    case 0xa0: case 0xc0: case 0xe0: case 0xa2:            adm =  1; break;
+    case 0x04: case 0x44: case 0x64: case 0x89: case 0x0c: adm =  0; break;
+    case 0x6c:                                             adm = 12; break;
+    case 0x94: case 0xb4:                                  adm =  3; break;
+    case 0x9c: case 0xbc:                                  adm =  5; break;
+    case 0x96: case 0xb6: case 0x97: case 0xb7:            adm = 11; break;
+    case 0x9e: case 0xbe: case 0x9f: case 0xbf:            adm =  6; break;
+    }
+    return adm;
 }
 
 int ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment, int *btype, WORD *entry)
@@ -128,41 +204,19 @@ int ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment
         "CPX", "SBC", "NOP", "ISB", "CPX", "SBC", "INC", "ISB", "INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISB",
         "BEQ", "SBC", " t ", "ISB", "NOP", "SBC", "INC", "ISB", "SED", "SBC", "NOP", "ISB", "NOP", "SBC", "INC", "ISB",
     };
-    static int inst_len_map [32] = { 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3,  2, 2, 1, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3 };
-    static int addr_mode_map[32] = { 0, 7, 0, 7, 2, 2, 2, 2, 0, 1, 0, 1, 4, 4, 4, 4, 10, 8, 9, 8, 0, 3, 3, 3, 0, 6, 0, 6, 0, 5, 5, 5 };
 
-    int am = 0, len = 0;
+    int len, adm;
 
     bytes[0] = bus_readb(ndb->nes->cbus, pc + 0);
     bytes[1] = bus_readb(ndb->nes->cbus, pc + 1);
     bytes[2] = bus_readb(ndb->nes->cbus, pc + 2);
 
     // instruction length & addressing mode
-    len = inst_len_map [bytes[0] & 0x1f];
-    am  = addr_mode_map[bytes[0] & 0x1f];
-
-    // instruction length for spcial opcode
-    switch (bytes[0])
-    {
-    case 0x00: case 0x40: case 0x60: case 0x02: case 0x22: case 0x42: case 0x62: len = 1; break;
-    case 0x20:                                                                   len = 3; break;
-    }
-
-    // addressing mode for spcial opcode
-    switch (bytes[0])
-    {
-    case 0x20:                                             am =  4; break;
-    case 0xa0: case 0xc0: case 0xe0: case 0xa2:            am =  1; break;
-    case 0x04: case 0x44: case 0x64: case 0x89: case 0x0c: am =  0; break;
-    case 0x6c:                                             am = 12; break;
-    case 0x94: case 0xb4:                                  am =  3; break;
-    case 0x9c: case 0xbc:                                  am =  5; break;
-    case 0x96: case 0xb6: case 0x97: case 0xb7:            am = 11; break;
-    case 0x9e: case 0xbe: case 0x9f: case 0xbf:            am =  6; break;
-    }
+    len = ndb_cal_inst_len(bytes[0]);
+    adm = ndb_cal_inst_adm(bytes[0]);
 
     // for different am
-    switch (am)
+    switch (adm)
     {
     case  0: sprintf(str, "%s"             , s_opcode_strs[bytes[0]]                     ); break; // Implied
     case  1: sprintf(str, "%s #%02X"       , s_opcode_strs[bytes[0]], bytes[1]           ); break; // immediate
@@ -179,6 +233,7 @@ int ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment
     case 12: sprintf(str, "%s ($%02X%02X)" , s_opcode_strs[bytes[0]], bytes[2], bytes[1] ); break; // indirect, JMP ()
     }
 
+    //++ for branch type & entry
     if (TRUE)             { *btype = NDB_DBT_NO_BRANCH ; *entry = 0;                                 } // default
     if (bytes[0] == 0x4c) { *btype = NDB_DBT_JMP_DIRECT; *entry = (bytes[2] << 8) | (bytes[1] << 0); } // JMP
     if (bytes[0] == 0x6c) {                                                                            // JMP () ++
@@ -189,8 +244,9 @@ int ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment
         }
     }                                                                                                  // JMP () --
     if (bytes[0] == 0x20) { *btype = NDB_DBT_CALL_SUB  ; *entry = (bytes[2] << 8) | (bytes[1] << 0); } // JSR
-    if (am == 10)         { *btype = NDB_DBT_JMP_ONCOND; *entry = (pc + 2 + (char)bytes[1]);         } // BPL BMI BVC BVS BCC BCS BNE BEQ
+    if (adm == 10)        { *btype = NDB_DBT_JMP_ONCOND; *entry = (pc + 2 + (char)bytes[1]);         } // BPL BMI BVC BVS BCC BCS BNE BEQ
     if (bytes[0] == 0x00 || bytes[0] == 0x40 || bytes[0] == 0x60) { *btype = NDB_DBT_STOP_DASM;      } // BRK RTI RTS
+    //-- for branch type & entry
 
     //++ for instruction comment ++//
     // todo..

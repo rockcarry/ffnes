@@ -6,9 +6,11 @@
 
 // 常量定义
 enum {
-    NDB_CPU_KEEP_RUNNING, // cpu keep running
-    NDB_CPU_RUN_NSTEPS,   // cpu run n instructions then stop
-    NDB_CPU_RUN_BPOINTS,  // cpu run to break points
+    NDB_CPU_RUN_DEBUG,    // cpu run debug
+    NDB_CPU_RUN_NSTEPS,   // cpu run n steps
+    NDB_CPU_RUN_STEP_IN,  // cpu run step in
+    NDB_CPU_RUN_STEP_OUT, // cpu run step out
+    NDB_CPU_RUN_STEP_OVER,// cpu run step over
 };
 
 enum {
@@ -34,6 +36,12 @@ enum {
     NDB_DBT_STOP_DASM,  // stop disassemble
 };
 
+enum {
+    NDB_DEBUG_MODE_DISABLE,
+    NDB_DEBUG_MODE_ENABLE,
+    NDB_DEBUG_MODE_RESTART,
+};
+
 // 类型声明
 struct tagNES;
 
@@ -48,14 +56,18 @@ typedef struct tagNDB
     int   stop;
     int   cond;
     WORD  curpc;       // current pc
-    BYTE  params [32]; // params for cond stop
+    BYTE  curopcode;   // current opcode
+    int   nsteps;      // for run n steps
     WORD  bpoints[16]; // totally 16 break points
     WORD  watches[16]; // totally 16 watch variables
 
+    WORD  pcstackbuf[128];
+    int   pcstacktop;
+    WORD  pcstepout;
+    WORD  pcstepover;
+
     // for save & restore
     BOOL  save_enable;
-    int   save_stop;
-    int   save_cond;
 } NDB;
 
 typedef struct
@@ -78,15 +90,13 @@ typedef struct
 void ndb_init (NDB *ndb, void *nes);
 void ndb_free (NDB *ndb);
 void ndb_reset(NDB *ndb);
-void ndb_debug(NDB *ndb, BOOL en);
 
-// save & restore
-void ndb_save   (NDB *ndb);
-void ndb_restore(NDB *ndb);
+// set ndb debug mode
+void ndb_set_debug(NDB *ndb, BOOL en);
 
 // debug cpu
 void ndb_cpu_debug(NDB *ndb);
-void ndb_cpu_runto(NDB *ndb, int cond, void *param);
+void ndb_cpu_runto(NDB *ndb, int cond, DWORD dwparam);
 
 // ndb disasm
 int  ndb_dasm_one_inst(NDB *ndb, WORD pc, BYTE bytes[3], char *str, char *comment, int *btype, WORD *entry);

@@ -39,6 +39,8 @@ private:
     CFont   m_fntDraw;
     CPen    m_penDraw;
     BOOL    m_bEnableTracking;
+    BOOL    m_bDebugTracking;
+    BOOL    m_bDebugRunNStep;
     BOOL    m_bIsSearchDown;
     CString m_strCurFindStr;
     int     m_nCurEditItemRow;
@@ -54,7 +56,6 @@ private:
 
 private:
     //++ mfc control variables
-    int       m_nCpuStopCond;
     CString   m_strWatchAddr;
     CString   m_strCpuStopNSteps;
     BOOL      m_bCheckAutoDasm;
@@ -82,9 +83,8 @@ protected:
     afx_msg void OnBnClickedBtnDelWatch();
     afx_msg void OnBnClickedBtnDelAllWatch();
     afx_msg void OnBnClickedBtnDelAllBpoint();
-    afx_msg void OnBnClickedRdoCpuKeepRunning();
+    afx_msg void OnBnClickedRdoCpuRunDebug();
     afx_msg void OnBnClickedRdoCpuRunNsteps();
-    afx_msg void OnBnClickedRdoCpuRunBpoints();
     afx_msg void OnBnClickedBtnCpuStepIn();
     afx_msg void OnBnClickedBtnCpuStepOut();
     afx_msg void OnBnClickedBtnCpuStepOver();

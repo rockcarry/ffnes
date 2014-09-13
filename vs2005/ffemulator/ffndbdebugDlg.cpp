@@ -16,15 +16,16 @@ IMPLEMENT_DYNAMIC(CffndbdebugDlg, CDialog)
 
 CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
     : CDialog(CffndbdebugDlg::IDD, pParent)
-    , m_nCpuStopCond(0)
     , m_strWatchAddr("2000")
-    , m_strCpuStopNSteps("1")
+    , m_strCpuStopNSteps("100000")
     , m_bCheckAutoDasm(FALSE)
 {
     // init varibles
     m_pNES            = pnes;
     m_pDASM           = NULL;
     m_bEnableTracking = FALSE;
+    m_bDebugTracking  = FALSE;
+    m_bDebugRunNStep  = FALSE;
     m_bIsSearchDown   = TRUE;
 }
 
@@ -35,7 +36,6 @@ CffndbdebugDlg::~CffndbdebugDlg()
 void CffndbdebugDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialog::DoDataExchange(pDX);
-    DDX_Radio  (pDX, IDC_RDO_CPU_KEEP_RUNNING, m_nCpuStopCond      );
     DDX_Text   (pDX, IDC_EDT_WATCH           , m_strWatchAddr      );
     DDX_Text   (pDX, IDC_EDT_NSTEPS          , m_strCpuStopNSteps  );
     DDX_Check  (pDX, IDC_CHECK_AUTO_DASM     , m_bCheckAutoDasm    );
@@ -136,9 +136,8 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_BN_CLICKED(IDC_BTN_DEL_WATCH       , &CffndbdebugDlg::OnBnClickedBtnDelWatch)
     ON_BN_CLICKED(IDC_BTN_DEL_ALL_WATCH   , &CffndbdebugDlg::OnBnClickedBtnDelAllWatch)
     ON_BN_CLICKED(IDC_BTN_DEL_ALL_BPOINT  , &CffndbdebugDlg::OnBnClickedBtnDelAllBpoint)
-    ON_BN_CLICKED(IDC_RDO_CPU_KEEP_RUNNING, &CffndbdebugDlg::OnBnClickedRdoCpuKeepRunning)
+    ON_BN_CLICKED(IDC_RDO_CPU_RUN_DEBUG   , &CffndbdebugDlg::OnBnClickedRdoCpuRunDebug)
     ON_BN_CLICKED(IDC_RDO_CPU_RUN_NSTEPS  , &CffndbdebugDlg::OnBnClickedRdoCpuRunNsteps)
-    ON_BN_CLICKED(IDC_RDO_CPU_RUN_BPOINTS , &CffndbdebugDlg::OnBnClickedRdoCpuRunBpoints)
     ON_BN_CLICKED(IDC_BTN_CPU_STEP_IN     , &CffndbdebugDlg::OnBnClickedBtnCpuStepIn)
     ON_BN_CLICKED(IDC_BTN_CPU_STEP_OUT    , &CffndbdebugDlg::OnBnClickedBtnCpuStepOut)
     ON_BN_CLICKED(IDC_BTN_CPU_STEP_OVER   , &CffndbdebugDlg::OnBnClickedBtnCpuStepOver)
@@ -166,7 +165,7 @@ void CffndbdebugDlg::OnCancel()
 BOOL CffndbdebugDlg::OnInitDialog()
 {
     // enable ndb debugging
-    ndb_debug(&(m_pNES->ndb), TRUE);
+    ndb_set_debug(&(m_pNES->ndb), NDB_DEBUG_MODE_ENABLE);
 
     // update button
     CWnd *pwnd = GetDlgItem(IDC_BTN_NES_RUN_PAUSE);
@@ -238,7 +237,7 @@ void CffndbdebugDlg::OnDestroy()
     delete m_pDASM;
 
     // disable ndb debugging
-    ndb_debug(&(m_pNES->ndb), FALSE);
+    ndb_set_debug(&(m_pNES->ndb), NDB_DEBUG_MODE_DISABLE);
 
     // delete self
     delete this;
@@ -269,8 +268,7 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
         {
         case DT_DEBUG_CPU:
             //++ if bank switch occured, we need redo disassemble ++//
-            if (  m_pNES->ndb.banksw == 0x8000 && m_pNES->ndb.curpc <  0xc0000
-               || m_pNES->ndb.banksw == 0xc000 && m_pNES->ndb.curpc >= 0xc0000)
+            if (m_pNES->ndb.banksw)
             {
                 UpdateData(TRUE);
                 if (m_bCheckAutoDasm)
@@ -284,9 +282,28 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
             //-- if bank switch occured, we need redo disassemble --//
 
             // update cursor of list control for ffndb pc tracking
-            if (m_bEnableTracking)
+            if (m_bEnableTracking) UpdateCurInstHighLight();
+
+            // for m_bDebugTracking
+            if (m_bDebugTracking && m_pNES->ndb.stop)
             {
+                if (m_pNES->ndb.banksw)
+                {
+                    MessageBox("nes mapper makes bank switch, need to redo disassemble!",
+                        "ffndb dasm", MB_ICONASTERISK|MB_ICONINFORMATION);
+                    DoNesRomDisAsm(); // redo dasm
+                    m_pNES->ndb.banksw = 0;
+                }
+
                 UpdateCurInstHighLight();
+                m_bDebugTracking = FALSE;
+            }
+
+            if (m_bDebugRunNStep)
+            {
+                if (m_pNES->ndb.nsteps == 0) m_bDebugRunNStep = FALSE;
+                m_strCpuStopNSteps.Format("%d", m_pNES->ndb.nsteps);
+                UpdateData(FALSE);
             }
 
             // draw cpu debug info
@@ -307,6 +324,7 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
 void CffndbdebugDlg::OnBnClickedBtnNesReset()
 {
     nes_reset(m_pNES);
+    m_bDebugTracking = TRUE;
 }
 
 void CffndbdebugDlg::OnBnClickedBtnNesRunPause()
@@ -384,50 +402,36 @@ void CffndbdebugDlg::OnBnClickedBtnDelAllBpoint()
     }
 }
 
-void CffndbdebugDlg::OnBnClickedRdoCpuKeepRunning()
+void CffndbdebugDlg::OnBnClickedRdoCpuRunDebug()
 {
-    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_KEEP_RUNNING, NULL);
+    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_DEBUG, NULL);
+    m_bDebugTracking = TRUE;
 }
 
 void CffndbdebugDlg::OnBnClickedRdoCpuRunNsteps()
 {
-    LONG lparam = 0;
     UpdateData(TRUE);
-    lparam = atoi(m_strCpuStopNSteps);
-    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_NSTEPS, &lparam);
-}
-
-void CffndbdebugDlg::OnBnClickedRdoCpuRunBpoints()
-{
-    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_BPOINTS, NULL);
+    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_NSTEPS, (DWORD)atoi(m_strCpuStopNSteps));
+    m_bDebugRunNStep = TRUE;
+    m_bDebugTracking = TRUE;
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuStepIn()
 {
-    DWORD nsteps = 1;
-    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_NSTEPS, &nsteps); // run 1 step
-    while (!m_pNES->ndb.stop) Sleep(20); // wait for cpu stop
-    UpdateCurInstHighLight(); // update cursor high light for instruction list
-
-    //++ if bank switch occured, we need redo disassemble ++//
-    if (m_pNES->ndb.banksw)
-    {
-        MessageBox("nes mapper makes bank switch, need to redo disassemble!",
-            "ffndb dasm", MB_ICONASTERISK|MB_ICONINFORMATION);
-        DoNesRomDisAsm(); // redo dasm
-        m_pNES->ndb.banksw = 0;
-    }
-    //-- if bank switch occured, we need redo disassemble --//
+    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_STEP_IN, NULL); // step in
+    m_bDebugTracking = TRUE;
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuStepOut()
 {
-    // TODO: Add your control notification handler code here
+    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_STEP_OUT, NULL); // step out
+    m_bDebugTracking = TRUE;
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuStepOver()
 {
-    // TODO: Add your control notification handler code here
+    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_STEP_OVER, NULL); // step over
+    m_bDebugTracking = TRUE;
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuTracking()
