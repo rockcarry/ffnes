@@ -6,8 +6,9 @@
 #include "ffndbdebugDlg.h"
 
 // 内部常量定义
-static RECT s_rtCpuInfo    = { 362, 85, 750, 378 };
-static RECT s_rtListCtrl   = { 9  , 85, 356, 527 };
+static RECT s_rtCpuInfo    = { 362, 68, 750, 386 };
+static RECT s_rtPpuInfo    = { 0  , 63, 756, 543 };
+static RECT s_rtListCtrl   = { 9  , 68, 356, 537 };
 static int  WM_FINDREPLACE = RegisterWindowMessage(FINDMSGSTRING);
 
 // CffndbdebugDlg dialog
@@ -195,9 +196,12 @@ BOOL CffndbdebugDlg::OnInitDialog()
     bmpinfo.bmiHeader.biPlanes      =  1;
     bmpinfo.bmiHeader.biBitCount    =  32;
     bmpinfo.bmiHeader.biCompression =  BI_RGB;
-    HBITMAP hbmp   = CreateDIBSection(m_cdcDraw.GetSafeHdc(), &bmpinfo, DIB_RGB_COLORS, (void**)&m_bmpDrawBuf, NULL, 0);
-    BITMAP  bitmap = {0}; GetObject(hbmp, sizeof(BITMAP), &bitmap); m_bmpDrawStride = bitmap.bmWidthBytes;
-    m_bmpDrawBmp = CBitmap::FromHandle(hbmp);
+    HBITMAP hbmp    = CreateDIBSection(m_cdcDraw.GetSafeHdc(), &bmpinfo, DIB_RGB_COLORS, (void**)&m_bmpDrawBuf, NULL, 0);
+    BITMAP  bitmap  = {0}; GetObject(hbmp, sizeof(BITMAP), &bitmap);
+    m_bmpDrawWidth  = rect.right;
+    m_bmpDrawHeight = rect.bottom;
+    m_bmpDrawStride = bitmap.bmWidthBytes / 4;
+    m_bmpDrawBmp    = CBitmap::FromHandle(hbmp);
 
     // create font
     m_fntDraw.CreateFont(12, 0, 0, 0, FW_NORMAL, FALSE, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
@@ -253,14 +257,21 @@ void CffndbdebugDlg::OnDestroy()
 void CffndbdebugDlg::OnPaint()
 {
     CPaintDC dc(this); // device context for painting
+    RECT *prect = NULL;
 
-    if (m_nDebugType == DT_DEBUG_CPU)
+    switch (m_nDebugType)
+    {
+    case DT_DEBUG_CPU: prect = &s_rtCpuInfo; break;
+    case DT_DEBUG_PPU: prect = &s_rtPpuInfo; break;
+    }
+
+    if (prect)
     {
         int savedc = m_cdcDraw.SaveDC();
         m_cdcDraw.SelectObject(m_bmpDrawBmp);
-        dc.BitBlt(s_rtCpuInfo.left, s_rtCpuInfo.top,
-                  s_rtCpuInfo.right - s_rtCpuInfo.left,
-                  s_rtCpuInfo.bottom - s_rtCpuInfo.top,
+        dc.BitBlt(prect->left, prect->top,
+                  prect->right - prect->left,
+                  prect->bottom - prect->top,
                   &m_cdcDraw, 0, 0, SRCCOPY);
         m_cdcDraw.RestoreDC(savedc);
     }
@@ -315,6 +326,11 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
 
             // draw cpu debug info
             DrawCpuDebugging();
+            break;
+
+        case DT_DEBUG_PPU:
+            // draw ppu debug info
+            DrawPpuDebugging();
             break;
         }
         break;
@@ -668,15 +684,15 @@ void CffndbdebugDlg::DrawCpuDebugging()
     // draw cpu pc & regs info
     {
         char cpuregs[128] = {0};
-        rect.left += 6; rect.top += 6;
+        rect.left += 6; rect.top += 16;
         ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_REGS0, cpuregs);
         m_cdcDraw.DrawText(cpuregs, -1, &rect, 0);
         rect.left += 0; rect.top += 22;
         ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_REGS1, cpuregs);
         m_cdcDraw.DrawText(cpuregs, -1, &rect, 0);
 
-        int gridx[] = { 3, 45+32*0, 45+32*1, 45+32*2, 45+32*3, 45+32*4, 256 };
-        int gridy[] = { 3, 3+22*1, 3+22*2 };
+        int gridx[] = {  3, 45+32*0, 45+32*1, 45+32*2, 45+32*3, 45+32*4, 256 };
+        int gridy[] = { 13, 13+22*1, 13+22*2 };
         DrawGrid(7, 3, gridx, gridy);
 
         char vector[128] = {0};
@@ -716,7 +732,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
             ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_BREAK_POINT0 + i, bpwv);
             m_cdcDraw.DrawText(bpwv, -1, &rect, 0);
         }
-        for (i=0; i<5; i++) gridy[i] += 127;
+        for (i=0; i<5; i++) gridy[i] += 137;
         DrawGrid(9, 3, gridx, gridy);
 
         rect.left = 6; rect.top += 29;
@@ -734,7 +750,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
     {
         char banksw[128];
         ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_BANKSW, banksw);
-        rect.left = 327; rect.top = 125;
+        rect.left = 327; rect.top = 135;
         m_cdcDraw.DrawText(banksw, -1, &rect, DT_LEFT);
     }
 
@@ -747,6 +763,12 @@ void CffndbdebugDlg::DrawCpuDebugging()
 
     // invalidate rect
     InvalidateRect(&s_rtCpuInfo, FALSE);
+}
+
+void CffndbdebugDlg::DrawPpuDebugging()
+{
+    ndb_dump_ppu(&(m_pNES->ndb), m_bmpDrawBuf, m_bmpDrawWidth, m_bmpDrawHeight, m_bmpDrawStride);
+    InvalidateRect(&s_rtPpuInfo, FALSE);
 }
 
 void CffndbdebugDlg::UpdateDasmListControl()

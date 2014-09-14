@@ -22,6 +22,7 @@ ndb_del_bpoint
 ndb_add_watch
 ndb_del_watch
 ndb_dump_info
+ndb_dump_ppu
 
 bus_readb
 bus_readw

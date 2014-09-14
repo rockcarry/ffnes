@@ -113,6 +113,7 @@ void ndb_del_watch (NDB *ndb, WORD watch );
 
 // ndb dump info
 void ndb_dump_info(NDB *ndb, int type, char *str);
+void ndb_dump_ppu (NDB *ndb, void *bmpbuf, int w, int h, int stride);
 
 #endif
 

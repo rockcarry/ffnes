@@ -34,6 +34,9 @@ typedef struct {
     //-- for step pclk rendering --//
 } PPU;
 
+// 全局变量声明
+extern BYTE DEF_PPU_PAL[];
+
 // 函数声明
 void ppu_init    (PPU *ppu, DWORD extra);
 void ppu_free    (PPU *ppu);

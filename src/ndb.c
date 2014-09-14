@@ -523,3 +523,96 @@ void ndb_dump_info(NDB *ndb, int type, char *str)
     case NDB_DUMP_BANKSW      : ndb_dump_banksw     (ndb, str); break;
     }
 }
+
+static void render_name_table(void *bmp, int stride, BYTE *chrom, BYTE *vram, BYTE *pal0, BYTE *pal1)
+{
+    BYTE  *ntab = vram + 0x0000;
+    BYTE  *atab = vram + 0x03c0;
+    DWORD *dwbuf;
+    BYTE   adata;
+    BYTE   tdata;
+    BYTE   cdatl;
+    BYTE   cdath;
+    BYTE   r, g, b;
+    int    ax, ay, sx, sy, tx, ty;
+    int    n, s, i, j;
+
+    for (n=0; n<64; n++)
+    {
+        adata = atab[n];
+        ax = (n & 0x7) * 32;
+        ay = (n >>  3) * 32;
+
+        for (s=0; s<4; s++)
+        {
+            sx = ax + (s & 0x1) * 16;
+            sy = ay + (s >>  1) * 16;
+            dwbuf = (DWORD*)bmp + sy * stride + sx;
+
+            for (i=0; i<16; i++)
+            {
+                for (j=0; j<16; j++)
+                {
+                    *dwbuf++ = (adata & 0x3) << 2;
+                }
+                dwbuf -= 16;
+                dwbuf += stride;
+            }
+            adata >>= 2;
+        }
+    }
+
+    for (n=0; n<960; n++)
+    {
+        tx = (n & 0x1f) * 8;
+        ty = (n >>   5) * 8;
+        tdata = ntab[n];
+        dwbuf = (DWORD*)bmp + ty * stride + tx;
+
+        for (i=0; i<8; i++)
+        {
+            cdatl = chrom[tdata * 16 + i + 0];
+            cdath = chrom[tdata * 16 + i + 8];
+            for (j=0; j<8; j++)
+            {
+                *dwbuf += ((cdath >> 7) << 1) | ((cdatl >> 7) << 0);
+                 dwbuf ++;
+                cdath <<= 1;
+                cdatl <<= 1;
+            }
+            dwbuf -= 8;
+            dwbuf += stride;
+        }
+    }
+
+    dwbuf = (DWORD*)bmp;
+    for (i=0; i<240; i++)
+    {
+        for (j=0; j<256; j++)
+        {
+            r = pal1[(pal0[*dwbuf] & 0x3f) * 3 + 2];
+            g = pal1[(pal0[*dwbuf] & 0x3f) * 3 + 1];
+            b = pal1[(pal0[*dwbuf] & 0x3f) * 3 + 0];
+            *dwbuf++ = RGB(r, g, b);
+        }
+        dwbuf -= 256;
+        dwbuf += stride;
+    }
+}
+
+void ndb_dump_ppu(NDB *ndb, void *bmpbuf, int w, int h, int stride)
+{
+    BYTE *tilebkg = ndb->nes->ppu.chrom_bkg;
+    BYTE *tilespr = ndb->nes->ppu.chrom_spr;
+    BYTE *ntab0   = ndb->nes->vram[0].data;
+    BYTE *ntab1   = ndb->nes->vram[1].data;
+    BYTE *ntab2   = ndb->nes->vram[2].data;
+    BYTE *ntab3   = ndb->nes->vram[3].data;
+    BYTE *pal0    = ndb->nes->ppu.palette;
+    BYTE *pal1    = DEF_PPU_PAL;
+
+    render_name_table((DWORD*)bmpbuf + 0   * stride + 0  , stride, tilebkg, ntab0, pal0, pal1);
+    render_name_table((DWORD*)bmpbuf + 0   * stride + 256, stride, tilebkg, ntab1, pal0, pal1);
+    render_name_table((DWORD*)bmpbuf + 240 * stride + 0  , stride, tilebkg, ntab2, pal0, pal1);
+    render_name_table((DWORD*)bmpbuf + 240 * stride + 256, stride, tilebkg, ntab3, pal0, pal1);
+}

@@ -8,7 +8,7 @@
 #define PPU_IMAGE_HEIGHT 240
 
 // 内部全局变量定义
-static BYTE DEF_PPU_PAL[64 * 3] =
+BYTE DEF_PPU_PAL[64 * 3] =
 {
 //  R     G     B
     0x80, 0x80, 0x80,

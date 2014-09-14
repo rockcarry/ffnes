@@ -36,7 +36,9 @@ private:
     int     m_nDebugType;
     CBitmap*m_bmpDrawBmp;
     void   *m_bmpDrawBuf;
-    LONG    m_bmpDrawStride;
+    int     m_bmpDrawWidth;
+    int     m_bmpDrawHeight;
+    int     m_bmpDrawStride;
     CDC     m_cdcDraw;
     CFont   m_fntDraw;
     CPen    m_penDraw;
@@ -51,6 +53,7 @@ private:
 private:
     void DrawGrid(int m, int n, int *x, int *y);
     void DrawCpuDebugging();
+    void DrawPpuDebugging();
     void DoNesRomDisAsm();
     void UpdateDasmListControl();
     void UpdateCurInstHighLight();
