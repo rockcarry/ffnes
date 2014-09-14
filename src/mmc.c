@@ -43,6 +43,7 @@ typedef struct
     void (*wcb1 )(MEM *pm, int addr, BYTE byte);
 } MAPPER;
 
+
 //++ mapper000 实现 ++//
 static void mapper000_reset(MMC *mmc)
 {
@@ -50,20 +51,16 @@ static void mapper000_reset(MMC *mmc)
     mmc_switch_pbank1(mmc,-1); // prom1 - last  bank
 }
 
-static void mapper000_init(MMC *mmc)
-{
-    mapper000_reset(mmc);
-}
-
 static MAPPER mapper000 =
 {
-    mapper000_init,
+    NULL,
     NULL,
     mapper000_reset,
     NULL,
     NULL,
 };
 //-- mapper000 实现 --//
+
 
 //++ mapper002 实现 ++//
 static void mapper002_reset(MMC *mmc)
@@ -92,9 +89,6 @@ static void mapper002_init(MMC *mmc)
     // register bus memory callback
     mmc->cbus[6].membank->w_callback = mapper002_wcb0;
     mmc->cbus[7].membank->w_callback = mapper002_wcb1;
-
-    // reset mapper002
-    mapper002_reset(mmc);
 }
 
 static void mapper002_free(MMC *mmc)
@@ -111,6 +105,7 @@ static MAPPER mapper002 =
     mapper002_wcb1,
 };
 //-- mapper002 实现 --//
+
 
 //++ mapper003 实现 ++//
 static void mapper003_reset(MMC *mmc)
@@ -135,9 +130,6 @@ static void mapper003_init(MMC *mmc)
     // register bus memory callback
     mmc->cbus[6].membank->w_callback = mapper003_wcb0;
     mmc->cbus[7].membank->w_callback = mapper003_wcb1;
-
-    // reset mapper003
-    mapper003_reset(mmc);
 }
 
 static void mapper003_free(MMC *mmc)
@@ -174,23 +166,30 @@ void mmc_init(MMC *mmc, CARTRIDGE *cart, BUS cbus, BUS pbus)
     mmc->cbus   = cbus;
     mmc->pbus   = pbus;
     mmc->number = cartridge_get_mappercode(cart);
+
+    // init & reset for different mapper
     mapper = g_mapper_list[mmc->number];
-    if (mapper && mapper->init) mapper->init(mmc);
+    if (mapper && mapper->init ) mapper->init(mmc);
+    mmc_reset(mmc); // call mmc reset
     log_printf("mapper number is %03d !\n", mmc->number);
 }
 
 void mmc_free(MMC *mmc)
 {
-    MAPPER *mapper;
-    mapper = g_mapper_list[mmc->number];
+    MAPPER *mapper = g_mapper_list[mmc->number];
     if (mapper && mapper->free) mapper->free(mmc);
 }
 
 void mmc_reset(MMC *mmc)
 {
-    MAPPER *mapper;
-    mapper = g_mapper_list[mmc->number];
-    mmc->bank8000 = -1;
-    mmc->bankc000 = -1;
+    MAPPER *mapper = g_mapper_list[mmc->number];
+    //++ by default, need mapper0 reset first
+    mmc->bank8000 = -1; mmc->bankc000 = -1;
+    g_mapper_list[0]->reset(mmc);
+    //-- by default, need mapper0 reset first
+
+    //++ call mapper xxx reset if needed
+    mmc->bank8000 = -1; mmc->bankc000 = -1;
     if (mapper && mapper->reset) mapper->reset(mmc);
+    //-- call mapper xxx reset if needed
 }
