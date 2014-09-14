@@ -422,7 +422,7 @@ void CffndbdebugDlg::OnBnClickedBtnDelAllBpoint()
     for (int i=0; i<16; i++)
     {
         int n = ndb_dasm_pc2instn(&(m_pNES->ndb), m_pDASM, m_pNES->ndb.bpoints[i]);
-        if (n) m_ctrInstructionList.SetItemText(n, 0, "");
+        m_ctrInstructionList.SetItemText(n, 0, "");
         m_pNES->ndb.bpoints[i] = 0xffff;
     }
 }
@@ -810,6 +810,15 @@ void CffndbdebugDlg::UpdateDasmListControl()
 
         m_ctrInstructionList.SetItemText(n, 3, m_pDASM->instlist[n].asmstr );
         m_ctrInstructionList.SetItemText(n, 4, m_pDASM->instlist[n].comment);
+    }
+    for (int i=0; i<16; i++)
+    {
+        if (m_pNES->ndb.bpoints[i] != 0xffff)
+        {
+            m_ctrInstructionList.SetItemText(
+                ndb_dasm_pc2instn(&(m_pNES->ndb), m_pDASM, m_pNES->ndb.bpoints[i]),
+                0, "B");
+        }
     }
     m_ctrInstructionList.SetRedraw(TRUE);
 }
