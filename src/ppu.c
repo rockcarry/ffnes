@@ -224,15 +224,19 @@ static void ppu_run_step(PPU *ppu)
         // update vblank pin status
         ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
 
-        // the ppu address copies the ppu's temp at the beginning of the line
         // if sprite or name-tables are visible.
-        if (ppu->regs[0x0001] & (0x3 << 3)) ppu->vaddr = ppu->temp0;
+        if (ppu->regs[0x0001] & (0x3 << 3))
+        {
+            // the ppu address copies the ppu's
+            // temp at the beginning of the line
+            ppu->vaddr = ppu->temp0;
 
-        // y increment
-        ppu_yincrement(ppu);
+            // y increment
+            ppu_yincrement(ppu);
 
-        // fetch tile data
-        ppu_fetch_tile(ppu);
+            // fetch tile data
+            ppu_fetch_tile(ppu);
+        }
 
         // lock video device, obtain draw buffer address & stride
         vdev_lock(ppu->vdevctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
