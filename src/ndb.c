@@ -502,7 +502,7 @@ static void ndb_dump_watch(NDB *ndb, int type, char *str)
 
 static void ndb_dump_banksw(NDB *ndb, char *str)
 {
-    sprintf(str, "banksw:\r\n8000 %2d\r\nC000 %2d", ndb->nes->mmc.bank8000, ndb->nes->mmc.bankc000);
+    sprintf(str, "mapper%03d:\r\n8000 %2d\r\nC000 %2d", ndb->nes->mmc.number, ndb->nes->mmc.bank8000, ndb->nes->mmc.bankc000);
 }
 
 void ndb_dump_info(NDB *ndb, int type, char *str)
