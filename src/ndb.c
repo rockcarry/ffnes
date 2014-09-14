@@ -524,7 +524,7 @@ void ndb_dump_info(NDB *ndb, int type, char *str)
     }
 }
 
-static void render_name_table(void *bmp, int stride, BYTE *chrom, BYTE *vram, BYTE *pal0, BYTE *pal1)
+static void render_name_table(void *bmp, int stride, BYTE *chrom, BYTE *vram, BYTE *pal0, BYTE *pal1, int div)
 {
     BYTE  *ntab = vram + 0x0000;
     BYTE  *atab = vram + 0x03c0;
@@ -536,8 +536,11 @@ static void render_name_table(void *bmp, int stride, BYTE *chrom, BYTE *vram, BY
     BYTE   r, g, b;
     int    ax, ay, sx, sy, tx, ty;
     int    n, s, i, j;
+    int    maxatabsize = (div == 1) ? 64  : (64   / div);
+    int    maxntabsize = (div == 1) ? 960 : (1024 / div);
+    int    maxscanline = (div == 1) ? 240 : (256  / div);
 
-    for (n=0; n<64; n++)
+    for (n=0; n<maxatabsize; n++)
     {
         adata = atab[n];
         ax = (n & 0x7) * 32;
@@ -562,7 +565,7 @@ static void render_name_table(void *bmp, int stride, BYTE *chrom, BYTE *vram, BY
         }
     }
 
-    for (n=0; n<960; n++)
+    for (n=0; n<maxntabsize; n++)
     {
         tx = (n & 0x1f) * 8;
         ty = (n >>   5) * 8;
@@ -586,7 +589,7 @@ static void render_name_table(void *bmp, int stride, BYTE *chrom, BYTE *vram, BY
     }
 
     dwbuf = (DWORD*)bmp;
-    for (i=0; i<240; i++)
+    for (i=0; i<maxscanline; i++)
     {
         for (j=0; j<256; j++)
         {
@@ -610,9 +613,15 @@ void ndb_dump_ppu(NDB *ndb, void *bmpbuf, int w, int h, int stride)
     BYTE *ntab3   = ndb->nes->vram[3].data;
     BYTE *pal0    = ndb->nes->ppu.palette;
     BYTE *pal1    = DEF_PPU_PAL;
+    BYTE  ntabtmp[1024] = {0};
+    int   i;
 
-    render_name_table((DWORD*)bmpbuf + 0   * stride + 0  , stride, tilebkg, ntab0, pal0, pal1);
-    render_name_table((DWORD*)bmpbuf + 0   * stride + 256, stride, tilebkg, ntab1, pal0, pal1);
-    render_name_table((DWORD*)bmpbuf + 240 * stride + 0  , stride, tilebkg, ntab2, pal0, pal1);
-    render_name_table((DWORD*)bmpbuf + 240 * stride + 256, stride, tilebkg, ntab3, pal0, pal1);
+    render_name_table((DWORD*)bmpbuf + 0   * stride + 0  , stride, tilebkg, ntab0, pal0, pal1, 1);
+    render_name_table((DWORD*)bmpbuf + 0   * stride + 256, stride, tilebkg, ntab1, pal0, pal1, 1);
+    render_name_table((DWORD*)bmpbuf + 240 * stride + 0  , stride, tilebkg, ntab2, pal0, pal1, 1);
+    render_name_table((DWORD*)bmpbuf + 240 * stride + 256, stride, tilebkg, ntab3, pal0, pal1, 1);
+
+    for (i=0; i<256; i++) ntabtmp[i] = i;
+    render_name_table((DWORD*)bmpbuf + 32  * stride + 512 + 5, stride, tilebkg, ntabtmp, pal0, pal1, 4);
+    render_name_table((DWORD*)bmpbuf + 128 * stride + 512 + 5, stride, tilespr, ntabtmp, pal0, pal1, 4);
 }

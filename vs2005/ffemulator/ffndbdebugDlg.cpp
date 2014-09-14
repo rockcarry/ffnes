@@ -768,6 +768,22 @@ void CffndbdebugDlg::DrawCpuDebugging()
 void CffndbdebugDlg::DrawPpuDebugging()
 {
     ndb_dump_ppu(&(m_pNES->ndb), m_bmpDrawBuf, m_bmpDrawWidth, m_bmpDrawHeight, m_bmpDrawStride);
+
+    // save dc
+    int savedc = m_cdcDraw.SaveDC();
+
+    m_cdcDraw.SelectObject(m_bmpDrawBmp);
+    m_cdcDraw.SelectObject(&m_fntDraw);
+    m_cdcDraw.SelectObject(&m_penDraw);
+    m_cdcDraw.SetBkMode(TRANSPARENT);
+    m_cdcDraw.SetTextColor(RGB(255, 255, 255));
+    m_cdcDraw.TextOut(512 + 5, 10 , "bkgrnd tiles:");
+    m_cdcDraw.TextOut(512 + 5, 106, "sprite tiles:");
+
+    // restore dc
+    m_cdcDraw.RestoreDC(savedc);
+
+    // invalidate rect
     InvalidateRect(&s_rtPpuInfo, FALSE);
 }
 
