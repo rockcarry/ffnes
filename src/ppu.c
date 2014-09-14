@@ -440,7 +440,7 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
     case 0x0007:
         if (vaddr >= 0x3f00)
         {   // for ppu palette mirroring
-            if (vaddr == 0x3f00)
+            if (vaddr == 0x3f00 || vaddr == 0x3f10)
             {
                 ppu->palette[0x00] = byte;
                 ppu->palette[0x04] = byte;
