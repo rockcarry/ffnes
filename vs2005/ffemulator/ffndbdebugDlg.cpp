@@ -779,6 +779,8 @@ void CffndbdebugDlg::DrawPpuDebugging()
     m_cdcDraw.SetTextColor(RGB(255, 255, 255));
     m_cdcDraw.TextOut(512 + 5, 10 , "bkgrnd tiles:");
     m_cdcDraw.TextOut(512 + 5, 106, "sprite tiles:");
+    m_cdcDraw.TextOut(512 + 5, 202, "bkgrnd palette:");
+    m_cdcDraw.TextOut(512 + 5, 250, "sprite palette:");
 
     // restore dc
     m_cdcDraw.RestoreDC(savedc);

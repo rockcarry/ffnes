@@ -603,6 +603,23 @@ static void render_name_table(void *bmp, int stride, BYTE *chrom, BYTE *vram, BY
     }
 }
 
+static void draw_color_bar(void *bmp, int stride, int x, int y, int color, BYTE *pal0, BYTE *pal1)
+{
+    DWORD *dwbuf   = (DWORD*)bmp + y * stride + x;
+    DWORD  dwcolor = RGB(pal1[pal0[color] * 3 + 2], pal1[pal0[color] * 3 + 1], pal1[pal0[color] * 3 + 0]);
+    int    i, j;
+    for (i=0; i<16; i++)
+    {
+        for (j=0; j<16; j++)
+        {
+            if (i==0 || i==15 || j==0) *dwbuf++ = RGB(255,255,255);
+            else *dwbuf++ = dwcolor;
+        }
+        dwbuf -= 16;
+        dwbuf += stride;
+    }
+}
+
 void ndb_dump_ppu(NDB *ndb, void *bmpbuf, int w, int h, int stride)
 {
     BYTE *tilebkg = ndb->nes->ppu.chrom_bkg;
@@ -624,4 +641,10 @@ void ndb_dump_ppu(NDB *ndb, void *bmpbuf, int w, int h, int stride)
     for (i=0; i<256; i++) ntabtmp[i] = i;
     render_name_table((DWORD*)bmpbuf + 32  * stride + 512 + 5, stride, tilebkg, ntabtmp, pal0, pal1, 4);
     render_name_table((DWORD*)bmpbuf + 128 * stride + 512 + 5, stride, tilespr, ntabtmp, pal0, pal1, 4);
+
+    for (i=0; i<16; i++)
+    {
+        draw_color_bar(bmpbuf, stride, 512 + 5 + i * 16, 224 + 0 , 0  + i, pal0, pal1);
+        draw_color_bar(bmpbuf, stride, 512 + 5 + i * 16, 224 + 48, 16 + i, pal0, pal1);
+    }
 }
