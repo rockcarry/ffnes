@@ -307,10 +307,12 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
             {
                 if (m_pNES->ndb.banksw)
                 {
+                    KillTimer(NDB_REFRESH_TIMER);
                     MessageBox("nes mapper makes bank switch, need to redo disassemble!",
                         "ffndb dasm", MB_ICONASTERISK|MB_ICONINFORMATION);
                     DoNesRomDisAsm(); // redo dasm
                     m_pNES->ndb.banksw = 0;
+                    SetTimer(NDB_REFRESH_TIMER, 50, NULL);
                 }
 
                 UpdateCurInstHighLight();
