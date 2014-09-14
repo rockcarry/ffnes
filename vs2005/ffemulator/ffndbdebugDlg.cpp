@@ -6,8 +6,8 @@
 #include "ffndbdebugDlg.h"
 
 // 内部常量定义
-static RECT s_rtCpuInfo    = { 362, 68, 750, 386 };
-static RECT s_rtPpuInfo    = { 0  , 63, 756, 543 };
+static RECT s_rtCpuInfo    = { 365, 68, 769, 386 };
+static RECT s_rtPpuInfo    = { 0  , 63, 776, 543 };
 static RECT s_rtListCtrl   = { 9  , 68, 356, 537 };
 static int  WM_FINDREPLACE = RegisterWindowMessage(FINDMSGSTRING);
 
