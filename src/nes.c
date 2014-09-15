@@ -150,7 +150,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     // create CHR-ROM
     nes->chrrom.type = MEM_ROM;
     nes->chrrom.size = NES_CHRROM_SIZE;
-    nes->chrrom.data = nes->cart.buf_crom ;
+    nes->chrrom.data = nes->cart.buf_crom;
 
     // create vram
     mirroring = cartridge_get_vram_mirroring(&(nes->cart));
