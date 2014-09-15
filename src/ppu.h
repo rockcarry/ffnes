@@ -18,8 +18,8 @@ typedef struct {
     WORD  vaddr;
     WORD  temp0;
     WORD  temp1;
-    BYTE _2007_data;
-    int   color_flags;
+    BYTE _2007_lazy;
+    BYTE _2001_lazy;
     BYTE *chrom_bkg;
     BYTE *chrom_spr;
 

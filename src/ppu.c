@@ -216,7 +216,7 @@ static int ppu_yincrement(PPU *ppu)
 static void ppu_run_step(PPU *ppu)
 {
     // scanline 0 pre-render scanline
-    if (ppu->pclk_frame == NES_HTOTAL * 0 + 280) // scanline 0, tick 280
+    if (ppu->pclk_frame == NES_HTOTAL * 0 + 256) // scanline 0, tick 256
     {
         // clear vblank bit of reg $2002
         ppu->regs[0x0002] &= ~(7 << 5);
@@ -224,8 +224,17 @@ static void ppu_run_step(PPU *ppu)
         // update vblank pin status
         ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
 
+        if (ppu->_2001_lazy != ppu->regs[0x0001])
+        {
+            if ((ppu->_2001_lazy & 0xe1) != (ppu->regs[0x0001] & 0xe1))
+            {
+                ppu_set_vdev_pal(ppu->vdevctxt, ppu->regs[0x0001] & 0xe1);
+            }
+            ppu->_2001_lazy = ppu->regs[0x0001];
+        }
+
         // if sprite or name-tables are visible.
-        if (ppu->regs[0x0001] & (0x3 << 3))
+        if (ppu->_2001_lazy & (0x3 << 3))
         {
             // the ppu address copies the ppu's
             // temp at the beginning of the line
@@ -245,7 +254,7 @@ static void ppu_run_step(PPU *ppu)
     // scanline 1 - 240 visible scanlines
     else if (ppu->pclk_frame >= NES_HTOTAL * 1 && ppu->pclk_frame <= NES_HTOTAL * 241 - 1)
     {
-        if (ppu->regs[0x0001] & (1 << 3))
+        if (ppu->_2001_lazy & (1 << 3))
         {
             if (ppu->pclk_line >= 0 && ppu->pclk_line <= 255)
             {
@@ -265,12 +274,12 @@ static void ppu_run_step(PPU *ppu)
                 ppu->draw_buffer -= 256;
                 ppu->draw_buffer += ppu->draw_stride;
 
-                // at dot 256, do y increment
-                ppu_yincrement(ppu);
-
-                // at dot 257, reget vaddr from temp0
+                // at dot 256, reget vaddr from temp0
                 ppu->vaddr &= ~0x041f;
                 ppu->vaddr |= (ppu->temp0 & 0x041f);
+
+                // at dot 257, do y increment
+                ppu_yincrement(ppu);
 
                 // fetch tile data
                 ppu_fetch_tile(ppu);
@@ -302,7 +311,7 @@ static void ppu_run_step(PPU *ppu)
         ppu->pclk_frame = 0;
     }
 
-    if (++ppu->pclk_line == NES_HTOTAL * 1)
+    if (++ppu->pclk_line == NES_HTOTAL)
     {
         // scanline change
         ppu->pclk_line = 0;
@@ -334,17 +343,17 @@ void ppu_reset(PPU *ppu)
 {
     NES *nes = container_of(ppu, NES, ppu);
 
-    ppu->pin_vbl      = 1;
-    ppu->toggle       = 0;
-    ppu->vaddr        = 0;
-    ppu->temp0        = 0;
-    ppu->temp1        = 0;
-    ppu->_2007_data   = 0;
-    ppu->color_flags  = 0;
-    ppu->chrom_bkg    = nes->chrrom.data + ((ppu->regs[0x0000] >> 4) & 1) * 0x1000;
-    ppu->chrom_spr    = nes->chrrom.data + ((ppu->regs[0x0000] >> 3) & 1) * 0x1000;
-    ppu->pclk_frame   = 0;
-    ppu->pclk_line    = 0;
+    ppu->pin_vbl    = 1;
+    ppu->toggle     = 0;
+    ppu->vaddr      = 0;
+    ppu->temp0      = 0;
+    ppu->temp1      = 0;
+    ppu->_2007_lazy = 0;
+    ppu->_2001_lazy = 0;
+    ppu->chrom_bkg  = nes->chrrom.data + ((ppu->regs[0x0000] >> 4) & 1) * 0x1000;
+    ppu->chrom_spr  = nes->chrrom.data + ((ppu->regs[0x0000] >> 3) & 1) * 0x1000;
+    ppu->pclk_frame = 0;
+    ppu->pclk_line  = 0;
     ppu_set_vdev_pal(ppu->vdevctxt, 0);
     memset(ppu->regs, 0, 8); // reset need clear regs
 }
@@ -368,9 +377,9 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
         break;
 
     case 0x0007:
-        byte = ppu->_2007_data;
-        ppu->_2007_data = bus_readb(nes->pbus, vaddr);
-        if (vaddr >= 0x3f00) byte = ppu->_2007_data & 0x3f;
+        byte = ppu->_2007_lazy;
+        ppu->_2007_lazy = bus_readb(nes->pbus, vaddr);
+        if (vaddr >= 0x3f00) byte = ppu->_2007_lazy & 0x3f;
         ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
         break;
     }
@@ -390,14 +399,6 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         ppu->temp0 |= (byte & 0x03) << 10;
         ppu->chrom_bkg = nes->chrrom.data + ((ppu->regs[0x0000] >> 4) & 1) * 0x1000;
         ppu->chrom_spr = nes->chrrom.data + ((ppu->regs[0x0000] >> 3) & 1) * 0x1000;
-        break;
-
-    case 0x0001:
-        if (ppu->color_flags != (byte & 0xe1))
-        {
-            ppu->color_flags = byte & 0xe1;
-            ppu_set_vdev_pal(ppu->vdevctxt, ppu->color_flags);
-        }
         break;
 
     case 0x0004:
