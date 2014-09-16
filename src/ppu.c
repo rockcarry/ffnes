@@ -213,6 +213,52 @@ static int ppu_yincrement(PPU *ppu)
     }
 }
 
+static void sprite_evaluate(PPU *ppu)
+{
+    NES *nes = container_of(ppu, NES, ppu);
+    int  sh  = (ppu->regs[0x0000] & (1 << 5)) ? 16 : 8;
+    int  sy, i;
+    BYTE cdatal, cdatah;
+
+    ppu->sprnum = 0;
+    for (i=0; i<64; i++)
+    {
+        if (ppu->scanline >= ppu->sprram[i*4+0] && ppu->scanline < ppu->sprram[i*4+0] + sh)
+        {
+            if (ppu->sprnum == 8)
+            {
+                ppu->regs[0x0002] |= (1 << 5);
+                break;
+            }
+
+            sy = ppu->scanline - ppu->sprram[i * 4 + 0];
+            if (ppu->sprram[i * 4 + 3] & (1 << 7)) sy = sh - sy;
+
+            switch (sh)
+            {
+            case 8:
+                cdatal = ppu->chrom_spr[ppu->sprram[i * 4 + 1] * 16 + 8 * 0 + sy];
+                cdatah = ppu->chrom_spr[ppu->sprram[i * 4 + 1] * 16 + 8 * 1 + sy];
+                break;
+            case 16:
+                cdatal = (nes->chrrom.data + (sy & 1) * 0x1000)[ppu->sprram[i * 4 + 1] * 16 + 8 * 0 + sy/2];
+                cdatah = (nes->chrrom.data + (sy & 1) * 0x1000)[ppu->sprram[i * 4 + 1] * 16 + 8 * 1 + sy/2];
+                break;
+            }
+
+            ppu->sprbuf[ppu->sprnum * 4 + 0] = cdatal;
+            ppu->sprbuf[ppu->sprnum * 4 + 1] = cdatah;
+            ppu->sprbuf[ppu->sprnum * 4 + 2] = ppu->sprram[i * 4 + 2];
+            ppu->sprbuf[ppu->sprnum * 4 + 3] = ppu->sprram[i * 4 + 3];
+            ppu->sprnum++;
+        }
+    }
+}
+
+static void sprite_render(PPU *ppu, int pixelc)
+{
+}
+
 static void ppu_run_step(PPU *ppu)
 {
     // scanline 0 pre-render scanline
@@ -254,14 +300,17 @@ static void ppu_run_step(PPU *ppu)
     // scanline 1 - 240 visible scanlines
     else if (ppu->pclk_frame >= NES_HTOTAL * 1 && ppu->pclk_frame <= NES_HTOTAL * 241 - 1)
     {
-        if (ppu->_2001_lazy & (1 << 3))
+        if (ppu->_2001_lazy & (0x3 << 3))
         {
             if (ppu->pclk_line >= 0 && ppu->pclk_line <= 255)
             {
                 // write pixel on adev
-                int pixell = ((ppu->cdatal >> 7) << 0) | ((ppu->cdatah >> 7) << 1);
+                int pixelc = ppu->pixelh | ((ppu->cdatal >> 7) << 0) | ((ppu->cdatah >> 7) << 1);
                 ppu->cdatal <<= 1; ppu->cdatah <<= 1;
-                *ppu->draw_buffer++ = ppu->palette[ppu->pixelh|pixell];
+                *ppu->draw_buffer++ = ppu->palette[pixelc];
+
+                // render sprite
+                sprite_render(ppu, pixelc);
 
                 // do x increment
                 if (ppu_xincrement(ppu)) {
@@ -273,6 +322,9 @@ static void ppu_run_step(PPU *ppu)
             {
                 ppu->draw_buffer -= 256;
                 ppu->draw_buffer += ppu->draw_stride;
+
+                // evaluate sprite
+                sprite_evaluate(ppu);
 
                 // at dot 256, reget vaddr from temp0
                 ppu->vaddr &= ~0x041f;
@@ -309,12 +361,14 @@ static void ppu_run_step(PPU *ppu)
     {
         // frame change
         ppu->pclk_frame = 0;
+        ppu->scanline   = 0;
     }
 
     if (++ppu->pclk_line == NES_HTOTAL)
     {
         // scanline change
         ppu->pclk_line = 0;
+        ppu->scanline++;
     }
 }
 

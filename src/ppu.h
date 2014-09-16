@@ -26,12 +26,17 @@ typedef struct {
     //++ for step pclk rendering ++//
     int   pclk_frame; // current pclk cycles in one frame
     int   pclk_line;  // current pclk cycles in one line
+    int   scanline;   // current scanline
     BYTE *draw_buffer;
     int   draw_stride;
     BYTE  cdatal;
     BYTE  cdatah;
     BYTE  pixelh;
     //-- for step pclk rendering --//
+
+    // sprite buffer for rendering
+    BYTE  sprbuf[32]; // sprite buffer
+    BYTE  sprnum;     // sprite number
 } PPU;
 
 // 全局变量声明
