@@ -401,6 +401,11 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         ppu->chrom_spr = nes->chrrom.data + ((ppu->regs[0x0000] >> 3) & 1) * 0x1000;
         break;
 
+    case 0x0001:
+        // if write d3 & d4 to zero, update _2001_lazy immediately
+        if (!(byte & 0x18)) ppu->_2001_lazy = byte;
+        break;
+
     case 0x0004:
         ppu->sprram[pm->data[0x0003]] = byte;
         break;
