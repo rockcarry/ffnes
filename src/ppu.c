@@ -215,48 +215,102 @@ static int ppu_yincrement(PPU *ppu)
 
 static void sprite_evaluate(PPU *ppu)
 {
-    NES *nes = container_of(ppu, NES, ppu);
-    int  sh  = (ppu->regs[0x0000] & (1 << 5)) ? 16 : 8;
-    int  sy, i;
-    BYTE cdatal, cdatah;
+    NES  *nes = container_of(ppu, NES, ppu);
+    int   sh  = (ppu->regs[0x0000] & (1 << 5)) ? 16 : 8;
+    int   sy, tile, vflip, i;
+    BYTE *chrrom, *sprsrc, *sprdst;
 
     ppu->sprnum = 0;
+    sprsrc = ppu->sprram;
+    sprdst = ppu->sprbuf;
+
     for (i=0; i<64; i++)
     {
-        if (ppu->scanline >= ppu->sprram[i*4+0] && ppu->scanline < ppu->sprram[i*4+0] + sh)
+        if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh)
         {
-            if (ppu->sprnum == 8)
+            if (ppu->sprnum == 8) // sprite overflow
             {
                 ppu->regs[0x0002] |= (1 << 5);
                 break;
             }
 
-            sy = ppu->scanline - ppu->sprram[i * 4 + 0];
-            if (ppu->sprram[i * 4 + 3] & (1 << 7)) sy = sh - sy;
+            sy    = ppu->scanline - sprsrc[0]; // sy
+            tile  = sprsrc[1] | (1 << 0);
+            vflip = sprsrc[2] & (1 << 7);
+            if (vflip) sy = sh - sy; // vflip
 
             switch (sh)
             {
             case 8:
-                cdatal = ppu->chrom_spr[ppu->sprram[i * 4 + 1] * 16 + 8 * 0 + sy];
-                cdatah = ppu->chrom_spr[ppu->sprram[i * 4 + 1] * 16 + 8 * 1 + sy];
+                chrrom = ppu->chrom_spr;
                 break;
+
             case 16:
-                cdatal = (nes->chrrom.data + (sy & 1) * 0x1000)[ppu->sprram[i * 4 + 1] * 16 + 8 * 0 + sy/2];
-                cdatah = (nes->chrrom.data + (sy & 1) * 0x1000)[ppu->sprram[i * 4 + 1] * 16 + 8 * 1 + sy/2];
+                chrrom = nes->chrrom.data + (sprsrc[1] & 1) * 0x1000;
+                if (sy < 8)
+                {
+                    tile &= ~(1 << 0);
+                }
+                else
+                {
+                    tile |=  (1 << 0);
+                    sy -= 8;
+                }
                 break;
             }
 
-            ppu->sprbuf[ppu->sprnum * 4 + 0] = cdatal;
-            ppu->sprbuf[ppu->sprnum * 4 + 1] = cdatah;
-            ppu->sprbuf[ppu->sprnum * 4 + 2] = ppu->sprram[i * 4 + 2];
-            ppu->sprbuf[ppu->sprnum * 4 + 3] = ppu->sprram[i * 4 + 3];
+            // for sprdst[ppu->sprnum * 4 + 2], only h&p&c (hflip, background priority & upper two bits of colour)
+            // is useful for sprite rendering, so I store these four bits in upper bits of this byte,
+            // the lower bits of this byte I will use to counter how many horizontal pixels has been rendered
+            *sprdst++ = chrrom[tile * 16 + 8 * 0 + sy];
+            *sprdst++ = chrrom[tile * 16 + 8 * 1 + sy];
+            *sprdst++ = ((sprsrc[2] << 1) & 0xc0) | ((sprsrc[2] << 4) & 0x30);
+            *sprdst++ = sprsrc[3];
             ppu->sprnum++;
         }
+
+        // next sprite
+        sprsrc += 4;
     }
 }
 
 static void sprite_render(PPU *ppu, int pixelc)
 {
+    int   n       = ppu->sprnum;
+	BYTE *sprdata = ppu->sprbuf + n * 4;
+    int   scolor;
+
+    while (n-- > 0)
+    {
+        sprdata -= 4; // minus 4 sprdata point to the correct data
+
+        if (!(sprdata[2] & (1 << 3))
+           && sprdata[3] == ppu->pclk_line)
+        {
+            if (sprdata[2] & (1 << 7)) // hflip - 1
+            {
+                scolor = (sprdata[0] & 1) | ((sprdata[1] & 1) << 1);
+                sprdata[0] >>= 1;
+                sprdata[1] >>= 1;
+            }
+            else // hflip - 0
+            {
+                scolor = (sprdata[0] >> 7) | ((sprdata[1] >> 7) << 1);
+                sprdata[0] <<= 1;
+                sprdata[1] <<= 1;
+            }
+
+            if (scolor)
+            {
+                if (sprdata[2] & (1 << 6)) scolor = pixelc;
+                else scolor |= (sprdata[2] >> 2) & 0xc;
+                *ppu->draw_buffer = ppu->palette[16 + scolor];
+                if (pixelc) ppu->regs[0x0002] |= (1 << 6);
+            }
+            sprdata[2]++;
+            sprdata[3]++;
+        }
+    }
 }
 
 static void ppu_run_step(PPU *ppu)
@@ -300,31 +354,42 @@ static void ppu_run_step(PPU *ppu)
     // scanline 1 - 240 visible scanlines
     else if (ppu->pclk_frame >= NES_HTOTAL * 1 && ppu->pclk_frame <= NES_HTOTAL * 241 - 1)
     {
-        if (ppu->_2001_lazy & (0x3 << 3))
+        if (ppu->pclk_line >= 0 && ppu->pclk_line <= 255)
         {
-            if (ppu->pclk_line >= 0 && ppu->pclk_line <= 255)
+            int pixelc = 0;
+
+            // render background
+            if (ppu->_2001_lazy & (1 << 3))
             {
                 // write pixel on adev
-                int pixelc = ppu->pixelh | ((ppu->cdatal >> 7) << 0) | ((ppu->cdatah >> 7) << 1);
+                pixelc = ppu->pixelh | ((ppu->cdatal >> 7) << 0) | ((ppu->cdatah >> 7) << 1);
                 ppu->cdatal <<= 1; ppu->cdatah <<= 1;
-                *ppu->draw_buffer++ = ppu->palette[pixelc];
+                *ppu->draw_buffer = ppu->palette[pixelc];
+            }
 
-                // render sprite
-                sprite_render(ppu, pixelc);
+            // render sprite
+            if (ppu->_2001_lazy & (1 << 4)) sprite_render(ppu, pixelc);
 
-                // do x increment
+            // do x increment
+            if (ppu->_2001_lazy & (0x3 << 3))
+            {
+                ppu->draw_buffer++;
+
                 if (ppu_xincrement(ppu)) {
                     // fetch tile data
                     ppu_fetch_tile(ppu);
                 }
             }
-            else if (ppu->pclk_line == 256)
+        }
+        else if (ppu->pclk_line == 256)
+        {
+            // evaluate sprite
+            if (ppu->_2001_lazy & (1 << 4)) sprite_evaluate(ppu);
+
+            if (ppu->_2001_lazy & (0x3 << 3))
             {
                 ppu->draw_buffer -= 256;
                 ppu->draw_buffer += ppu->draw_stride;
-
-                // evaluate sprite
-                sprite_evaluate(ppu);
 
                 // at dot 256, reget vaddr from temp0
                 ppu->vaddr &= ~0x041f;
