@@ -305,7 +305,12 @@ static void sprite_render(PPU *ppu, int pixelc)
                 if (sprdata[2] & (1 << 6)) scolor = pixelc;
                 else scolor |= (sprdata[2] >> 2) & 0xc;
                 *ppu->draw_buffer = ppu->palette[16 + scolor];
-                if (pixelc) ppu->regs[0x0002] |= (1 << 6);
+
+                // update sprite 0 hit flag
+                if (n == 0 && ppu->pclk_line != 255 && pixelc)
+                {
+                    ppu->regs[0x0002] |= (1 << 6);
+                }
             }
             sprdata[2]++;
             sprdata[3]++;
