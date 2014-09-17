@@ -74,7 +74,7 @@ void* vdev_create(int w, int h, int depth, DWORD extra)
         dev->hbmp   = CreateDIBSection(dev->hdcsrc, bmpinfo, DIB_RGB_COLORS, (void**)&(dev->pdata), NULL, 0);
 
         GetObject(dev->hbmp, sizeof(BITMAP), &bitmap);
-        dev->stride = bitmap.bmWidthBytes;
+        dev->stride = bitmap.bmWidthBytes * 8 / depth;
         SelectObject(dev->hdcsrc, dev->hbmp);
     }
     return dev;

@@ -99,16 +99,15 @@ static int color_emphasis_factor[8][3] =
 };
 
 // 内部函数实现
-static void ppu_set_vdev_pal(void *ctxt, int flags)
+static void ppu_set_vdev_pal(PPU *ppu, int flags)
 {
-    BYTE  pal[256 * 4];
     BYTE *psrc   = DEF_PPU_PAL;
     BYTE *pend   = psrc + 64 * 3;
-    BYTE *pdst   = pal;
+    BYTE *pdst   = ppu->vdevpal;
     int   factor = flags >> 5;
     int   r, g, b, i;
 
-    for (i=0; i<256; i++)
+    for (i=0; i<64; i++)
     {
         if (flags & (1 << 0))
         {   // monochrome
@@ -137,9 +136,6 @@ static void ppu_set_vdev_pal(void *ctxt, int flags)
             psrc = DEF_PPU_PAL;
         }
     }
-
-    // set vdev palette
-    vdev_setpal(ctxt, 0, 256, pal);
 }
 
 #define FINEX (ppu->temp1)
@@ -308,7 +304,7 @@ static void sprite_render(PPU *ppu, int pixelc)
             {
                 if (sprdata[2] & (1 << 6)) scolor = pixelc;
                 else scolor |= (sprdata[2] >> 2) & 0xc;
-                *ppu->draw_buffer = ppu->palette[16 + scolor];
+                *ppu->draw_buffer = ((DWORD*)ppu->vdevpal)[ppu->palette[16 + scolor]];
 
                 // update sprite 0 hit flag
                 if (n == 0 && ppu->pclk_line != 255 && pixelc)
@@ -337,7 +333,7 @@ static void ppu_run_step(PPU *ppu)
         {
             if ((ppu->_2001_lazy & 0xe1) != (ppu->regs[0x0001] & 0xe1))
             {
-                ppu_set_vdev_pal(ppu->vdevctxt, ppu->regs[0x0001] & 0xe1);
+                ppu_set_vdev_pal(ppu, ppu->regs[0x0001] & 0xe1);
             }
             ppu->_2001_lazy = ppu->regs[0x0001];
         }
@@ -376,7 +372,7 @@ static void ppu_run_step(PPU *ppu)
                     pixelc = ppu->pixelh | ((ppu->cdatal >> 7) << 0) | ((ppu->cdatah >> 7) << 1);
                 }
                 ppu->cdatal <<= 1; ppu->cdatah <<= 1;
-                *ppu->draw_buffer = ppu->palette[pixelc];
+                *ppu->draw_buffer = ((DWORD*)ppu->vdevpal)[ppu->palette[pixelc]];
             }
 
             // render sprite
@@ -458,7 +454,7 @@ void ppu_run_pclk(PPU *ppu, int pclk)
 void ppu_init(PPU *ppu, DWORD extra)
 {
     // create vdev for ppu
-    ppu->vdevctxt = vdev_create(PPU_IMAGE_WIDTH, PPU_IMAGE_HEIGHT, 8, extra);
+    ppu->vdevctxt = vdev_create(PPU_IMAGE_WIDTH, PPU_IMAGE_HEIGHT, 32, extra);
     if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
 
     // reset ppu
@@ -485,7 +481,7 @@ void ppu_reset(PPU *ppu)
     ppu->chrom_spr  = nes->chrrom.data + ((ppu->regs[0x0000] >> 3) & 1) * 0x1000;
     ppu->pclk_frame = 0;
     ppu->pclk_line  = 0;
-    ppu_set_vdev_pal(ppu->vdevctxt, 0);
+    ppu_set_vdev_pal(ppu, 0);
     memset(ppu->regs, 0, 8); // reset need clear regs
 }
 
