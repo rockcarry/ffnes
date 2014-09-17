@@ -213,7 +213,7 @@ static void sprite_evaluate(PPU *ppu)
 {
     NES  *nes = container_of(ppu, NES, ppu);
     int   sh  = (ppu->regs[0x0000] & (1 << 5)) ? 16 : 8;
-    int   sy, tile, vflip, i;
+    int   sy, tile, i;
     BYTE *chrrom, *sprsrc, *sprdst;
 
     ppu->sprnum = 0;
@@ -230,10 +230,9 @@ static void sprite_evaluate(PPU *ppu)
                 break;
             }
 
-            sy    = ppu->scanline - sprsrc[0]; // sy
-            tile  = sprsrc[1] | (1 << 0);
-            vflip = sprsrc[2] & (1 << 7);
-            if (vflip) sy = sh - sy; // vflip
+            sy   = ppu->scanline - sprsrc[0]; // sy
+            tile = sprsrc[1];
+            if (sprsrc[2] & (1 << 7)) sy = sh - sy; // vflip
 
             switch (sh)
             {
@@ -302,9 +301,15 @@ static void sprite_render(PPU *ppu, int pixelc)
 
             if (scolor)
             {
-                if (sprdata[2] & (1 << 6)) scolor = pixelc;
-                else scolor |= (sprdata[2] >> 2) & 0xc;
-                *ppu->draw_buffer = ((DWORD*)ppu->vdevpal)[ppu->palette[16 + scolor]];
+                if (sprdata[2] & (1 << 6))
+                {
+                    *ppu->draw_buffer = ((DWORD*)ppu->vdevpal)[ppu->palette[pixelc]];
+                }
+                else
+                {
+                    scolor |= (sprdata[2] >> 2) & 0xc;
+                    *ppu->draw_buffer = ((DWORD*)ppu->vdevpal)[ppu->palette[16 + scolor]];
+                }
 
                 // update sprite 0 hit flag
                 if (n == 0 && ppu->pclk_line != 255 && pixelc)
