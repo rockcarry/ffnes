@@ -232,7 +232,7 @@ static void sprite_evaluate(PPU *ppu)
 
             sy   = ppu->scanline - sprsrc[0]; // sy
             tile = sprsrc[1];
-            if (sprsrc[2] & (1 << 7)) sy = sh - sy; // vflip
+            if (sprsrc[2] & (1 << 7)) sy = sh - sy - 1; // vflip
 
             switch (sh)
             {
