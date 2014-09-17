@@ -2,7 +2,7 @@
 #include "nes.h"
 
 // 内部函数实现
-#define TURBOKEY_THREAD_DELAY  200
+#define TURBOKEY_THREAD_DELAY  50
 static DWORD WINAPI turbokey_thread_proc(LPVOID lpParam)
 {
     JOYPAD *jp = (JOYPAD*)lpParam;
