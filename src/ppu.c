@@ -287,18 +287,22 @@ static void sprite_render(PPU *ppu, int pixelc)
         if (!(sprdata[2] & (1 << 3))
            && sprdata[3] == ppu->pclk_line)
         {
-            if (sprdata[2] & (1 << 7)) // hflip - 1
+            if ((ppu->_2001_lazy & (1 << 2)) || ppu->pclk_line >= 8)
             {
-                scolor = (sprdata[0] & 1) | ((sprdata[1] & 1) << 1);
-                sprdata[0] >>= 1;
-                sprdata[1] >>= 1;
+                if (sprdata[2] & (1 << 7)) // hflip - 1
+                {
+                    scolor = (sprdata[0] & 1) | ((sprdata[1] & 1) << 1);
+                    sprdata[0] >>= 1;
+                    sprdata[1] >>= 1;
+                }
+                else // hflip - 0
+                {
+                    scolor = (sprdata[0] >> 7) | ((sprdata[1] >> 7) << 1);
+                    sprdata[0] <<= 1;
+                    sprdata[1] <<= 1;
+                }
             }
-            else // hflip - 0
-            {
-                scolor = (sprdata[0] >> 7) | ((sprdata[1] >> 7) << 1);
-                sprdata[0] <<= 1;
-                sprdata[1] <<= 1;
-            }
+            else scolor = 0;
 
             if (scolor)
             {
@@ -367,7 +371,10 @@ static void ppu_run_step(PPU *ppu)
             if (ppu->_2001_lazy & (1 << 3))
             {
                 // write pixel on adev
-                pixelc = ppu->pixelh | ((ppu->cdatal >> 7) << 0) | ((ppu->cdatah >> 7) << 1);
+                if ((ppu->_2001_lazy & (1 << 3)) || ppu->pclk_line >= 8)
+                {
+                    pixelc = ppu->pixelh | ((ppu->cdatal >> 7) << 0) | ((ppu->cdatah >> 7) << 1);
+                }
                 ppu->cdatal <<= 1; ppu->cdatah <<= 1;
                 *ppu->draw_buffer = ppu->palette[pixelc];
             }
