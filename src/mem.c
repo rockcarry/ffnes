@@ -67,3 +67,4 @@ WORD mem_readw_norwcb(MEM *pm, int addr)
     if (pm->data) return *(WORD*)(pm->data + addr % pm->size);
     return 0;
 }
+
