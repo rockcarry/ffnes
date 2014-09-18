@@ -524,7 +524,7 @@ void ndb_dump_info(NDB *ndb, int type, char *str)
     }
 }
 
-static void render_name_table(void *bmp, int stride, BYTE *chrom, BYTE *vram, BYTE *pal0, BYTE *pal1, int div)
+static void render_name_table(void *bmp, int stride, BYTE *vram, BYTE *chrom, BYTE *pal0, BYTE *pal1, int div)
 {
     BYTE  *ntab = vram + 0x0000;
     BYTE  *atab = vram + 0x03c0;
@@ -633,14 +633,21 @@ void ndb_dump_ppu(NDB *ndb, void *bmpbuf, int w, int h, int stride)
     BYTE  ntabtmp[1024] = {0};
     int   i;
 
-    render_name_table((DWORD*)bmpbuf + 0   * stride + 0  , stride, tilebkg, ntab0, pal0, pal1, 1);
-    render_name_table((DWORD*)bmpbuf + 0   * stride + 256, stride, tilebkg, ntab1, pal0, pal1, 1);
-    render_name_table((DWORD*)bmpbuf + 240 * stride + 0  , stride, tilebkg, ntab2, pal0, pal1, 1);
-    render_name_table((DWORD*)bmpbuf + 240 * stride + 256, stride, tilebkg, ntab3, pal0, pal1, 1);
+    render_name_table((DWORD*)bmpbuf + 0   * stride + 0  , stride, ntab0, tilebkg, pal0, pal1, 1);
+    render_name_table((DWORD*)bmpbuf + 0   * stride + 256, stride, ntab1, tilebkg, pal0, pal1, 1);
+    render_name_table((DWORD*)bmpbuf + 240 * stride + 0  , stride, ntab2, tilebkg, pal0, pal1, 1);
+    render_name_table((DWORD*)bmpbuf + 240 * stride + 256, stride, ntab3, tilebkg, pal0, pal1, 1);
 
+    //++ make sure tilebkg & tilespr not point to the same
+    if (tilespr == tilebkg)
+    {
+        if (tilespr != ndb->nes->chrrom.data) tilespr = ndb->nes->chrrom.data;
+        else tilespr = ndb->nes->chrrom.data + 0x1000;
+    }
+    //-- make sure tilebkg & tilespr not point to the same
     for (i=0; i<256; i++) ntabtmp[i] = i;
-    render_name_table((DWORD*)bmpbuf + 32  * stride + 512 + 5, stride, tilebkg, ntabtmp, pal0, pal1, 4);
-    render_name_table((DWORD*)bmpbuf + 128 * stride + 512 + 5, stride, tilespr, ntabtmp, pal0, pal1, 4);
+    render_name_table((DWORD*)bmpbuf + 32  * stride + 512 + 5, stride, ntabtmp, tilebkg, pal0, pal1, 4);
+    render_name_table((DWORD*)bmpbuf + 128 * stride + 512 + 5, stride, ntabtmp, tilespr, pal0, pal1, 4);
 
     for (i=0; i<16; i++)
     {
