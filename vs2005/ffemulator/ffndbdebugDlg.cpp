@@ -15,7 +15,7 @@ static RECT s_rtPpuAreas[] = {
     { 517, 63 + 224, 773, 63 + 240 }, // bkgrnd palette
     { 517, 63 + 272, 773, 63 + 288 }, // sprite palette
     { 517, 63 + 320, 773, 63 + 388 }, // sprite ram
-    { 517, 63 + 394, 773, 63 + 543 }, // ppu details
+    { 0  , 0       , 999, 999      }, // ppu details
 };
 static RECT s_rtListCtrl   = { 9  , 68      , 356, 537      };
 static int  WM_FINDREPLACE = RegisterWindowMessage(FINDMSGSTRING);
@@ -37,7 +37,7 @@ CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
     m_bDebugTracking  = FALSE;
     m_bDebugRunNStep  = FALSE;
     m_bIsSearchDown   = TRUE;
-    m_nCurPpuDetails  = 7;
+    m_nCurPpuDetails  = 0;
 }
 
 CffndbdebugDlg::~CffndbdebugDlg()
@@ -831,7 +831,7 @@ void CffndbdebugDlg::DrawPpuDebugging()
         tiley  = pixely / 8;
         addr   = 0x2000 + 0x400 * ntable + tiley * 32 + tilex;
         data   = bus_readb(m_pNES->pbus, addr);
-        details.Format("nametable%d, 0x%04X[%03d]: 0x%02X\r\npixel x: %3d, pixel y: %3d\r\ntile  x: %3d, tile  y: %3d\r\n",
+        details.Format("details:\r\nnametable%d, 0x%04X[%03d]: 0x%02X\r\npixel x: %3d, pixel y: %3d\r\ntile  x: %3d, tile  y: %3d",
             ntable, 0x2000 + 0x400 * ntable, tiley * 32 + tilex, data,
             pixelx, pixely, tilex, tiley);
         grid.left   = m_ptCurPixelPoint.x / 8 * 8;
@@ -847,6 +847,36 @@ void CffndbdebugDlg::DrawPpuDebugging()
         break;
     case 3: // background palette
         details.Format("");
+        break;
+    case 4:
+        details.Format("");
+        break;
+    case 5:
+        details.Format("");
+        break;
+    case 6:
+        details.Format(
+            "details:\r\n"
+            "nmi: %8s, vblank: %d %d\r\n"
+            "rx, ry, clk: %3d,%3d,%5d\r\n"
+            "vaddr iaddr temp0 temp1 spr  bkg\r\n"
+            "%04X  %-4d  %04X  %04X  %c%c%c%c %c%c",
+            (m_pNES->ppu.regs[0x0000] & (1 << 7)) ? "enabled" : "disabled",
+            (m_pNES->ppu.regs[0x0002] & (1 << 7)) ? 1 : 0,
+            m_pNES->ppu.pin_vbl ? 1 : 0,
+            m_pNES->ppu.pclk_line,
+            m_pNES->ppu.scanline,
+            m_pNES->ppu.pclk_frame,
+            m_pNES->ppu.vaddr,
+            (m_pNES->ppu.regs[0x0000] & (1 << 2)) ? 32 : 1,
+            m_pNES->ppu.temp0,
+            m_pNES->ppu.temp1,
+            (m_pNES->ppu.regs[0x0001] & (1 << 4)) ? 'v' : '-',
+            (m_pNES->ppu.regs[0x0001] & (1 << 2)) ? '-' : 'c',
+            (m_pNES->ppu.regs[0x0002] & (1 << 6)) ? 'h' : '-',
+            (m_pNES->ppu.regs[0x0002] & (1 << 5)) ? 'o' : '-',
+            (m_pNES->ppu.regs[0x0001] & (1 << 3)) ? 'v' : '-',
+            (m_pNES->ppu.regs[0x0001] & (1 << 1)) ? '-' : 'c');
         break;
     }
     m_cdcDraw.FillSolidRect(&rect, RGB(0, 0, 0));
