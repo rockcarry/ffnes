@@ -6,9 +6,18 @@
 #include "ffndbdebugDlg.h"
 
 // 内部常量定义
-static RECT s_rtCpuInfo    = { 365, 68, 769, 386 };
-static RECT s_rtPpuInfo    = { 0  , 63, 776, 543 };
-static RECT s_rtListCtrl   = { 9  , 68, 356, 537 };
+static RECT s_rtCpuInfo    = { 365, 68      , 769, 386      };
+static RECT s_rtPpuInfo    = { 0  , 63      , 776, 543      };
+static RECT s_rtPpuAreas[] = {
+    { 0  , 63 + 0  , 512, 63 + 480 }, // name table
+    { 517, 63 + 32 , 773, 63 + 96  }, // bkgrnd tile
+    { 517, 63 + 128, 773, 63 + 192 }, // sprite tile
+    { 517, 63 + 224, 773, 63 + 240 }, // bkgrnd palette
+    { 517, 63 + 272, 773, 63 + 288 }, // sprite palette
+    { 517, 63 + 320, 773, 63 + 388 }, // sprite ram
+    { 517, 63 + 394, 773, 63 + 543 }, // ppu details
+};
+static RECT s_rtListCtrl   = { 9  , 68      , 356, 537      };
 static int  WM_FINDREPLACE = RegisterWindowMessage(FINDMSGSTRING);
 
 // CffndbdebugDlg dialog
@@ -28,6 +37,7 @@ CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
     m_bDebugTracking  = FALSE;
     m_bDebugRunNStep  = FALSE;
     m_bIsSearchDown   = TRUE;
+    m_nCurPpuDetails  = 7;
 }
 
 CffndbdebugDlg::~CffndbdebugDlg()
@@ -129,6 +139,7 @@ BEGIN_MESSAGE_MAP(CffndbdebugDlg, CDialog)
     ON_WM_DESTROY()
     ON_WM_PAINT()
     ON_WM_TIMER()
+    ON_WM_MOUSEMOVE()
     ON_BN_CLICKED(IDC_BTN_NES_RESET       , &CffndbdebugDlg::OnBnClickedBtnNesReset)
     ON_BN_CLICKED(IDC_BTN_NES_RUN_PAUSE   , &CffndbdebugDlg::OnBnClickedBtnNesRunPause)
     ON_BN_CLICKED(IDC_BTN_NES_DEBUG_CPU   , &CffndbdebugDlg::OnBnClickedBtnNesDebugCpu)
@@ -208,7 +219,8 @@ BOOL CffndbdebugDlg::OnInitDialog()
                          CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH , "Fixedsys");
 
     // create pen
-    m_penDraw.CreatePen(PS_SOLID, 2, RGB(128, 128, 128));
+    m_penGray .CreatePen(PS_SOLID, 2, RGB(128, 128, 128));
+    m_penGreen.CreatePen(PS_SOLID, 1, RGB(0  , 255, 0  ));
 
     //++ create & init list control
     m_ctrInstructionList.Create(WS_CHILD|WS_VISIBLE|WS_BORDER|LVS_REPORT|LVS_SHOWSELALWAYS|WS_TABSTOP, s_rtListCtrl, this, IDC_LST_OPCODE);
@@ -239,9 +251,10 @@ void CffndbdebugDlg::OnDestroy()
     KillTimer(NDB_DIASM_TIMER  );
 
     // delete dc & object
-    m_cdcDraw.DeleteDC();
-    m_fntDraw.DeleteObject();
-    m_penDraw.DeleteObject();
+    m_cdcDraw .DeleteDC();
+    m_fntDraw .DeleteObject();
+    m_penGray .DeleteObject();
+    m_penGreen.DeleteObject();
     m_bmpDrawBmp->DeleteObject();
 
     // delete m_pDASM
@@ -344,6 +357,23 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
         break;
     }
     CDialog::OnTimer(nIDEvent);
+}
+
+void CffndbdebugDlg::OnMouseMove(UINT nFlags, CPoint point)
+{
+    int i = 0;
+    switch (m_nDebugType)
+    {
+    case DT_DEBUG_PPU:
+        for (i=0; i<7; i++)
+        {
+            if (PtInRect(&(s_rtPpuAreas[i]) , point)) break;
+        }
+        m_nCurPpuDetails  = i;
+        m_ptCurPixelPoint = point - CPoint(0, 63);
+        break;
+    }
+    CDialog::OnMouseMove(nFlags, point);
 }
 
 void CffndbdebugDlg::OnBnClickedBtnNesReset()
@@ -680,7 +710,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
 
     m_cdcDraw.SelectObject(m_bmpDrawBmp);
     m_cdcDraw.SelectObject(&m_fntDraw);
-    m_cdcDraw.SelectObject(&m_penDraw);
+    m_cdcDraw.SelectObject(&m_penGray);
     m_cdcDraw.FillSolidRect(&rect, RGB(255, 255, 255));
 
     // draw cpu pc & regs info
@@ -776,7 +806,8 @@ void CffndbdebugDlg::DrawPpuDebugging()
 
     m_cdcDraw.SelectObject(m_bmpDrawBmp);
     m_cdcDraw.SelectObject(&m_fntDraw);
-    m_cdcDraw.SelectObject(&m_penDraw);
+    m_cdcDraw.SelectObject(&m_penGreen);
+    m_cdcDraw.SelectObject(GetStockObject(NULL_BRUSH));
     m_cdcDraw.SetBkMode(TRANSPARENT);
     m_cdcDraw.SetTextColor(RGB(255, 255, 255));
     m_cdcDraw.TextOut(512 + 5, 10 , "bkgrnd tiles:");
@@ -784,7 +815,43 @@ void CffndbdebugDlg::DrawPpuDebugging()
     m_cdcDraw.TextOut(512 + 5, 202, "bkgrnd palette:");
     m_cdcDraw.TextOut(512 + 5, 250, "sprite palette:");
     m_cdcDraw.TextOut(512 + 5, 298, "sprite ram:");
-    m_cdcDraw.TextOut(512 + 5, 394, "details:");
+
+    // for details
+    static RECT    rect    = { 517, 394, 773, 543 };
+           CString details = "";
+           int     ntable, pixelx, pixely, tilex, tiley, addr, data;
+           RECT    grid    = {0};
+    switch (m_nCurPpuDetails)
+    {
+    case 0: // name table
+        ntable = m_ptCurPixelPoint.y / 240 * 2 + m_ptCurPixelPoint.x / 256;
+        pixelx = m_ptCurPixelPoint.x % 256;
+        pixely = m_ptCurPixelPoint.y % 240;
+        tilex  = pixelx / 8;
+        tiley  = pixely / 8;
+        addr   = 0x2000 + 0x400 * ntable + tiley * 32 + tilex;
+        data   = bus_readb(m_pNES->pbus, addr);
+        details.Format("nametable%d, 0x%04X[%03d]: 0x%02X\r\npixel x: %3d, pixel y: %3d\r\ntile  x: %3d, tile  y: %3d\r\n",
+            ntable, 0x2000 + 0x400 * ntable, tiley * 32 + tilex, data,
+            pixelx, pixely, tilex, tiley);
+        grid.left   = m_ptCurPixelPoint.x / 8 * 8;
+        grid.top    = m_ptCurPixelPoint.y / 8 * 8;
+        grid.right  = grid.left + 8;
+        grid.bottom = grid.top  + 8;
+        break;
+    case 1: // background tile
+        details.Format("");
+        break;
+    case 2: // sprite tile
+        details.Format("");
+        break;
+    case 3: // background palette
+        details.Format("");
+        break;
+    }
+    m_cdcDraw.FillSolidRect(&rect, RGB(0, 0, 0));
+    m_cdcDraw.Rectangle(&grid);
+    m_cdcDraw.DrawText(details, -1, &rect, DT_LEFT);
 
     // restore dc
     m_cdcDraw.RestoreDC(savedc);

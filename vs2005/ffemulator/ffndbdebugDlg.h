@@ -21,19 +21,26 @@ public:
 // Dialog Data
     enum { IDD = IDD_FFNDBDEBUG_DIALOG };
 
+    // timer
+    #define NDB_REFRESH_TIMER 1
+    #define NDB_DIASM_TIMER   2
+
+private:
+    //+ nes & dasm
+    NES    *m_pNES;
+    DASM   *m_pDASM;
+    //- nes & dasm
+
+    //++ debug type
     enum {
         DT_DEBUG_CPU,
         DT_DEBUG_PPU,
         DT_DEBUG_MEM,
     };
-
-    #define NDB_REFRESH_TIMER 1
-    #define NDB_DIASM_TIMER   2
-
-private:
-    NES    *m_pNES;
-    DASM   *m_pDASM;
     int     m_nDebugType;
+    //-- debug type
+
+    //++ bitmap, cdc, font & pen for rendering
     CBitmap*m_bmpDrawBmp;
     void   *m_bmpDrawBuf;
     int     m_bmpDrawWidth;
@@ -41,14 +48,27 @@ private:
     int     m_bmpDrawStride;
     CDC     m_cdcDraw;
     CFont   m_fntDraw;
-    CPen    m_penDraw;
+    CPen    m_penGray;
+    CPen    m_penGreen;
+    //-- bitmap, cdc, font & pen for rendering
+
+    //+ for cpu debugging & tracking
     BOOL    m_bEnableTracking;
     BOOL    m_bDebugTracking;
     BOOL    m_bDebugRunNStep;
+    //- for cpu debugging & tracking
+
+    //+ list control find & edit
     BOOL    m_bIsSearchDown;
     CString m_strCurFindStr;
     int     m_nCurEditItemRow;
     int     m_nCurEditItemCol;
+    //- list control find & edit
+
+    //+ for ppu debugging
+    int     m_nCurPpuDetails ;
+    CPoint  m_ptCurPixelPoint;
+    //- for ppu debugging
 
 private:
     void DrawGrid(int m, int n, int *x, int *y);
@@ -78,6 +98,7 @@ protected:
     afx_msg void OnPaint();
     afx_msg void OnDestroy();
     afx_msg void OnTimer(UINT_PTR nIDEvent);
+    afx_msg void OnMouseMove(UINT nFlags, CPoint point);
     afx_msg void OnOK();
     afx_msg void OnCancel();
     afx_msg void OnBnClickedBtnNesReset();
