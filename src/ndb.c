@@ -620,6 +620,67 @@ static void draw_color_bar(void *bmp, int stride, int x, int y, int color, BYTE 
     }
 }
 
+static void draw_sprite(void *bmp, int stride, int x, int y, BYTE *sprite, PPU *ppu)
+{
+    DWORD *dwbuf = (DWORD*)bmp + y * stride + x;
+    NES   *nes   = container_of(ppu, NES, ppu);
+    int    sh    = (ppu->regs[0x0000] & (1 << 5)) ? 16 : 8;
+    int    sy, scolor, i, j;
+    BYTE   tile, cdatal, cdatah;
+    BYTE  *chrrom;
+
+    if (sh == 8)
+    {
+        chrrom = ppu->chrom_spr;
+        tile   = sprite[1];
+    }
+    else
+    {
+        chrrom = nes->chrrom.data + (sprite[1] & 1) * 0x1000;
+        tile   = sprite[1] & ~(1 << 0);
+    }
+
+    for (i=0; i<sh; i++)
+    {
+        sy = (sprite[2] & (1 << 7)) ? (sh - i - 1) : i;
+        if (sh == 16)
+        {
+            if (sy < 8)
+            {
+                tile &= ~(1 << 0);
+            }
+            else
+            {
+                tile |=  (1 << 0);
+                sy -= 8;
+            }
+        }
+
+        cdatal = chrrom[tile * 16 + 8 * 0 + sy];
+        cdatah = chrrom[tile * 16 + 8 * 1 + sy];
+
+        for (j=0; j<8; j++)
+        {
+            if (sprite[2] & (1 << 6)) // hflip - 1
+            {
+                scolor = (cdatal & 1) | ((cdatah & 1) << 1);
+                cdatal >>= 1; cdatah >>= 1;
+            }
+            else // hflip - 0
+            {
+                scolor = (cdatal >> 7) | ((cdatah >> 7) << 1);
+                cdatal <<= 1; cdatah <<= 1;
+            }
+
+            if (scolor) scolor |= (sprite[2] << 2) & 0xc;
+            *dwbuf++ = ((DWORD*)ppu->vdevpal)[ppu->palette[16 + scolor]];
+        }
+
+        dwbuf -= 8;
+        dwbuf += stride;
+    }
+}
+
 void ndb_dump_ppu(NDB *ndb, void *bmpbuf, int w, int h, int stride)
 {
     BYTE *tilebkg = ndb->nes->ppu.chrom_bkg;
@@ -651,7 +712,11 @@ void ndb_dump_ppu(NDB *ndb, void *bmpbuf, int w, int h, int stride)
 
     for (i=0; i<16; i++)
     {
-        draw_color_bar(bmpbuf, stride, 512 + 5 + i * 16, 224 + 0 , 0  + i, pal0, pal1);
-        draw_color_bar(bmpbuf, stride, 512 + 5 + i * 16, 224 + 48, 16 + i, pal0, pal1);
+        draw_color_bar(bmpbuf, stride, 512 + 5 + i * 16, 224 + 0  , 0  + i, pal0, pal1);
+        draw_color_bar(bmpbuf, stride, 512 + 5 + i * 16, 224 + 48 , 16 + i, pal0, pal1);
+        draw_sprite   (bmpbuf, stride, 512 + 5 + i * 16, 224 + 96 , ndb->nes->ppu.sprram + (0  + i) * 4, &(ndb->nes->ppu));
+        draw_sprite   (bmpbuf, stride, 512 + 5 + i * 16, 224 + 113, ndb->nes->ppu.sprram + (16 + i) * 4, &(ndb->nes->ppu));
+        draw_sprite   (bmpbuf, stride, 512 + 5 + i * 16, 224 + 130, ndb->nes->ppu.sprram + (32 + i) * 4, &(ndb->nes->ppu));
+        draw_sprite   (bmpbuf, stride, 512 + 5 + i * 16, 224 + 147, ndb->nes->ppu.sprram + (48 + i) * 4, &(ndb->nes->ppu));
     }
 }
