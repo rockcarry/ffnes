@@ -493,7 +493,7 @@ static void ndb_dump_watch(NDB *ndb, int type, char *str)
             if (wts[i] == 0xffff) sprintf(str+i*5, " --  ");
             else
             {
-                byte = bus_readb(ndb->nes->cbus, wts[i]);
+                byte = bus_readb_norwcb(ndb->nes->cbus, wts[i]);
                 sprintf(str+i*5, " %02X  ", byte);
             }
         }

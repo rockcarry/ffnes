@@ -25,5 +25,9 @@ WORD mem_readw (MEM *pm, int addr);
 void mem_writeb(MEM *pm, int addr, BYTE  byte);
 void mem_writew(MEM *pm, int addr, WORD  word);
 
+// mem read without rw callback
+BYTE mem_readb_norwcb(MEM *pm, int addr);
+WORD mem_readw_norwcb(MEM *pm, int addr);
+
 #endif
 

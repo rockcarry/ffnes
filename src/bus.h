@@ -30,6 +30,10 @@ void bus_writew(BUS bus, int baddr, WORD  word);
 void bus_setmem(BUS bus, int i, int start, int end, MEM *membank);
 void bus_setmir(BUS bus, int i, int start, int end, WORD mirmask);
 
+// bus read without rw callback
+BYTE bus_readb_norwcb(BUS bus, int baddr);
+WORD bus_readw_norwcb(BUS bus, int baddr);
+
 #endif
 
 

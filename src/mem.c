@@ -56,3 +56,14 @@ void mem_writew(MEM *pm, int addr, WORD word)
     }
 }
 
+BYTE mem_readb_norwcb(MEM *pm, int addr)
+{
+    if (pm->data) return pm->data[addr % pm->size];
+    return 0;
+}
+
+WORD mem_readw_norwcb(MEM *pm, int addr)
+{
+    if (pm->data) return *(WORD*)(pm->data + addr % pm->size);
+    return 0;
+}

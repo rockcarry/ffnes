@@ -76,4 +76,24 @@ void bus_setmir(BUS bus, int i, int start, int end, WORD mirmask)
     bus[i].mirmask = mirmask;
 }
 
+// bus read without rw callback
+BYTE bus_readb_norwcb(BUS bus, int baddr)
+{
+    int  maddr = 0;
+    MEM *mbank = find_mem_bank(bus, baddr, &maddr);
+    if (mbank) {
+        return mem_readb_norwcb(mbank, maddr);
+    }
+    else return 0;
+}
+
+WORD bus_readw_norwcb(BUS bus, int baddr)
+{
+    int  maddr = 0;
+    MEM *mbank = find_mem_bank(bus, baddr, &maddr);
+    if (mbank) {
+        return mem_readw_norwcb(mbank, maddr);
+    }
+    else return 0;
+}
 
