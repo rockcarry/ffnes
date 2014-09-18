@@ -26,8 +26,9 @@ static void mmc_switch_pbank1(MMC *mmc, int bank)
     mmc->cbus[7].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
 }
 
-static void mmc_switch_cbank (MMC *mmc, int bank)
+static void mmc_switch_cbank(MMC *mmc, int bank)
 {
+    mmc->bankchrrom = bank;
     bank = (bank == -1) ? (mmc->cart->crom_count - 1) : bank; // -1 is special, means the last bank
     mmc->pbus[2].membank->data = mmc->cart->buf_crom + 0x2000 * (bank % mmc->cart->crom_count);
 }
@@ -170,12 +171,12 @@ void mmc_reset(MMC *mmc)
     MAPPER *mapper = g_mapper_list[mmc->number];
 
     //++ by default, need mapper0 reset first
-    mmc->bank8000 = -1; mmc->bankc000 = -1;
+    mmc->bank8000 = -1; mmc->bankc000 = -1; mmc->bankchrrom = -1;
     g_mapper_list[0]->reset(mmc);
     //-- by default, need mapper0 reset first
 
     //++ call mapper xxx reset if exsits
-    mmc->bank8000 = -1; mmc->bankc000 = -1;
+    mmc->bank8000 = -1; mmc->bankc000 = -1; mmc->bankchrrom = -1;
     if (mapper && mapper->reset) mapper->reset(mmc);
     //-- call mapper xxx reset if exsits
 }

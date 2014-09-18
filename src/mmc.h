@@ -16,6 +16,7 @@ typedef struct {
                          // but use 8KB CHR-RAM instead of it
     int        bank8000;
     int        bankc000;
+    int        bankchrrom;
 } MMC;
 
 // º¯ÊıÉùÃ÷

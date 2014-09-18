@@ -672,8 +672,12 @@ static void draw_sprite(void *bmp, int stride, int x, int y, BYTE *sprite, PPU *
                 cdatal <<= 1; cdatah <<= 1;
             }
 
-            if (scolor) scolor |= (sprite[2] << 2) & 0xc;
-            *dwbuf++ = ((DWORD*)ppu->vdevpal)[ppu->palette[16 + scolor]];
+            if (scolor)
+            {
+                scolor |= (sprite[2] << 2) & 0xc;
+                *dwbuf  = ((DWORD*)ppu->vdevpal)[ppu->palette[16 + scolor]];
+            }
+            dwbuf++;
         }
 
         dwbuf -= 8;
@@ -707,16 +711,16 @@ void ndb_dump_ppu(NDB *ndb, void *bmpbuf, int w, int h, int stride)
     }
     //-- make sure tilebkg & tilespr not point to the same
     for (i=0; i<256; i++) ntabtmp[i] = i;
-    render_name_table((DWORD*)bmpbuf + 32  * stride + 512 + 5, stride, ntabtmp, tilebkg, pal0, pal1, 4);
-    render_name_table((DWORD*)bmpbuf + 128 * stride + 512 + 5, stride, ntabtmp, tilespr, pal0, pal1, 4);
+    render_name_table((DWORD*)bmpbuf + 32  * stride + 512 + 8, stride, ntabtmp, tilebkg, pal0, pal1, 4);
+    render_name_table((DWORD*)bmpbuf + 128 * stride + 512 + 8, stride, ntabtmp, tilespr, pal0, pal1, 4);
 
     for (i=0; i<16; i++)
     {
-        draw_color_bar(bmpbuf, stride, 512 + 5 + i * 16, 224 + 0  , 0  + i, pal0, pal1);
-        draw_color_bar(bmpbuf, stride, 512 + 5 + i * 16, 224 + 48 , 16 + i, pal0, pal1);
-        draw_sprite   (bmpbuf, stride, 512 + 5 + i * 16, 224 + 96 , ndb->nes->ppu.sprram + (0  + i) * 4, &(ndb->nes->ppu));
-        draw_sprite   (bmpbuf, stride, 512 + 5 + i * 16, 224 + 113, ndb->nes->ppu.sprram + (16 + i) * 4, &(ndb->nes->ppu));
-        draw_sprite   (bmpbuf, stride, 512 + 5 + i * 16, 224 + 130, ndb->nes->ppu.sprram + (32 + i) * 4, &(ndb->nes->ppu));
-        draw_sprite   (bmpbuf, stride, 512 + 5 + i * 16, 224 + 147, ndb->nes->ppu.sprram + (48 + i) * 4, &(ndb->nes->ppu));
+        draw_color_bar(bmpbuf, stride, 512 + 8 + i * 16, 224 + 0  , 0  + i, pal0, pal1);
+        draw_color_bar(bmpbuf, stride, 512 + 8 + i * 16, 224 + 48 , 16 + i, pal0, pal1);
+        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 96 , ndb->nes->ppu.sprram + (0  + i) * 4, &(ndb->nes->ppu));
+        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 112, ndb->nes->ppu.sprram + (16 + i) * 4, &(ndb->nes->ppu));
+        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 128, ndb->nes->ppu.sprram + (32 + i) * 4, &(ndb->nes->ppu));
+        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 144, ndb->nes->ppu.sprram + (48 + i) * 4, &(ndb->nes->ppu));
     }
 }

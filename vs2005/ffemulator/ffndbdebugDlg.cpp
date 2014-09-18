@@ -6,15 +6,15 @@
 #include "ffndbdebugDlg.h"
 
 // 内部常量定义
-static RECT s_rtCpuInfo    = { 365, 68      , 769, 386      };
-static RECT s_rtPpuInfo    = { 0  , 63      , 776, 543      };
+static RECT s_rtCpuInfo    = { 365, 68      , 776, 386      };
+static RECT s_rtPpuInfo    = { 0  , 63      , 783, 543      };
 static RECT s_rtPpuAreas[] = {
     { 0  , 63 + 0  , 512, 63 + 480 }, // name table
-    { 517, 63 + 32 , 773, 63 + 96  }, // bkgrnd tile
-    { 517, 63 + 128, 773, 63 + 192 }, // sprite tile
-    { 517, 63 + 224, 773, 63 + 240 }, // bkgrnd palette
-    { 517, 63 + 272, 773, 63 + 288 }, // sprite palette
-    { 517, 63 + 320, 773, 63 + 388 }, // sprite ram
+    { 520, 63 + 32 , 776, 63 + 96  }, // bkgrnd tile
+    { 520, 63 + 128, 776, 63 + 192 }, // sprite tile
+    { 520, 63 + 224, 776, 63 + 240 }, // bkgrnd palette
+    { 520, 63 + 272, 776, 63 + 288 }, // sprite palette
+    { 520, 63 + 320, 776, 63 + 388 }, // sprite ram
     { 0  , 0       , 999, 999      }, // ppu details
 };
 static RECT s_rtListCtrl   = { 9  , 68      , 356, 537      };
@@ -37,7 +37,7 @@ CffndbdebugDlg::CffndbdebugDlg(CWnd* pParent, NES *pnes)
     m_bDebugTracking  = FALSE;
     m_bDebugRunNStep  = FALSE;
     m_bIsSearchDown   = TRUE;
-    m_nCurPpuDetails  = 0;
+    m_nCurPpuDetails  = 6;
 }
 
 CffndbdebugDlg::~CffndbdebugDlg()
@@ -799,28 +799,62 @@ void CffndbdebugDlg::DrawCpuDebugging()
 
 void CffndbdebugDlg::DrawPpuDebugging()
 {
-    ndb_dump_ppu(&(m_pNES->ndb), m_bmpDrawBuf, m_bmpDrawWidth, m_bmpDrawHeight, m_bmpDrawStride);
-
     // save dc
     int savedc = m_cdcDraw.SaveDC();
 
+    // init cdc
     m_cdcDraw.SelectObject(m_bmpDrawBmp);
     m_cdcDraw.SelectObject(&m_fntDraw);
     m_cdcDraw.SelectObject(&m_penGreen);
     m_cdcDraw.SelectObject(GetStockObject(NULL_BRUSH));
     m_cdcDraw.SetBkMode(TRANSPARENT);
     m_cdcDraw.SetTextColor(RGB(255, 255, 255));
-    m_cdcDraw.TextOut(512 + 5, 10 , "bkgrnd tiles:");
-    m_cdcDraw.TextOut(512 + 5, 106, "sprite tiles:");
-    m_cdcDraw.TextOut(512 + 5, 202, "bkgrnd palette:");
-    m_cdcDraw.TextOut(512 + 5, 250, "sprite palette:");
-    m_cdcDraw.TextOut(512 + 5, 298, "sprite ram:");
 
-    // for details
-    static RECT    rect    = { 517, 394, 773, 543 };
-           CString details = "";
-           int     ntable, pixelx, pixely, tilex, tiley, addr, data;
-           RECT    grid    = {0};
+    // clear rect
+    RECT rect = { 520, 320, 776, 543 };
+    m_cdcDraw.FillSolidRect(&rect, RGB(0, 0, 0));
+
+    // draw text
+    m_cdcDraw.TextOut(512 + 8, 10 , "bkgrnd tiles:");
+    m_cdcDraw.TextOut(512 + 8, 106, "sprite tiles:");
+    m_cdcDraw.TextOut(512 + 8, 202, "bkgrnd palette:");
+    m_cdcDraw.TextOut(512 + 8, 250, "sprite palette:");
+    m_cdcDraw.TextOut(512 + 8, 298, "sprite ram:");
+
+    // use ndb_dump_ppu to draw ppu info
+    ndb_dump_ppu(&(m_pNES->ndb), m_bmpDrawBuf, m_bmpDrawWidth, m_bmpDrawHeight, m_bmpDrawStride);
+
+    //++ for ppu details infomation ++//
+    //+ draw cursor
+    RECT cursor = {0};
+    switch (m_nCurPpuDetails)
+    {
+    case 0: case 1: case 2:
+        cursor.left   = m_ptCurPixelPoint.x / 8 * 8;
+        cursor.top    = m_ptCurPixelPoint.y / 8 * 8;
+        cursor.right  = cursor.left + 8;
+        cursor.bottom = cursor.top  + 8;
+        break;
+    case 3: case 4:
+        cursor.left   = (m_ptCurPixelPoint.x - 8) / 16 * 16 + 8;
+        cursor.top    = (m_ptCurPixelPoint.y - 0) / 16 * 16 + 0;
+        cursor.right  = cursor.left + 16;
+        cursor.bottom = cursor.top  + 16;
+        break;
+    case 5:
+        cursor.left   = (m_ptCurPixelPoint.x - 8) / 16 * 16 + 8;
+        cursor.top    = (m_ptCurPixelPoint.y - 0) / 16 * 16 + 0;
+        cursor.right  = cursor.left + 8;
+        cursor.bottom = cursor.top  + 8;
+        if (m_pNES->ppu.regs[0x0000] & (1 << 5)) cursor.bottom += 8;
+        break;
+    }
+    m_cdcDraw.Rectangle(&cursor);
+    //- draw cursor
+
+    //+ draw details
+    CString details = "";
+    int     ntable, pixelx, pixely, tilex, tiley, addr, data;
     switch (m_nCurPpuDetails)
     {
     case 0: // name table
@@ -831,39 +865,102 @@ void CffndbdebugDlg::DrawPpuDebugging()
         tiley  = pixely / 8;
         addr   = 0x2000 + 0x400 * ntable + tiley * 32 + tilex;
         data   = bus_readb(m_pNES->pbus, addr);
-        details.Format("details:\r\nnametable%d, 0x%04X[%03d]: 0x%02X\r\npixel x: %3d, pixel y: %3d\r\ntile  x: %3d, tile  y: %3d",
+        details.Format(
+            "details:\r\n"
+            "nametable-%d\r\n"
+            "0x%04X[%03d]: %d\r\n"
+            "pixel xy: %3d,%3d\r\n"
+            "tile  xy: %3d,%3d",
             ntable, 0x2000 + 0x400 * ntable, tiley * 32 + tilex, data,
             pixelx, pixely, tilex, tiley);
-        grid.left   = m_ptCurPixelPoint.x / 8 * 8;
-        grid.top    = m_ptCurPixelPoint.y / 8 * 8;
-        grid.right  = grid.left + 8;
-        grid.bottom = grid.top  + 8;
         break;
+
     case 1: // background tile
-        details.Format("");
+        tilex = (m_ptCurPixelPoint.x - 520) / 8;
+        tiley = (m_ptCurPixelPoint.y - 32 ) / 8;
+        details.Format(
+            "details:\r\n"
+            "chrbank: %d\r\n"
+            "tabaddr: 0x%04X\r\n"
+            "tile id: %d",
+            m_pNES->mmc.bankchrrom,
+            (m_pNES->ppu.regs[0x0000] & (1 << 4)) ? 0x1000 : 0x0000,
+            tiley * 32 + tilex);
         break;
+
     case 2: // sprite tile
-        details.Format("");
+        tilex = (m_ptCurPixelPoint.x - 520) / 8;
+        tiley = (m_ptCurPixelPoint.y - 128) / 8;
+        details.Format(
+            "details:\r\n"
+            "chrbank: %d\r\n"
+            "tabaddr: 0x%04X\r\n"
+            "tile id: %d",
+            m_pNES->mmc.bankchrrom,
+            ((m_pNES->ppu.regs[0x0000] & (1 << 4)) ^ (1 << 4)) ? 0x1000 : 0x0000,
+            tiley * 32 + tilex);
         break;
+
     case 3: // background palette
-        details.Format("");
+        tilex = (m_ptCurPixelPoint.x - 520) / 16;
+        tiley = (m_ptCurPixelPoint.y - 224) / 16;
+        details.Format(
+            "details:\r\n"
+            "palette id  : %d\r\n"
+            "palette data: %d\r\n"
+            "RGB(%3d,%3d,%3d)",
+            tilex, m_pNES->ppu.palette[tilex],
+            m_pNES->ppu.vdevpal[m_pNES->ppu.palette[tilex] * 4 + 2],
+            m_pNES->ppu.vdevpal[m_pNES->ppu.palette[tilex] * 4 + 1],
+            m_pNES->ppu.vdevpal[m_pNES->ppu.palette[tilex] * 4 + 0]);
         break;
-    case 4:
-        details.Format("");
+
+    case 4: // sprite palette
+        tilex = (m_ptCurPixelPoint.x - 520) / 16;
+        tiley = (m_ptCurPixelPoint.y - 272) / 16;
+        details.Format(
+            "details:\r\n"
+            "palette id  : %d\r\n"
+            "palette data: %d\r\n"
+            "RGB(%3d,%3d,%3d)",
+            tiley * 16 + tilex, m_pNES->ppu.palette[16 + tilex],
+            m_pNES->ppu.vdevpal[m_pNES->ppu.palette[16 + tilex] * 4 + 2],
+            m_pNES->ppu.vdevpal[m_pNES->ppu.palette[16 + tilex] * 4 + 1],
+            m_pNES->ppu.vdevpal[m_pNES->ppu.palette[16 + tilex] * 4 + 0]);
         break;
-    case 5:
-        details.Format("");
+
+    case 5: // sprite ram
+        tilex = (m_ptCurPixelPoint.x - 520) / 16;
+        tiley = (m_ptCurPixelPoint.y - 320) / 16;
+        data  = tiley * 16 + tilex;
+        details.Format(
+            "details:\r\n"
+            "sprite id: %d\r\n"
+            "sprite xy: %d, %d\r\n"
+            "sprite tile: %d\r\n"
+            "%c%c%c 0x%x",
+            data,
+            m_pNES->ppu.sprram[data * 4 + 3],
+            m_pNES->ppu.sprram[data * 4 + 0],
+            m_pNES->ppu.sprram[data * 4 + 1],
+            (m_pNES->ppu.sprram[data * 4 + 2] & (1 << 7)) ? 'v' : '-',
+            (m_pNES->ppu.sprram[data * 4 + 2] & (1 << 6)) ? 'h' : '-',
+            (m_pNES->ppu.sprram[data * 4 + 2] & (1 << 5)) ? 'b' : '-',
+            (m_pNES->ppu.sprram[data * 4 + 2] & 0x3) << 2);
         break;
+
     case 6:
         details.Format(
             "details:\r\n"
-            "nmi: %8s, vblank: %d %d\r\n"
-            "rx, ry, clk: %3d,%3d,%5d\r\n"
+            "nmi vblk color rx  ry  clk\r\n"
+            "%c   %d %c  %c %d  %3d %3d %5d\r\n"
             "vaddr iaddr temp0 temp1 spr  bkg\r\n"
             "%04X  %-4d  %04X  %04X  %c%c%c%c %c%c",
-            (m_pNES->ppu.regs[0x0000] & (1 << 7)) ? "enabled" : "disabled",
+            (m_pNES->ppu.regs[0x0000] & (1 << 7)) ? 'e' : 'd',
             (m_pNES->ppu.regs[0x0002] & (1 << 7)) ? 1 : 0,
-            m_pNES->ppu.pin_vbl ? 1 : 0,
+            m_pNES->ppu.pin_vbl ? 'h' : 'l',
+            (m_pNES->ppu.regs[0x0001] & (1 << 0)) ? 'm' : 'c',
+            (m_pNES->ppu.regs[0x0001] >> 5),
             m_pNES->ppu.pclk_line,
             m_pNES->ppu.scanline,
             m_pNES->ppu.pclk_frame,
@@ -879,9 +976,9 @@ void CffndbdebugDlg::DrawPpuDebugging()
             (m_pNES->ppu.regs[0x0001] & (1 << 1)) ? '-' : 'c');
         break;
     }
-    m_cdcDraw.FillSolidRect(&rect, RGB(0, 0, 0));
-    m_cdcDraw.Rectangle(&grid);
+    rect.top = 392;
     m_cdcDraw.DrawText(details, -1, &rect, DT_LEFT);
+    //- draw details
 
     // restore dc
     m_cdcDraw.RestoreDC(savedc);
