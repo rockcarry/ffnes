@@ -825,7 +825,7 @@ void CffndbdebugDlg::DrawPpuDebugging()
     ndb_dump_ppu(&(m_pNES->ndb), m_bmpDrawBuf, m_bmpDrawWidth, m_bmpDrawHeight, m_bmpDrawStride);
 
     //++ for ppu details infomation ++//
-    //+ draw cursor
+    //+ for cursor
     RECT cursor = {0};
     switch (m_nCurPpuDetails)
     {
@@ -849,8 +849,7 @@ void CffndbdebugDlg::DrawPpuDebugging()
         if (m_pNES->ppu.regs[0x0000] & (1 << 5)) cursor.bottom += 8;
         break;
     }
-    m_cdcDraw.Rectangle(&cursor);
-    //- draw cursor
+    //- for cursor
 
     //+ draw details
     CString details = "";
@@ -978,6 +977,31 @@ void CffndbdebugDlg::DrawPpuDebugging()
     }
     rect.top = 392;
     m_cdcDraw.DrawText(details, -1, &rect, DT_LEFT);
+    if (cursor.right - cursor.left)
+    {
+        rect.left += 176;
+        rect.top  += 8;
+        rect.right = rect.left + 64;
+        rect.bottom= rect.top  + 64;
+        if (  cursor.right - cursor.left == 8
+           && cursor.bottom - cursor.top == 16)
+        {
+            rect.right -= 32;
+        }
+        if (  cursor.right - cursor.left == 16
+           && cursor.bottom - cursor.top == 16)
+        {
+            m_cdcDraw.StretchBlt(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
+                &m_cdcDraw, cursor.left + 1, cursor.top + 1, cursor.right - cursor.left - 2, cursor.bottom - cursor.top - 2, SRCCOPY);
+        }
+        else
+        {
+            m_cdcDraw.StretchBlt(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
+                &m_cdcDraw, cursor.left, cursor.top, cursor.right - cursor.left, cursor.bottom - cursor.top, SRCCOPY);
+        }
+        m_cdcDraw.Rectangle(&rect  ); // draw border
+        m_cdcDraw.Rectangle(&cursor); // draw cursor
+    }
     //- draw details
 
     // restore dc
