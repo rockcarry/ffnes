@@ -6,8 +6,8 @@
 #include "ffndbdebugDlg.h"
 
 // 内部常量定义
-static RECT s_rtCpuInfo    = { 365, 68      , 776, 386      };
-static RECT s_rtPpuInfo    = { 0  , 63      , 783, 543      };
+static RECT s_rtCpuInfo    = { 365, 68, 776, 386 };
+static RECT s_rtPpuInfo    = { 0  , 63, 783, 543 };
 static RECT s_rtPpuAreas[] = {
     { 0  , 63 + 0  , 512, 63 + 480 }, // name table
     { 520, 63 + 32 , 776, 63 + 96  }, // bkgrnd tile
@@ -17,7 +17,7 @@ static RECT s_rtPpuAreas[] = {
     { 520, 63 + 320, 776, 63 + 388 }, // sprite ram
     { 0  , 0       , 999, 999      }, // ppu details
 };
-static RECT s_rtListCtrl   = { 9  , 68      , 356, 537      };
+static RECT s_rtListCtrl   = { 9  , 68, 356, 537 };
 static int  WM_FINDREPLACE = RegisterWindowMessage(FINDMSGSTRING);
 
 // CffndbdebugDlg dialog
