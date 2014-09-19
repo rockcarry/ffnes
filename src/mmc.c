@@ -211,8 +211,11 @@ void mmc_init(MMC *mmc, CARTRIDGE *cart, BUS cbus, BUS pbus)
     mapper = g_mapper_list[mmc->number];
 
     // init cbus memory bank callback
-    mmc->cbus[6].membank->w_callback = mapper->wcb0;
-    mmc->cbus[7].membank->w_callback = mapper->wcb1;
+    if (mapper)
+    {
+        mmc->cbus[6].membank->w_callback = mapper->wcb0;
+        mmc->cbus[7].membank->w_callback = mapper->wcb1;
+    }
 
     // call mapper init if exsits
     if (mapper && mapper->init ) mapper->init(mmc);
