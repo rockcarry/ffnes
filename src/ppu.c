@@ -138,7 +138,7 @@ static void ppu_set_vdev_pal(PPU *ppu, int flags)
     }
 }
 
-#define FINEX (ppu->temp1)
+#define FINEX (ppu->finex)
 #define FINEY (ppu->vaddr >> 12)
 #define TILEX ((ppu->vaddr >> 0) & 0x1f)
 #define TILEY ((ppu->vaddr >> 5) & 0x1f)
@@ -349,6 +349,7 @@ static void ppu_run_step(PPU *ppu)
             // the ppu address copies the ppu's
             // temp at the beginning of the line
             ppu->vaddr = ppu->temp0;
+            ppu->finex = ppu->temp1;
 
             // y increment
             ppu_yincrement(ppu);
@@ -407,6 +408,7 @@ static void ppu_run_step(PPU *ppu)
                 // at dot 256, reget vaddr from temp0
                 ppu->vaddr &= ~0x041f;
                 ppu->vaddr |= (ppu->temp0 & 0x041f);
+                ppu->finex  = ppu->temp1;
 
                 // at dot 257, do y increment
                 ppu_yincrement(ppu);
@@ -477,6 +479,7 @@ void ppu_reset(PPU *ppu)
 
     ppu->pin_vbl    = 1;
     ppu->toggle     = 0;
+    ppu->finex      = 0;
     ppu->vaddr      = 0;
     ppu->temp0      = 0;
     ppu->temp1      = 0;

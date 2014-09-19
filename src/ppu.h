@@ -15,6 +15,7 @@ typedef struct {
     void *vdevctxt;
     int   pin_vbl;
     int   toggle;
+    int   finex;
     WORD  vaddr;
     WORD  temp0;
     WORD  temp1;
