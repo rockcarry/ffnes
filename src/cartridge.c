@@ -8,6 +8,7 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
     FILE *fp   = NULL;
     BOOL  bret = FALSE;
 
+    strcpy(pcart->file, file);
     fp = fopen(file, "rb");
     if (!fp) return FALSE;
 
@@ -23,8 +24,21 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
 
     // allocate sram if exists
     if (cartridge_has_sram(pcart)) {
+        FILE *fp = NULL;
+        char save[MAX_PATH];
+        strcpy(save, file); strcat(save, ".sav");
+
         pcart->buf_sram = malloc(0x2000);
-        if (!pcart->buf_sram) goto done;
+        if (pcart->buf_sram)
+        {
+            fp = fopen(save, "rb");
+            if (fp) {
+                fread(pcart->buf_sram, 0x2000, 1, fp);
+                fclose(fp);
+            }
+            else memset(pcart->buf_sram, 0, 0x2000);
+        }
+        else goto done;
     }
 
     // read prom & crom
@@ -77,6 +91,17 @@ done:
 
 void cartridge_free(CARTRIDGE *pcart)
 {
+    if (cartridge_has_sram(pcart)) {
+        FILE *fp = NULL;
+        char save[MAX_PATH];
+        strcpy(save, pcart->file); strcat(save, ".sav");
+        fp = fopen(save, "wb");
+        if (fp) {
+            fwrite(pcart->buf_sram, 0x2000, 1, fp);
+            fclose(fp);
+        }
+    }
+
     if (pcart->buf_trainer) free(pcart->buf_trainer);
     if (pcart->buf_sram   ) free(pcart->buf_sram   );
     if (pcart->buf_prom   ) free(pcart->buf_prom   );

@@ -21,6 +21,7 @@ typedef struct {
     BYTE *buf_sram;
     BYTE *buf_prom;
     BYTE *buf_crom;
+    char  file[MAX_PATH];// nes rom file name
 } CARTRIDGE;
 #pragma pack()
 
