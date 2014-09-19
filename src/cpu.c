@@ -464,13 +464,6 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
 
     while (cclk > 0)
     {
-        //++ for ndb cpu debug ++//
-        {
-            NES *nes = container_of(cpu, NES, cpu);
-            ndb_cpu_debug(&(nes->ndb));
-        }
-        //-- for ndb cpu debug --//
-
         //++ dma cclk counting ++//
         if (cpu->cclk_dma > 0)
         {
@@ -515,6 +508,13 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
             cclk -= 7;
         }
         //-- handle irq interrupt --//
+
+        //++ for ndb cpu debug ++//
+        {
+            NES *nes = container_of(cpu, NES, cpu);
+            ndb_cpu_debug(&(nes->ndb));
+        }
+        //-- for ndb cpu debug --//
 
         // fetch opcode
         opcode = bus_readb(cpu->cbus, cpu->pc++);
