@@ -539,7 +539,7 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         break;
 
     case 0x0004:
-        ppu->sprram[pm->data[0x0003]] = byte;
+        ppu->sprram[pm->data[0x0003]++] = byte;
         break;
 
     case 0x0005:
