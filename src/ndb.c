@@ -502,7 +502,8 @@ static void ndb_dump_watch(NDB *ndb, int type, char *str)
 
 static void ndb_dump_banksw(NDB *ndb, char *str)
 {
-    sprintf(str, "mapper%03d:\r\n8000 %2d\r\nC000 %2d", ndb->nes->mmc.number, ndb->nes->mmc.bank8000, ndb->nes->mmc.bankc000);
+    sprintf(str, "mapper%03d  banksize: %dKB, bank0: %d, bank1: %d",
+        ndb->nes->mmc.number, ndb->nes->mmc.pbanksize/1024, ndb->nes->mmc.pbank8000, ndb->nes->mmc.pbankc000);
 }
 
 void ndb_dump_info(NDB *ndb, int type, char *str)
@@ -636,7 +637,7 @@ static void draw_sprite(void *bmp, int stride, int x, int y, BYTE *sprite, PPU *
     }
     else
     {
-        chrrom = nes->chrrom.data + (sprite[1] & 1) * 0x1000;
+        chrrom = (sprite[1] & 1) ? nes->chrrom1.data : nes->chrrom0.data;
         tile   = sprite[1] & ~(1 << 0);
     }
 
@@ -704,11 +705,8 @@ void ndb_dump_ppu(NDB *ndb, void *bmpbuf, int w, int h, int stride)
     render_name_table((DWORD*)bmpbuf + 240 * stride + 256, stride, ntab3, tilebkg, pal0, pal1, 1);
 
     //++ make sure tilebkg & tilespr not point to the same
-    if (tilespr == tilebkg)
-    {
-        if (tilespr != ndb->nes->chrrom.data) tilespr = ndb->nes->chrrom.data;
-        else tilespr = ndb->nes->chrrom.data + 0x1000;
-    }
+    tilespr = ((ndb->nes->ppu.regs[0x0000] & (1 << 4)) ^ (1 << 4)) ? ndb->nes->chrrom1.data : ndb->nes->chrrom0.data;
+
     //-- make sure tilebkg & tilespr not point to the same
     for (i=0; i<256; i++) ntabtmp[i] = i;
     render_name_table((DWORD*)bmpbuf + 32  * stride + 512 + 8, stride, ntabtmp, tilebkg, pal0, pal1, 4);

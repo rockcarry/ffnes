@@ -716,15 +716,15 @@ void CffndbdebugDlg::DrawCpuDebugging()
     // draw cpu pc & regs info
     {
         char cpuregs[128] = {0};
-        rect.left += 6; rect.top += 16;
+        rect.left += 6; rect.top += 6;
         ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_REGS0, cpuregs);
         m_cdcDraw.DrawText(cpuregs, -1, &rect, 0);
         rect.left += 0; rect.top += 22;
         ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_REGS1, cpuregs);
         m_cdcDraw.DrawText(cpuregs, -1, &rect, 0);
 
-        int gridx[] = {  3, 45+32*0, 45+32*1, 45+32*2, 45+32*3, 45+32*4, 256 };
-        int gridy[] = { 13, 13+22*1, 13+22*2 };
+        int gridx[] = { 3, 45+32*0, 45+32*1, 45+32*2, 45+32*3, 45+32*4, 256 };
+        int gridy[] = { 3, 3 +22*1, 3 +22*2 };
         DrawGrid(7, 3, gridx, gridy);
 
         char vector[128] = {0};
@@ -764,7 +764,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
             ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_BREAK_POINT0 + i, bpwv);
             m_cdcDraw.DrawText(bpwv, -1, &rect, 0);
         }
-        for (i=0; i<5; i++) gridy[i] += 137;
+        for (i=0; i<5; i++) gridy[i] += 127;
         DrawGrid(9, 3, gridx, gridy);
 
         rect.left = 6; rect.top += 29;
@@ -782,7 +782,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
     {
         char banksw[128];
         ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_BANKSW, banksw);
-        rect.left = 327; rect.top = 135;
+        rect.left = 6; rect.top = 295;
         m_cdcDraw.DrawText(banksw, -1, &rect, DT_LEFT);
     }
 
@@ -877,26 +877,28 @@ void CffndbdebugDlg::DrawPpuDebugging()
     case 1: // background tile
         tilex = (m_ptCurPixelPoint.x - 520) / 8;
         tiley = (m_ptCurPixelPoint.y - 32 ) / 8;
+        addr  = (m_pNES->ppu.regs[0x0000] & (1 << 4)) ? 0x1000 : 0x0000;
         details.Format(
             "details:\r\n"
             "chrbank: %d\r\n"
             "tabaddr: 0x%04X\r\n"
             "tile id: %d",
-            m_pNES->mmc.bankchrrom,
-            (m_pNES->ppu.regs[0x0000] & (1 << 4)) ? 0x1000 : 0x0000,
+            addr ? m_pNES->mmc.cbank1000 : m_pNES->mmc.cbank0000,
+            addr,
             tiley * 32 + tilex);
         break;
 
     case 2: // sprite tile
         tilex = (m_ptCurPixelPoint.x - 520) / 8;
         tiley = (m_ptCurPixelPoint.y - 128) / 8;
+        addr  = ((m_pNES->ppu.regs[0x0000] & (1 << 4)) ^ (1 << 4)) ? 0x1000 : 0x0000;
         details.Format(
             "details:\r\n"
             "chrbank: %d\r\n"
             "tabaddr: 0x%04X\r\n"
             "tile id: %d",
-            m_pNES->mmc.bankchrrom,
-            ((m_pNES->ppu.regs[0x0000] & (1 << 4)) ^ (1 << 4)) ? 0x1000 : 0x0000,
+            addr ? m_pNES->mmc.cbank1000 : m_pNES->mmc.cbank0000,
+            addr,
             tiley * 32 + tilex);
         break;
 

@@ -147,10 +147,13 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     //-- cbus mem map --//
 
     //++ pbus mem map ++//
-    // create CHR-ROM
-    nes->chrrom.type = MEM_ROM;
-    nes->chrrom.size = NES_CHRROM_SIZE;
-    nes->chrrom.data = nes->cart.buf_crom;
+    // create CHR-ROM0
+    nes->chrrom0.type = MEM_ROM;
+    nes->chrrom0.size = NES_CHRROM_SIZE;
+
+    // create CHR-ROM1
+    nes->chrrom1.type = MEM_ROM;
+    nes->chrrom1.size = NES_CHRROM_SIZE;
 
     // create vram
     mirroring = cartridge_get_vram_mirroring(&(nes->cart));
@@ -170,18 +173,19 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     bus_setmir(nes->pbus, 0, 0x3000, 0x3EFF, 0x2FFF);
     bus_setmir(nes->pbus, 1, 0x3F00, 0x3FFF, 0x3F1F);
 
-    bus_setmem(nes->pbus, 2, 0x0000, 0x1FFF, &(nes->chrrom ));
-    bus_setmem(nes->pbus, 3, 0x2000, 0x23FF, &(nes->vram[0]));
-    bus_setmem(nes->pbus, 4, 0x2400, 0x27FF, &(nes->vram[1]));
-    bus_setmem(nes->pbus, 5, 0x2800, 0x2BFF, &(nes->vram[2]));
-    bus_setmem(nes->pbus, 6, 0x2C00, 0x2FFF, &(nes->vram[3]));
+    bus_setmem(nes->pbus, 2, 0x0000, 0x0FFF, &(nes->chrrom0));
+    bus_setmem(nes->pbus, 3, 0x1000, 0x1FFF, &(nes->chrrom1));
+    bus_setmem(nes->pbus, 4, 0x2000, 0x23FF, &(nes->vram[0]));
+    bus_setmem(nes->pbus, 5, 0x2400, 0x27FF, &(nes->vram[1]));
+    bus_setmem(nes->pbus, 6, 0x2800, 0x2BFF, &(nes->vram[2]));
+    bus_setmem(nes->pbus, 7, 0x2C00, 0x2FFF, &(nes->vram[3]));
 
     // palette
     // 0x3F00 - 0x3F0F: image palette
     // 0x3F10 - 0x3F1F: sprite palette
     // 0x3F00, 0x3F04, 0x3F08, 0x3F0C, 0x3F10, 0x3F14, 0x3F18, 0x3F1C mirring and store the background color
-    bus_setmem(nes->pbus, 7, 0x3F00, 0x3F1F, &(nes->palette));
-    bus_setmem(nes->pbus, 8, 0x0000, 0x0000, NULL           );
+    bus_setmem(nes->pbus, 8, 0x3F00, 0x3F1F, &(nes->palette));
+    bus_setmem(nes->pbus, 9, 0x0000, 0x0000, NULL           );
     //-- pbus mem map --//
 
     // init mmc before cpu & ppu & apu, due to mmc will do bank switch

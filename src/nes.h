@@ -31,7 +31,7 @@
 #define NES_SRAM_SIZE     0x2000
 #define NES_PRGROM_SIZE   0x4000
 
-#define NES_CHRROM_SIZE   0x2000
+#define NES_CHRROM_SIZE   0x1000
 #define NES_VRAM_SIZE     0x0400
 #define NES_PALETTE_SIZE  0x0020
 
@@ -64,7 +64,8 @@ typedef struct tagNES {
 
     // ppu bus
     BUSITEM pbus[NES_MAX_BUS_SIZE];
-    MEM chrrom ; // CHR-ROM 8KB, int cart
+    MEM chrrom0; // CHR-ROM 4KB, int cart
+    MEM chrrom1; // CHR-ROM 4KB, int cart
     MEM vram[4]; // vram0 1KB * 4 vram, in ppu/cart
     MEM palette; // color palette in ppu
 
