@@ -312,10 +312,7 @@ static void sprite_render(PPU *ppu, int pixelc)
                 }
 
                 // update sprite 0 hit flag
-                if (n == 0 && ppu->pclk_line != 255 && pixelc)
-                {
-                    ppu->regs[0x0002] |= (1 << 6);
-                }
+                if (n == 0 && ppu->pclk_line != 255 && (pixelc & 0x3)) ppu->regs[0x0002] |= (1 << 6);
             }
             sprdata[2]++;
             sprdata[3]++;
@@ -326,7 +323,7 @@ static void sprite_render(PPU *ppu, int pixelc)
 static void ppu_run_step(PPU *ppu)
 {
     // scanline 0 pre-render scanline
-    if (ppu->pclk_frame == NES_HTOTAL * 0 + 256) // scanline 0, tick 256
+    if (ppu->pclk_frame == NES_HTOTAL * 0 + NES_HTOTAL - 1) // scanline 0, last tick
     {
         // clear vblank bit of reg $2002
         ppu->regs[0x0002] &= ~(7 << 5);
@@ -395,7 +392,7 @@ static void ppu_run_step(PPU *ppu)
                 }
             }
         }
-        else if (ppu->pclk_line == 256)
+        else if (ppu->pclk_line == NES_HTOTAL - 1)
         {
             // evaluate sprite
             if (ppu->_2001_lazy & (1 << 4)) sprite_evaluate(ppu);
