@@ -824,6 +824,21 @@ void CffndbdebugDlg::DrawPpuDebugging()
     // use ndb_dump_ppu to draw ppu info
     ndb_dump_ppu(&(m_pNES->ndb), m_bmpDrawBuf, m_bmpDrawWidth, m_bmpDrawHeight, m_bmpDrawStride);
 
+    //+ draw scrolling line
+    {
+        #define FINEX (m_pNES->ppu.temp1)
+        #define FINEY (m_pNES->ppu.temp0 >> 12)
+        #define TILEX ((m_pNES->ppu.temp0 >> 0) & 0x1f)
+        #define TILEY ((m_pNES->ppu.temp0 >> 5) & 0x1f)
+        int x = TILEX * 8 + FINEX + ((m_pNES->ppu.temp0 & (1 << 10)) ? 256 : 0);
+        int y = TILEY * 8 + FINEY + ((m_pNES->ppu.temp0 & (1 << 11)) ? 256 : 0);
+        m_cdcDraw.MoveTo(x, 0); m_cdcDraw.LineTo(x  , 512);
+        m_cdcDraw.MoveTo(0, y); m_cdcDraw.LineTo(512, y  );
+        m_cdcDraw.MoveTo((x+256)%512, 0); m_cdcDraw.LineTo((x+256)%512, 512);
+        m_cdcDraw.MoveTo(0, (y+240)%480); m_cdcDraw.LineTo(512, (y+240)%480);
+    }
+    //- draw scrolling line
+
     //++ for ppu details infomation ++//
     //+ for cursor
     RECT cursor = {0};
