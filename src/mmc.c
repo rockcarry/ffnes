@@ -55,7 +55,7 @@ static void mmc_switch_cbank4k0(MMC *mmc, int bank)
     mmc->cbanksize = 4 * 1024;
     mmc->cbank0000 = bank;
     bank = (bank == -1) ? (mmc->cart->crom_count * 2 - 1) : bank; // -1 is special, means the last bank
-    mmc->pbus[2].membank->data = mmc->cart->buf_crom + 0x1000 * (bank % (mmc->cart->prom_count * 2));
+    mmc->pbus[2].membank->data = mmc->cart->buf_crom + 0x1000 * (bank % (mmc->cart->crom_count * 2));
 }
 
 static void mmc_switch_cbank4k1(MMC *mmc, int bank)
@@ -63,7 +63,7 @@ static void mmc_switch_cbank4k1(MMC *mmc, int bank)
     mmc->cbanksize = 4 * 1024;
     mmc->cbank1000 = bank;
     bank = (bank == -1) ? (mmc->cart->crom_count * 2 - 1) : bank; // -1 is special, means the last bank
-    mmc->pbus[3].membank->data = mmc->cart->buf_crom + 0x1000 * (bank % (mmc->cart->prom_count * 2));
+    mmc->pbus[3].membank->data = mmc->cart->buf_crom + 0x1000 * (bank % (mmc->cart->crom_count * 2));
 }
 
 static void mmc_switch_cbank8k(MMC *mmc, int bank)
