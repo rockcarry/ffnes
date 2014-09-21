@@ -38,6 +38,7 @@ typedef struct {
     // sprite buffer for rendering
     BYTE  sprbuf[32]; // sprite buffer
     BYTE  sprnum;     // sprite number
+    BYTE *sprzero;    // sprite zero
 
     // palette for vdev rendering
     BYTE  vdevpal[64*4];

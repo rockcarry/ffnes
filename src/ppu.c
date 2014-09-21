@@ -216,9 +216,15 @@ static void sprite_evaluate(PPU *ppu)
     int   sy, tile, i;
     BYTE *chrrom, *sprsrc, *sprdst;
 
-    ppu->sprnum = 0;
     sprsrc = ppu->sprram;
     sprdst = ppu->sprbuf;
+
+    ppu->sprnum = 0;
+    if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh)
+    {
+        ppu->sprzero = sprdst;
+    }
+    else ppu->sprzero = NULL;
 
     for (i=0; i<64; i++)
     {
@@ -312,7 +318,10 @@ static void sprite_render(PPU *ppu, int pixelc)
                 }
 
                 // update sprite 0 hit flag
-                if (n == 0 && ppu->pclk_line != 255 && (pixelc & 0x3)) ppu->regs[0x0002] |= (1 << 6);
+                if (ppu->sprzero == sprdata && ppu->pclk_line != 255 && (pixelc & 0x3))
+                {
+                    ppu->regs[0x0002] |= (1 << 6);
+                }
             }
             sprdata[2]++;
             sprdata[3]++;
