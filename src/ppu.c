@@ -307,7 +307,7 @@ static void sprite_render(PPU *ppu, int pixelc)
 
             if (scolor)
             {
-                if (sprdata[2] & (1 << 6))
+                if ((sprdata[2] & (1 << 6)) && (pixelc & 0x3))
                 {
                     *ppu->draw_buffer = ((DWORD*)ppu->vdevpal)[ppu->palette[pixelc]];
                 }
