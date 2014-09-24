@@ -25,8 +25,7 @@
 // memory size defines
 #define NES_CRAM_SIZE     0x0800
 #define NES_PPUREGS_SIZE  0x0008
-#define NES_APUREGS_SIZE  0x0016
-#define NES_PADREGS_SIZE  0x000A
+#define NES_APUREGS_SIZE  0x0020
 #define NES_EROM_SIZE     0x1FE0
 #define NES_SRAM_SIZE     0x2000
 #define NES_PRGROM_SIZE   0x4000

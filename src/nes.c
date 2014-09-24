@@ -109,13 +109,6 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     nes->apuregs.r_callback = NES_APU_REG_RCB;
     nes->apuregs.w_callback = NES_APU_REG_WCB;
 
-    // create pad regs
-    nes->padregs.type = MEM_REG;
-    nes->padregs.size = NES_PADREGS_SIZE;
-    nes->padregs.data = nes->pad.regs;
-    nes->padregs.r_callback = NES_PAD_REG_RCB;
-    nes->padregs.w_callback = NES_PAD_REG_WCB;
-
     // create expansion rom
     nes->erom.type = MEM_ROM;
     nes->erom.size = NES_EROM_SIZE;
@@ -137,13 +130,12 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     // init nes cbus
     bus_setmem(nes->cbus, 0, 0x0000, 0x1FFF, &(nes->cram   ));
     bus_setmem(nes->cbus, 1, 0x2000, 0x3FFF, &(nes->ppuregs));
-    bus_setmem(nes->cbus, 2, 0x4000, 0x4015, &(nes->apuregs));
-    bus_setmem(nes->cbus, 3, 0x4016, 0x401F, &(nes->padregs));
-    bus_setmem(nes->cbus, 4, 0x4020, 0x5FFF, &(nes->erom   ));
-    bus_setmem(nes->cbus, 5, 0x6000, 0x7FFF, &(nes->sram   ));
-    bus_setmem(nes->cbus, 6, 0x8000, 0xBFFF, &(nes->prom0  ));
-    bus_setmem(nes->cbus, 7, 0xC000, 0xFFFF, &(nes->prom1  ));
-    bus_setmem(nes->cbus, 8, 0x0000, 0x0000, NULL           );
+    bus_setmem(nes->cbus, 2, 0x4000, 0x401F, &(nes->apuregs));
+    bus_setmem(nes->cbus, 3, 0x4020, 0x5FFF, &(nes->erom   ));
+    bus_setmem(nes->cbus, 4, 0x6000, 0x7FFF, &(nes->sram   ));
+    bus_setmem(nes->cbus, 5, 0x8000, 0xBFFF, &(nes->prom0  ));
+    bus_setmem(nes->cbus, 6, 0xC000, 0xFFFF, &(nes->prom1  ));
+    bus_setmem(nes->cbus, 7, 0x0000, 0x0000, NULL           );
     //-- cbus mem map --//
 
     //++ pbus mem map ++//

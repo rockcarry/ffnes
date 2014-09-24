@@ -4,13 +4,13 @@
 // 内部函数实现
 static void mmc_switch_pbank16k0(MMC *mmc, int bank)
 {
-    BYTE *oldbank0 = mmc->cbus[6].membank->data;
+    BYTE *oldbank0 = mmc->cbus[5].membank->data;
     mmc->pbanksize = 16 * 1024;
     mmc->pbank8000 = bank;
     bank = (bank == -1) ? (mmc->cart->prom_count - 1) : bank; // -1 is special, means the last bank
-    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
+    mmc->cbus[5].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
 
-    if (oldbank0 != mmc->cbus[6].membank->data)
+    if (oldbank0 != mmc->cbus[5].membank->data)
     {
         ((NES*)container_of(mmc, NES, mmc))->ndb.banksw = 1;
     }
@@ -18,13 +18,13 @@ static void mmc_switch_pbank16k0(MMC *mmc, int bank)
 
 static void mmc_switch_pbank16k1(MMC *mmc, int bank)
 {
-    BYTE *oldbank1 = mmc->cbus[7].membank->data;
+    BYTE *oldbank1 = mmc->cbus[6].membank->data;
     mmc->pbanksize = 16 * 1024;
     mmc->pbankc000 = bank;
     bank = (bank == -1) ? (mmc->cart->prom_count - 1) : bank; // -1 is special, means the last bank
-    mmc->cbus[7].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
+    mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
 
-    if (oldbank1 != mmc->cbus[7].membank->data)
+    if (oldbank1 != mmc->cbus[6].membank->data)
     {
         ((NES*)container_of(mmc, NES, mmc))->ndb.banksw = 1;
     }
@@ -32,8 +32,8 @@ static void mmc_switch_pbank16k1(MMC *mmc, int bank)
 
 static void mmc_switch_pbank32k(MMC *mmc, int bank)
 {
-    BYTE *oldbank0 = mmc->cbus[6].membank->data;
-    BYTE *oldbank1 = mmc->cbus[7].membank->data;
+    BYTE *oldbank0 = mmc->cbus[5].membank->data;
+    BYTE *oldbank1 = mmc->cbus[6].membank->data;
 
     mmc->pbanksize = 32 * 1024;
     mmc->pbank8000 = bank;
@@ -41,10 +41,10 @@ static void mmc_switch_pbank32k(MMC *mmc, int bank)
 
     bank = (bank == -1) ? (mmc->cart->prom_count - 2) : bank * 2; // -1 is special, means the last bank
     bank = (bank <   0) ? 0 : bank; // make sure bank is >= 0
-    mmc->cbus[6].membank->data = mmc->cbus[7].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
-    if (bank + 1 < mmc->cart->prom_count) mmc->cbus[7].membank->data += 0x4000;
+    mmc->cbus[5].membank->data = mmc->cbus[6].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
+    if (bank + 1 < mmc->cart->prom_count) mmc->cbus[6].membank->data += 0x4000;
 
-    if (oldbank0 != mmc->cbus[6].membank->data || oldbank1 != mmc->cbus[7].membank->data)
+    if (oldbank0 != mmc->cbus[5].membank->data || oldbank1 != mmc->cbus[6].membank->data)
     {
         ((NES*)container_of(mmc, NES, mmc))->ndb.banksw = 1;
     }
@@ -114,7 +114,7 @@ static void mapper002_init(MMC *mmc)
 {
     // using 8KB chr-ram instead of chr-rom
     // so we allocate 8KB chrram buffer
-    if (mmc->data = malloc(8192)) memset(mmc->data, 0, 8192);
+    if ((mmc->data = malloc(8192))) memset(mmc->data, 0, 8192);
 }
 
 static void mapper002_free(MMC *mmc)
@@ -215,8 +215,8 @@ void mmc_init(MMC *mmc, CARTRIDGE *cart, BUS cbus, BUS pbus)
     // init cbus memory bank callback
     if (mapper)
     {
-        mmc->cbus[6].membank->w_callback = mapper->wcb0;
-        mmc->cbus[7].membank->w_callback = mapper->wcb1;
+        mmc->cbus[5].membank->w_callback = mapper->wcb0;
+        mmc->cbus[6].membank->w_callback = mapper->wcb1;
     }
 
     // call mapper init if exsits

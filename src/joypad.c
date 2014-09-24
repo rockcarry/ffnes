@@ -95,7 +95,7 @@ void joypad_setkey(JOYPAD *jp, int pad, int key, int value)
 
 BYTE NES_PAD_REG_RCB(MEM *pm, int addr)
 {
-    NES    *nes = container_of(pm, NES, padregs);
+    NES    *nes = container_of(pm, NES, apuregs);
     JOYPAD *pad = &(nes->pad);
 
     if (pad->strobe) pm->data[addr] = 0;
@@ -109,7 +109,7 @@ BYTE NES_PAD_REG_RCB(MEM *pm, int addr)
 
         switch (addr)
         {
-        case 0x0000: // 4016
+        case 0x0016: // 4016
             if (pad->counter_4016 < 8) {
                 pm->data[addr] = (BYTE)(pad->pad_data[0] >> (pad->counter_4016 - 0)) & 0x1;
             }
@@ -124,7 +124,7 @@ BYTE NES_PAD_REG_RCB(MEM *pm, int addr)
             }
             if (pad->counter_4016 < 32) pad->counter_4016++;
             break;
-        case 0x0001: // 4017
+        case 0x0017: // 4017
             if (pad->counter_4017 < 8) {
                 pm->data[addr] = (BYTE)(pad->pad_data[1] >> (pad->counter_4017 - 0)) & 0x1;
             }
@@ -146,12 +146,12 @@ BYTE NES_PAD_REG_RCB(MEM *pm, int addr)
 
 void NES_PAD_REG_WCB(MEM *pm, int addr, BYTE byte)
 {
-    NES    *nes = container_of(pm, NES, padregs);
+    NES    *nes = container_of(pm, NES, apuregs);
     JOYPAD *pad = &(nes->pad);
 
     switch (addr)
     {
-    case 0x0000: // 4016
+    case 0x0016: // 4016
         if (byte & 0x1) {
             pad->strobe       = 1;
             pad->counter_4016 = 0;

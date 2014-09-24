@@ -46,7 +46,15 @@ void apu_run_pclk(APU *apu, int pclk)
 
 BYTE NES_APU_REG_RCB(MEM *pm, int addr)
 {
-    return pm->data[addr];
+    switch (addr)
+    {
+    case 0x0016:
+    case 0x0017:
+        return NES_PAD_REG_RCB(pm, addr);
+
+    default:
+        return pm->data[addr];
+    }
 }
 
 void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
@@ -60,6 +68,11 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
             nes->ppu.sprram[i] = bus_readb(nes->cbus, byte * 256 + i);
         }
         nes->cpu.cclk_dma += 512;
+        break;
+
+    case 0x0016:
+    case 0x0017:
+        NES_PAD_REG_WCB(pm, addr, byte);
         break;
     }
 }
