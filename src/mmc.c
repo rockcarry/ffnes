@@ -92,8 +92,10 @@ static void mapper000_reset(MMC *mmc)
 {
     mmc_switch_pbank16k0(mmc, 0); // prom0 - first bank
     mmc_switch_pbank16k1(mmc,-1); // prom1 - last  bank
-    mmc_switch_cbank4k0 (mmc, 0); // crom0 - first bank
-    mmc_switch_cbank4k1 (mmc,-1); // crom1 - last  bank
+    if (mmc->cart->crom_count) {
+        mmc_switch_cbank4k0(mmc, 0); // crom0 - first bank
+        mmc_switch_cbank4k1(mmc,-1); // crom1 - last  bank
+    }
 }
 
 static MAPPER mapper000 =
