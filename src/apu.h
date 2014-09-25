@@ -7,6 +7,18 @@
 #include "mem.h"
 
 // 类型定义
+typedef struct
+{
+    int length_counter;
+    int envlop_divider;
+    int envlop_counter;
+    int envlop_volume;
+    int envlop_start;
+    int wavseq_divider;
+    int wavseq_counter;
+    int output_value;
+} SQUARE_CHANNEL;
+
 typedef struct {
     BYTE regs[0x20];
 
@@ -16,14 +28,8 @@ typedef struct {
     int  mixer_divider;
     int  mixer_counter;
 
-    int  sch0_length_counter;
-    int  sch0_envlop_divider;
-    int  sch0_envlop_counter;
-    int  sch0_envlop_volume;
-    int  sch0_wavseq_divider;
-    int  sch0_wavseq_counter;
-    int  sch0_output_value;
-    int _4003_write_flag;
+    SQUARE_CHANNEL sch1;
+    SQUARE_CHANNEL sch2;
 
 // private:
     void     *adevctxt;
