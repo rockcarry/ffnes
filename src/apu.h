@@ -8,7 +8,22 @@
 
 // 类型定义
 typedef struct {
-    BYTE  regs[0x16];
+    BYTE regs[0x20];
+
+    int  frame_interrupt;
+    int  frame_divider;
+    int  frame_counter;
+    int  mixer_divider;
+    int  mixer_counter;
+
+    int  sch0_length_counter;
+    int  sch0_envlop_divider;
+    int  sch0_envlop_counter;
+    int  sch0_envlop_volume;
+    int  sch0_wavseq_divider;
+    int  sch0_wavseq_counter;
+    int  sch0_output_value;
+    int _4003_write_flag;
 
 // private:
     void     *adevctxt;
