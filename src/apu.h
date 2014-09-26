@@ -25,8 +25,11 @@ typedef struct {
     int  frame_interrupt;
     int  frame_divider;
     int  frame_counter;
+
     int  mixer_divider;
     int  mixer_counter;
+    int  mixer_table_ss [31];
+    int  mixer_table_tnd[203];
 
     SQUARE_CHANNEL sch1;
     SQUARE_CHANNEL sch2;

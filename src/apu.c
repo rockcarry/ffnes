@@ -64,10 +64,7 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int fel)
                 if (sch->envlop_counter > 0) sch->envlop_counter--;
 
                 // if loop is set and counter is zero, it is set to 15
-                if (regs[0x0000] & (1 << 5) && sch->envlop_counter == 0)
-                {
-                    sch->envlop_counter = 15;
-                }
+                else if (regs[0x0000] & (1 << 5)) sch->envlop_counter = 15;
 
                 // reloaded with the period
                 sch->envlop_divider = SCH_ENVLOP_DIVIDER;
@@ -108,8 +105,15 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int fel)
 // º¯ÊýÊµÏÖ
 void apu_init(APU *apu, DWORD extra)
 {
+    int i;
+
     // create adev & request buffer
     apu->adevctxt = adev_create(APU_ABUF_NUM, APU_ABUF_LEN);
+
+    // create mixer lookup table
+    apu->mixer_table_ss[0] = apu->mixer_table_tnd[0] = 0;
+    for (i=1; i<31 ; i++) apu->mixer_table_ss [i] = (int)(0xffff * 95.52  / (8128.0  / i + 100));
+    for (i=1; i<203; i++) apu->mixer_table_tnd[i] = (int)(0xffff * 163.67 / (24329.0 / i + 100));
 
     // reset apu
     apu_reset(apu);
@@ -194,7 +198,13 @@ void apu_run_pclk(APU *apu, int pclk)
         // for mixer ouput
         if (--apu->mixer_divider == 0)
         {
-            ((DWORD*)apu->audiobuf->lpdata)[apu->mixer_counter++] = apu->sch1.output_value * 1024 + apu->sch2.output_value * 1024;
+            int triangle = 0;
+            int noise    = 0;
+            int dmc      = 0;
+            int squ_out  = apu->mixer_table_ss [apu->sch1.output_value + apu->sch2.output_value];
+            int tnd_out  = apu->mixer_table_tnd[3 * triangle + 2 * noise + dmc];
+            int sample   = squ_out + tnd_out - 0x7fff;
+            ((DWORD*)apu->audiobuf->lpdata)[apu->mixer_counter++] = (sample << 16) | (sample << 0);
             apu->mixer_divider = MIXER_DIVIDER;
         }
     }
@@ -282,6 +292,11 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
     case 0x0017:
         NES_PAD_REG_WCB(pm, addr, byte);
 
+        //++ for frame sequencer
+        nes->apu.frame_divider = FRAME_DIVIDER;
+        nes->apu.frame_counter = 0;
+        //-- for frame sequencer
+
         // interrupt inhibit flag. ff set, the frame interrupt flag is cleared
         if (byte & (1 << 6)) nes->apu.frame_interrupt = 0;
 
@@ -291,11 +306,6 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
             apu_render_square_channel(&(nes->apu.sch1), (BYTE*)nes->apu.regs + 0, 0x03);
             apu_render_square_channel(&(nes->apu.sch2), (BYTE*)nes->apu.regs + 4, 0x03);
         }
-
-        //++ for frame sequencer
-        nes->apu.frame_divider = FRAME_DIVIDER;
-        nes->apu.frame_counter = 0;
-        //-- for frame sequencer
         break;
     }
 }
