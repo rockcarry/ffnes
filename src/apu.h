@@ -13,7 +13,11 @@ typedef struct
     int envlop_divider;
     int envlop_counter;
     int envlop_volume;
-    int envlop_start;
+    int envlop_reset;
+    int sweepu_divider;
+    int sweepu_value;
+    int sweepu_reset;
+    int sweepu_silence;
     int wavseq_divider;
     int wavseq_counter;
     int output_value;
