@@ -41,19 +41,31 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
         else goto done;
     }
 
-    // read prom & crom
+    // read prom data
     if (pcart->prom_count > 0)
     {
         pcart->buf_prom = malloc(pcart->prom_count * 0x4000);
         if (!pcart->buf_prom) goto done;
         fread(pcart->buf_prom, pcart->prom_count * 0x4000, 1, fp);
     }
-    if (pcart->crom_count > 0)
+
+    // read crom data
+    if (pcart->crom_count) pcart->ischrram = 0;
+    else
     {
-        pcart->buf_crom = malloc(pcart->crom_count * 0x2000);
-        if (!pcart->buf_crom) goto done;
-        fread(pcart->buf_crom, pcart->crom_count * 0x2000, 1, fp);
+        pcart->ischrram   = 1;
+        pcart->crom_count = 1;
     }
+
+    // allocate buffer for crom/cram
+    pcart->buf_crom = malloc(pcart->crom_count * 0x2000);
+    if (!pcart->buf_crom) goto done;
+
+    // init buffer for crom/cram
+    if (pcart->ischrram) memset(pcart->buf_crom, 0, pcart->crom_count * 0x2000);
+    else fread(pcart->buf_crom, pcart->crom_count * 0x2000, 1, fp);
+
+    // successed
     bret = TRUE;
 
 done:

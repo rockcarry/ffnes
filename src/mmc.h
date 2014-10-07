@@ -12,7 +12,6 @@ typedef struct {
     BUS        cbus;
     BUS        pbus;
     int        number; // mapper number
-    void      *data;   // mapper data
 
     // for bank switch
     int        pbanksize;

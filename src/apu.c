@@ -7,7 +7,7 @@
 
 #define FRAME_DIVIDER       (NES_FREQ_PPU / 240)
 #define MIXER_DIVIDER       (NES_HTOTAL*NES_VTOTAL / 800 + 1)
-#define SCH_ENVLOP_DIVIDER  ((regs[0x0000] & 0x0f) + 1)
+#define SCH_ENVLOP_DIVIDER  ((regs[0x0000] & 0xf) + 1)
 #define SCH_SWEEPU_DIVIDER  (((regs[0x0001] >> 4) & 0x7) + 1)
 #define SCH_WAVSEQ_DIVIDER  (48 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
 
@@ -28,6 +28,8 @@ static void apu_reset_square_channel(SQUARE_CHANNEL *sch, BYTE *regs)
     sch->envlop_volume  = 0;
     sch->sweepu_divider = SCH_SWEEPU_DIVIDER;
     sch->sweepu_value   = 0;
+    sch->sweepu_reset   = 0;
+    sch->sweepu_silence = 0;
     sch->wavseq_divider = SCH_WAVSEQ_DIVIDER;
     sch->wavseq_counter = 0;
     sch->output_value   = 0;
@@ -80,16 +82,19 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int fel)
         // the divider is *first* clocked
         if (--sch->sweepu_divider == 0)
         {
-            int negate   = (regs[0x0001] & (1 << 3)) ? -1 : 1;
-            int shifterc = regs[0x0001] & 0x7;
-            int shifterv = (SCH_SWEEPU_DIVIDER / 48) >> shifterc;
-            int shiftert = sch->wavseq_divider + 48 * negate * shifterv;
+            int negate    = (regs[0x0001] & (1 << 3)) ? -1 : 1;
+            int shifterc  = regs[0x0001] & 0x7;
+            int shifterv  = (SCH_SWEEPU_DIVIDER / 48) >> shifterc;
+            int tarperiod = sch->wavseq_divider + 48 * negate * shifterv;
 
-            if (sch->wavseq_divider < 8 * 48 || shiftert > 0x7ff * 48) sch->sweepu_silence = 1;
-            else if (regs[0x0001] & (1 << 7) && shifterc)
+            if (SCH_WAVSEQ_DIVIDER < 8 * 48 || tarperiod > 0x7ff * 48) sch->sweepu_silence = 1;
+            else
             {
+                if (regs[0x0001] & (1 << 7) && shifterc)
+                {
+                    sch->wavseq_divider = tarperiod;
+                }
                 sch->sweepu_silence = 0;
-                sch->wavseq_divider = shiftert;
             }
 
             sch->sweepu_divider = SCH_SWEEPU_DIVIDER;
@@ -151,8 +156,8 @@ void apu_init(APU *apu, DWORD extra)
 
     // create mixer lookup table
     apu->mixer_table_ss[0] = apu->mixer_table_tnd[0] = 0;
-    for (i=1; i<31 ; i++) apu->mixer_table_ss [i] = (int)(0xffff * 95.52  / (8128.0  / i + 100));
-    for (i=1; i<203; i++) apu->mixer_table_tnd[i] = (int)(0xffff * 163.67 / (24329.0 / i + 100));
+    for (i=1; i<31 ; i++) apu->mixer_table_ss [i] = (int)(0x10000 * 95.52  / (8128.0  / i + 100));
+    for (i=1; i<203; i++) apu->mixer_table_tnd[i] = (int)(0x10000 * 163.67 / (24329.0 / i + 100));
 
     // reset apu
     apu_reset(apu);
@@ -242,7 +247,7 @@ void apu_run_pclk(APU *apu, int pclk)
             int dmc      = 0;
             int squ_out  = apu->mixer_table_ss [apu->sch1.output_value + apu->sch2.output_value];
             int tnd_out  = apu->mixer_table_tnd[3 * triangle + 2 * noise + dmc];
-            int sample   = squ_out + tnd_out - 0x7fff;
+            int sample   = squ_out + tnd_out;
             ((DWORD*)apu->audiobuf->lpdata)[apu->mixer_counter++] = (sample << 16) | (sample << 0);
             apu->mixer_divider = MIXER_DIVIDER;
         }

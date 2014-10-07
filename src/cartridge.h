@@ -22,6 +22,7 @@ typedef struct {
     BYTE *buf_prom;
     BYTE *buf_crom;
     char  file[MAX_PATH];// nes rom file name
+    int   ischrram;      // cartridge is using chr-rom or chr-ram
 } CARTRIDGE;
 #pragma pack()
 

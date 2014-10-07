@@ -92,10 +92,8 @@ static void mapper000_reset(MMC *mmc)
 {
     mmc_switch_pbank16k0(mmc, 0); // prom0 - first bank
     mmc_switch_pbank16k1(mmc,-1); // prom1 - last  bank
-    if (mmc->cart->crom_count) {
-        mmc_switch_cbank4k0(mmc, 0); // crom0 - first bank
-        mmc_switch_cbank4k1(mmc,-1); // crom1 - last  bank
-    }
+    mmc_switch_cbank4k0 (mmc, 0); // crom0 - first bank
+    mmc_switch_cbank4k1 (mmc,-1); // crom1 - last  bank
 }
 
 static MAPPER mapper000 =
@@ -110,31 +108,6 @@ static MAPPER mapper000 =
 
 
 //++ mapper002 й╣ож ++//
-static void mapper002_init(MMC *mmc)
-{
-    // using 8KB chr-ram instead of chr-rom
-    // so we allocate 8KB chrram buffer
-    if ((mmc->data = malloc(8192))) memset(mmc->data, 0, 8192);
-}
-
-static void mapper002_free(MMC *mmc)
-{
-    if (mmc->data)
-    {
-        free(mmc->data);
-        mmc->data = NULL;
-    }
-}
-
-static void mapper002_reset(MMC *mmc)
-{
-    mmc->pbus[2].membank->type  = MEM_RAM;
-    mmc->pbus[2].membank->data  = mmc->data;
-    mmc->pbus[3].membank->type  = MEM_RAM;
-    mmc->pbus[3].membank->data  = mmc->data;
-    mmc->pbus[3].membank->data += 0x1000;
-}
-
 static void mapper002_wcb0(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prom0);
@@ -149,9 +122,9 @@ static void mapper002_wcb1(MEM *pm, int addr, BYTE byte)
 
 static MAPPER mapper002 =
 {
-    mapper002_init,
-    mapper002_free,
-    mapper002_reset,
+    NULL,
+    NULL,
+    NULL,
     mapper002_wcb0,
     mapper002_wcb1,
 };
@@ -207,7 +180,6 @@ void mmc_init(MMC *mmc, CARTRIDGE *cart, BUS cbus, BUS pbus)
     mmc->cbus   = cbus;
     mmc->pbus   = pbus;
     mmc->number = cartridge_get_mappercode(cart);
-    mmc->data   = NULL;
 
     // get mapper by number
     mapper = g_mapper_list[mmc->number];
@@ -219,8 +191,15 @@ void mmc_init(MMC *mmc, CARTRIDGE *cart, BUS cbus, BUS pbus)
         mmc->cbus[6].membank->w_callback = mapper->wcb1;
     }
 
+    // if cartridge is using chr-ram
+    if (mmc->cart->ischrram)
+    {
+        mmc->pbus[2].membank->type = MEM_RAM;
+        mmc->pbus[3].membank->type = MEM_RAM;
+    }
+
     // call mapper init if exsits
-    if (mapper && mapper->init ) mapper->init(mmc);
+    if (mapper && mapper->init) mapper->init(mmc);
 
     // call mmc reset
     mmc_reset(mmc);
