@@ -326,7 +326,7 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
     case 0x0014:
         //++ for sprite dma
         for (i=0; i<256; i++) {
-            nes->ppu.sprram[i] = bus_readb(nes->cbus, byte * 256 + i);
+            nes->ppu.sprram[nes->ppu.regs[0x0003]++] = bus_readb(nes->cbus, byte * 256 + i);
         }
         nes->cpu.cclk_dma += 512;
         //-- for sprite dma
