@@ -332,7 +332,7 @@ static void sprite_render(PPU *ppu, int pixelc)
 static void ppu_run_step(PPU *ppu)
 {
     // scanline 0 pre-render scanline
-    if (ppu->pclk_frame == NES_HTOTAL * 0 + NES_HTOTAL - 1) // scanline 0, last tick
+    if (ppu->pclk_frame == NES_HTOTAL * 0 + 1) // scanline 0, tick 1
     {
         // clear vblank bit of reg $2002
         ppu->regs[0x0002] &= ~(7 << 5);
@@ -429,7 +429,7 @@ static void ppu_run_step(PPU *ppu)
     // do nothing
 
     // scanline 242 - 261 vblank
-    else if (ppu->pclk_frame == NES_HTOTAL * 242 + 1) // scanline 242, tick 1
+    else if (ppu->pclk_frame == NES_HTOTAL * 242 + 15) // scanline 242, tick 15
     {
         // unlock video device
         vdev_unlock(ppu->vdevctxt);
@@ -437,7 +437,7 @@ static void ppu_run_step(PPU *ppu)
         // set vblank bit of reg $2002
         ppu->regs[0x0002] |= (1 << 7);
     }
-    else if (ppu->pclk_frame >= NES_HTOTAL * 242 + 2 && ppu->pclk_frame <= NES_HTOTAL * 262 - 1)
+    else if (ppu->pclk_frame >= NES_HTOTAL * 242 + 16 && ppu->pclk_frame <= NES_HTOTAL * 262 - 1)
     {
         // this code will keep pull low vblank pin
         ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
