@@ -32,12 +32,14 @@ void mem_writeb(MEM *pm, int addr, BYTE byte)
     // wrap around
     addr %= pm->size;
 
-    if (pm->type != MEM_ROM) {
-        if (pm->data) pm->data[addr] = byte;
+    // memory write callback
+    if (pm->w_callback)
+    {
+        pm->w_callback(pm, addr, byte);
+        return;
     }
 
-    // memory write callback
-    if (pm->w_callback) pm->w_callback(pm, addr, byte);
+    if (pm->type != MEM_ROM && pm->data) pm->data[addr] = byte;
 }
 
 void mem_writew(MEM *pm, int addr, WORD word)
@@ -45,15 +47,14 @@ void mem_writew(MEM *pm, int addr, WORD word)
     // wrap around
     addr %= pm->size;
 
-    if (pm->type != MEM_ROM) {
-        if (pm->data) *(WORD*)(pm->data + addr) = word;
-    }
-
     // memory write callback
     if (pm->w_callback) {
         pm->w_callback(pm, addr + 0, (BYTE)(word > 0));
         pm->w_callback(pm, addr + 1, (BYTE)(word > 1));
+        return;
     }
+
+    if (pm->type != MEM_ROM && pm->data) *(WORD*)(pm->data + addr) = word;
 }
 
 BYTE mem_readb_norwcb(MEM *pm, int addr)

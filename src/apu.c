@@ -362,5 +362,8 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         }
         break;
     }
+
+    // save reg write value
+    pm->data[addr] = byte;
 }
 

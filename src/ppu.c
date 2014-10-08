@@ -565,6 +565,11 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         if (!(byte & 0x18)) ppu->_2001_lazy = byte;
         break;
 
+    case 0x0002:
+        byte &= ~(1 << 7);
+        byte |= pm->data[0x0002] & (1 << 7);
+        break;
+
     case 0x0004:
         ppu->sprram[pm->data[0x0003]++] = byte;
         break;
@@ -628,6 +633,9 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
         break;
     }
+
+    // save reg write value
+    pm->data[addr] = byte;
 }
 
 

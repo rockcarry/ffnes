@@ -531,17 +531,34 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
         {
             if (opopt != 4)
             {
-                // addressing
-                switch (opmat)
+                //++ for lda abs,x & lda abs,y dummy read
+                if (opcode == 0xbd)
                 {
-                case 0: MR_IX(); break; // (indir,x)
-                case 1: MR_ZP(); break; // zeropage
-                case 2: MR_IM(); break; // immediate
-                case 3: MR_AB(); break; // absolute
-                case 4: MR_IY(); CHECK_EA(); break; // (indir),y
-                case 5: MR_ZX(); break; // zeropage,x
-                case 6: MR_AY(); CHECK_EA(); break; // absolute,y
-                case 7: MR_AX(); CHECK_EA(); break; // absolute,x
+                    ET = READW(PC); PC += 2; EA = ET + XI;
+                    if ((ET & 0xFF00) != (EA & 0xFF00)) { READB(ET + (EA & 0xff)); cclk--; }
+                    DT = READB(EA);
+                }
+                else if (opcode == 0xb1)
+                {
+                    DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI;
+                    if ((ET & 0xFF00) != (EA & 0xFF00)) { READB(ET + (EA & 0xff)); cclk--; }
+                    DT = READB(EA);
+                }
+                else
+                //-- for lda abs,x & lda abs,y dummy read
+                {
+                    // addressing
+                    switch (opmat)
+                    {
+                    case 0: MR_IX(); break; // (indir,x)
+                    case 1: MR_ZP(); break; // zeropage
+                    case 2: MR_IM(); break; // immediate
+                    case 3: MR_AB(); break; // absolute
+                    case 4: MR_IY(); CHECK_EA(); break; // (indir),y
+                    case 5: MR_ZX(); break; // zeropage,x
+                    case 6: MR_AY(); CHECK_EA(); break; // absolute,y
+                    case 7: MR_AX(); CHECK_EA(); break; // absolute,x
+                    }
                 }
 
                 // excute
@@ -560,14 +577,14 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
             {
                 switch (opmat)
                 {
-                case 0: EA_IX(); STA(); MW_EA(); break; // STA
-                case 1: EA_ZP(); STA(); MW_ZP(); break; // STA
-                case 2: NOP();   PC++;           break; // NOP
-                case 3: EA_AB(); STA(); MW_EA(); break; // STA
-                case 4: EA_IY(); STA(); MW_EA(); break; // STA
-                case 5: EA_ZX(); STA(); MW_ZP(); break; // STA
-                case 6: EA_AY(); STA(); MW_EA(); break; // STA
-                case 7: EA_AX(); STA(); MW_EA(); break; // STA
+                case 0: EA_IX(); STA(); MW_EA(); break; // STA (indir,x)
+                case 1: EA_ZP(); STA(); MW_ZP(); break; // STA zeropage
+                case 2: NOP();   PC++;           break; // NOP immediate
+                case 3: EA_AB(); STA(); MW_EA(); break; // STA absolute
+                case 4: EA_IY(); READB(ET + (EA & 0xff)); STA(); MW_EA(); break; // STA (indir),y
+                case 5: EA_ZX(); STA(); MW_ZP(); break; // STA zeropage,x
+                case 6: EA_AY(); STA(); MW_EA(); break; // STA absolute,y
+                case 7: EA_AX(); READB(ET + (EA & 0xff)); STA(); MW_EA(); break; // STA absolute,x
                 }
             }
             continue;
@@ -612,17 +629,28 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
 
 
         //++ ASL, ROL, LSR, ROR ++//
-        if ((opcode & 0x83) == 0x02 && opmat != 0
-           && opmat != 4 && opmat != 6)
+        if ( (opcode & 0x83) == 0x02
+           && opmat != 0 && opmat != 4 && opmat != 6)
         {
-            // addressing
-            switch (opmat)
+            //++ for rol abs,x dummy read
+            if (opcode == 0x3e)
             {
-            case 1: MR_ZP(); break; // zeropage
-            case 2: DT = AX; break; // implied
-            case 3: MR_AB(); break; // absolute
-            case 5: MR_ZX(); break; // zeropage,x
-            case 7: MR_AX(); break; // absolute,x
+                ET = READW(PC); PC += 2; EA = ET + XI;
+                READB(ET + (EA & 0xff));
+                DT = READB(EA);
+            }
+            else
+            //-- for rol abs,x dummy read
+            {
+                // addressing
+                switch (opmat)
+                {
+                case 1: MR_ZP(); break; // zeropage
+                case 2: DT = AX; break; // implied
+                case 3: MR_AB(); break; // absolute
+                case 5: MR_ZX(); break; // zeropage,x
+                case 7: MR_AX(); break; // absolute,x
+                }
             }
 
             // excute
