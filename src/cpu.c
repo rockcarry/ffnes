@@ -415,6 +415,11 @@ static BYTE CPU_CYCLE_TAB[256] =
 void cpu_init(CPU *cpu, BUS cbus)
 {
     cpu->cbus = cbus;
+    cpu->ax   = 0x00;
+    cpu->xi   = 0x00;
+    cpu->yi   = 0x00;
+    cpu->sp   = 0x00;
+    cpu->ps   = R_FLAG;
     cpu_reset(cpu);
 }
 
@@ -425,18 +430,15 @@ void cpu_free(CPU *cpu)
 
 void cpu_reset(CPU *cpu)
 {
-    cpu->pc = bus_readw(cpu->cbus, RST_VECTOR);
-    cpu->sp = 0xff;
-    cpu->ax = 0x00;
-    cpu->xi = 0x00;
-    cpu->yi = 0x00;
-    cpu->ps = I_FLAG | R_FLAG;
-    cpu->nmi_last    = 1;
-    cpu->nmi_cur     = 1;
-    cpu->irq_flag    = 1;
-    cpu->pclk_diff   = 0;
-    cpu->cclk_diff   = 0;
-    cpu->cclk_dma    = 0;
+    cpu->pc  = bus_readw(cpu->cbus, RST_VECTOR);
+    cpu->sp -= 0x03;
+    cpu->ps |= I_FLAG;
+    cpu->nmi_last  = 1;
+    cpu->nmi_cur   = 1;
+    cpu->irq_flag  = 1;
+    cpu->pclk_diff = 0;
+    cpu->cclk_diff = 0;
+    cpu->cclk_dma  = 0;
 }
 
 void cpu_nmi(CPU *cpu, int nmi)
