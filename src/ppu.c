@@ -518,9 +518,13 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
         break;
 
     case 0x0007:
-        byte = ppu->_2007_lazy;
-        ppu->_2007_lazy = bus_readb(nes->pbus, vaddr);
-        if (vaddr >= 0x3f00) byte = ppu->_2007_lazy & 0x3f;
+        if (vaddr < 0x3f00)
+        {
+            byte            = ppu->_2007_lazy;
+            ppu->_2007_lazy = bus_readb(nes->pbus, vaddr);
+        }
+        else byte = bus_readb(nes->pbus, vaddr);
+        // increase vaddr by 1 or 32
         ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
         break;
     }
@@ -585,9 +589,12 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         break;
 
     case 0x0007:
-        if (vaddr >= 0x3f00)
-        {   // for ppu palette mirroring
-            if (vaddr == 0x3f00 || vaddr == 0x3f10)
+        if (vaddr < 0x3f00) bus_writeb(nes->pbus, vaddr, byte);
+        else
+        {
+            // for ppu palette mirroring
+            vaddr &= 0x001f;
+            if (vaddr == 0x0000 || vaddr == 0x0010)
             {
                 ppu->palette[0x00] = byte;
                 ppu->palette[0x04] = byte;
@@ -600,10 +607,10 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
             }
             else if (vaddr & 0x3)
             {
-                ppu->palette[vaddr & 0x1f] = byte;
+                ppu->palette[vaddr] = byte;
             }
         }
-        else bus_writeb(nes->pbus, vaddr, byte);
+        // increase vaddr by 1 or 32
         ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
         break;
     }
