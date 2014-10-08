@@ -533,7 +533,11 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
             byte            = ppu->_2007_lazy;
             ppu->_2007_lazy = bus_readb(nes->pbus, vaddr);
         }
-        else byte = bus_readb(nes->pbus, vaddr);
+        else
+        {
+            byte            = bus_readb(nes->pbus, vaddr);
+            ppu->_2007_lazy = bus_readb(nes->pbus, vaddr & 0x2fff);
+        }
         // increase vaddr by 1 or 32
         ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
         break;
