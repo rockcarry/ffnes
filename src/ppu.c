@@ -556,8 +556,8 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
     case 0x0000:
         ppu->temp0 &=~(0x03 << 10);
         ppu->temp0 |= (byte & 0x03) << 10;
-        ppu->chrom_bkg = (ppu->regs[0x0000] & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
-        ppu->chrom_spr = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
+        ppu->chrom_bkg = (byte & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
+        ppu->chrom_spr = (byte & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
         break;
 
     case 0x0001:
