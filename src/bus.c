@@ -4,59 +4,54 @@
 // º¯ÊýÊµÏÖ
 static MEM* find_mem_bank(BUS bus, int baddr, int *maddr)
 {
-    int i;
-    for (i=0; bus[i].membank; i++) {
-        if (baddr >= bus[i].start && baddr <= bus[i].end)
+    do {
+        if (baddr >= bus->start && baddr <= bus->end)
         {
-            if (bus[i].type == BUS_MAP_MIRROR) {
-                baddr &= bus[i].mirmask;
-                continue;
-            }
-
-            if (bus[i].type == BUS_MAP_MEMORY) {
-                *maddr = baddr - bus[i].start;
-                return bus[i].membank;
+            switch (bus->type)
+            {
+            case BUS_MAP_MIRROR:
+                baddr &= bus->mirmask;
+                break;
+            case BUS_MAP_MEMORY:
+                *maddr = baddr - bus->start;
+                return bus->membank;
             }
         }
-    }
+    } while (bus++->membank);
     return NULL;
 }
 
-BYTE bus_readb(BUS bus, int baddr)
+BYTE bus_readb(BUS bus, int addr)
 {
-    int  maddr = 0;
-    MEM *mbank = find_mem_bank(bus, baddr, &maddr);
+    MEM *mbank = find_mem_bank(bus, addr, &addr);
     if (mbank) {
-        return mem_readb(mbank, maddr);
+        return mem_readb(mbank, addr);
     }
     else return 0;
 }
 
-WORD bus_readw(BUS bus, int baddr)
+WORD bus_readw(BUS bus, int addr)
 {
-    int  maddr = 0;
-    MEM *mbank = find_mem_bank(bus, baddr, &maddr);
+    MEM *mbank = find_mem_bank(bus, addr, &addr);
     if (mbank) {
-        return mem_readw(mbank, maddr);
+        return mem_readw(mbank, addr);
     }
     else return 0;
 }
 
-void bus_writeb(BUS bus, int baddr, BYTE byte)
+void bus_writeb(BUS bus, int addr, BYTE byte)
 {
-    int  maddr = 0;
-    MEM *mbank = find_mem_bank(bus, baddr, &maddr);
+    MEM *mbank = find_mem_bank(bus, addr, &addr);
     if (mbank) {
-        mem_writeb(mbank, maddr, byte);
+        mem_writeb(mbank, addr, byte);
     }
 }
 
-void bus_writew(BUS bus, int baddr, WORD word)
+void bus_writew(BUS bus, int addr, WORD word)
 {
-    int  maddr = 0;
-    MEM *mbank = find_mem_bank(bus, baddr, &maddr);
+    MEM *mbank = find_mem_bank(bus, addr, &addr);
     if (mbank) {
-        mem_writew(mbank, maddr, word);
+        mem_writew(mbank, addr, word);
     }
 }
 
@@ -77,22 +72,20 @@ void bus_setmir(BUS bus, int i, int start, int end, WORD mirmask)
 }
 
 // bus read without rw callback
-BYTE bus_readb_norwcb(BUS bus, int baddr)
+BYTE bus_readb_norwcb(BUS bus, int addr)
 {
-    int  maddr = 0;
-    MEM *mbank = find_mem_bank(bus, baddr, &maddr);
+    MEM *mbank = find_mem_bank(bus, addr, &addr);
     if (mbank) {
-        return mem_readb_norwcb(mbank, maddr);
+        return mem_readb_norwcb(mbank, addr);
     }
     else return 0;
 }
 
-WORD bus_readw_norwcb(BUS bus, int baddr)
+WORD bus_readw_norwcb(BUS bus, int addr)
 {
-    int  maddr = 0;
-    MEM *mbank = find_mem_bank(bus, baddr, &maddr);
+    MEM *mbank = find_mem_bank(bus, addr, &addr);
     if (mbank) {
-        return mem_readw_norwcb(mbank, maddr);
+        return mem_readw_norwcb(mbank, addr);
     }
     else return 0;
 }

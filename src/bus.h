@@ -23,16 +23,16 @@ typedef struct {
 } *BUS, BUSITEM;
 
 // º¯ÊýÉùÃ÷
-BYTE bus_readb (BUS bus, int baddr);
-WORD bus_readw (BUS bus, int baddr);
-void bus_writeb(BUS bus, int baddr, BYTE  byte);
-void bus_writew(BUS bus, int baddr, WORD  word);
+BYTE bus_readb (BUS bus, int addr);
+WORD bus_readw (BUS bus, int addr);
+void bus_writeb(BUS bus, int addr, BYTE byte);
+void bus_writew(BUS bus, int addr, WORD word);
 void bus_setmem(BUS bus, int i, int start, int end, MEM *membank);
 void bus_setmir(BUS bus, int i, int start, int end, WORD mirmask);
 
 // bus read without rw callback
-BYTE bus_readb_norwcb(BUS bus, int baddr);
-WORD bus_readw_norwcb(BUS bus, int baddr);
+BYTE bus_readb_norwcb(BUS bus, int addr);
+WORD bus_readw_norwcb(BUS bus, int addr);
 
 #endif
 
