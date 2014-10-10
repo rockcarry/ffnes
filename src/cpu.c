@@ -366,12 +366,14 @@ flags.
     SET_ZN_FLAG(AX);        \
 } while (0)
 
+// ARR Similar to AND #i then ROR A, except sets the flags differently. N and Z are normal,
+// but C is bit 6 and V is bit 6 xor bit 5.
 #define ARR() do {          \
     DT &= AX;               \
     AX  = (DT >> 1)|((PS&C_FLAG) << 7); \
     SET_ZN_FLAG(AX);        \
     TST_FLAG(AX & 0x40, C_FLAG);        \
-    TST_FLAG((AX>>6)^(AX>>5), O_FLAG ); \
+    TST_FLAG((AX^(AX<<1))&0x40, O_FLAG);\
 } while (0)
 
 #define ANE() do {          \
