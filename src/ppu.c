@@ -331,8 +331,8 @@ static void sprite_render(PPU *ppu, int pixelc)
 
 static void ppu_run_step(PPU *ppu)
 {
-    // scanline 0 pre-render scanline
-    if (ppu->pclk_frame == NES_HTOTAL * 0 + 1) // scanline 0, tick 1
+    // scanline 261 pre-render scanline
+    if (ppu->pclk_frame == NES_HTOTAL * 261 + 1) // scanline 261, tick 1
     {
         // clear vblank bit of reg $2002
         ppu->regs[0x0002] &= ~(7 << 5);
@@ -340,14 +340,8 @@ static void ppu_run_step(PPU *ppu)
         // update vblank pin status
         ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
 
-        if (ppu->_2001_lazy != ppu->regs[0x0001])
-        {
-            if ((ppu->_2001_lazy & 0xe1) != (ppu->regs[0x0001] & 0xe1))
-            {
-                ppu_set_vdev_pal(ppu, ppu->regs[0x0001] & 0xe1);
-            }
-            ppu->_2001_lazy = ppu->regs[0x0001];
-        }
+        // update _2001_lazy variable
+        ppu->_2001_lazy = ppu->regs[0x0001];
 
         // if sprite or name-tables are visible.
         if (ppu->_2001_lazy & (0x3 << 3))
@@ -368,10 +362,10 @@ static void ppu_run_step(PPU *ppu)
         vdev_lock(ppu->vdevctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
     }
 
-    // scanline 1 - 240 visible scanlines
-    else if (ppu->pclk_frame >= NES_HTOTAL * 1 && ppu->pclk_frame <= NES_HTOTAL * 241 - 1)
+    // scanline 0 - 239 visible scanlines
+    else if (ppu->pclk_frame < NES_HTOTAL * 240)
     {
-        if (ppu->pclk_line >= 0 && ppu->pclk_line <= 255)
+        if (ppu->pclk_line < 256)
         {
             int pixelc = 0;
 
@@ -393,13 +387,21 @@ static void ppu_run_step(PPU *ppu)
             // do x increment
             if (ppu->_2001_lazy & (0x3 << 3))
             {
-                ppu->draw_buffer++;
-
                 if (ppu_xincrement(ppu)) {
                     // fetch tile data
                     ppu_fetch_tile(ppu);
                 }
             }
+            else
+            {
+                if (ppu->vaddr > 0x3f00)
+                {
+                    *ppu->draw_buffer = ((DWORD*)ppu->vdevpal)[ppu->palette[ppu->vaddr & 0x1f]];
+                }
+            }
+
+            // next pixel of vdev draw buffer
+            ppu->draw_buffer++;
         }
         else if (ppu->pclk_line == NES_HTOTAL - 1)
         {
@@ -408,9 +410,6 @@ static void ppu_run_step(PPU *ppu)
 
             if (ppu->_2001_lazy & (0x3 << 3))
             {
-                ppu->draw_buffer -= 256;
-                ppu->draw_buffer += ppu->draw_stride;
-
                 // at dot 256, reget vaddr from temp0
                 ppu->vaddr &= ~0x041f;
                 ppu->vaddr |= (ppu->temp0 & 0x041f);
@@ -422,14 +421,18 @@ static void ppu_run_step(PPU *ppu)
                 // fetch tile data
                 ppu_fetch_tile(ppu);
             }
+
+            // next scanline of vdev draw buffer
+            ppu->draw_buffer -= 256;
+            ppu->draw_buffer += ppu->draw_stride;
         }
     }
 
-    // scanline 241 post-render scanline
+    // scanline 240 post-render scanline
     // do nothing
 
-    // scanline 242 - 261 vblank
-    else if (ppu->pclk_frame == NES_HTOTAL * 242 + 15) // scanline 242, tick 15
+    // scanline 241 - 260 vblank
+    else if (ppu->pclk_frame == NES_HTOTAL * 241 + 15) // scanline 241, tick 15
     {
         // unlock video device
         vdev_unlock(ppu->vdevctxt);
@@ -437,7 +440,7 @@ static void ppu_run_step(PPU *ppu)
         // set vblank bit of reg $2002
         ppu->regs[0x0002] |= (1 << 7);
     }
-    else if (ppu->pclk_frame >= NES_HTOTAL * 242 + 16 && ppu->pclk_frame <= NES_HTOTAL * 262 - 1)
+    else if (ppu->pclk_frame >  NES_HTOTAL * 241 + 15 && ppu->pclk_frame < NES_HTOTAL * 261)
     {
         // this code will keep pull low vblank pin
         ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
@@ -505,6 +508,7 @@ void ppu_reset(PPU *ppu)
     ppu->chrom_spr  = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
     ppu->pclk_frame = 0;
     ppu->pclk_line  = 0;
+    ppu->scanline   = 0;
     ppu_set_vdev_pal(ppu, 0);
     memset(ppu->regs, 0, 8); // reset need clear regs
 }
@@ -563,6 +567,12 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
     case 0x0001:
         // if write d3 & d4 to zero, update _2001_lazy immediately
         if (!(byte & 0x18)) ppu->_2001_lazy = byte;
+
+        // if d7-d5 or d0 changed, we need update palette
+        if ((ppu->regs[0x0001] & 0xe1) != (byte & 0xe1))
+        {
+            ppu_set_vdev_pal(ppu, byte & 0xe1);
+        }
         break;
 
     case 0x0002:

@@ -17,8 +17,8 @@ typedef struct {
     int   toggle;
     int   finex;
     WORD  vaddr;
-    WORD  temp0;
-    WORD  temp1;
+    WORD  temp0; // correspond to vaddr
+    WORD  temp1; // correspond to finex
     BYTE _2007_lazy;
     BYTE _2001_lazy;
     BYTE *chrom_bkg;
