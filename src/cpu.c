@@ -153,8 +153,8 @@ flags.
 
 #define SBC() do {                  \
     WT = AX - DT - (~PS & C_FLAG);  \
-    TST_FLAG((AX^DT) & (AX^WT) & 0x80, O_FLAG); \
     TST_FLAG(WT < 0x100, C_FLAG);   \
+    TST_FLAG((AX^DT) & (AX^WT) & 0x80, O_FLAG); \
     AX = (BYTE)WT;                  \
     SET_ZN_FLAG(AX);                \
 } while (0)
@@ -234,18 +234,18 @@ flags.
 #define LDA() do { AX = DT; SET_ZN_FLAG(AX); } while (0)
 #define LDX() do { XI = DT; SET_ZN_FLAG(XI); } while (0)
 #define LDY() do { YI = DT; SET_ZN_FLAG(YI); } while (0)
-#define LAX() do { AX = DT; XI = DT; SET_ZN_FLAG(AX);           } while (0)
-#define LXA() do { AX = XI = ((AX|0xEE) & DT); SET_ZN_FLAG(AX); } while (0)
-#define LAS() do { AX = XI = SP = (SP & DT);   SET_ZN_FLAG(AX); } while (0)
+#define LAX() do { AX = DT; XI = DT; SET_ZN_FLAG(AX);         } while (0)
+#define LXA() do { AX = XI = (AX | DT) & DT; SET_ZN_FLAG(AX); } while (0)
+#define LAS() do { AX = XI = SP = (SP & DT); SET_ZN_FLAG(AX); } while (0)
 
 #define STA() do { DT = AX;      } while (0)
 #define STX() do { DT = XI;      } while (0)
 #define STY() do { DT = YI;      } while (0)
 #define SAX() do { DT = AX & XI; } while (0)
-#define SHA() do { DT = AX & XI & (BYTE)((EA >> 8) + 1);      } while (0)
-#define SHY() do { DT = YI & (BYTE)((EA>>8)+1);               } while (0)
-#define SHX() do { DT = XI & (BYTE)((EA>>8)+1);               } while (0)
-#define SHS() do { SP = AX & XI; DT = SP & (BYTE)((EA>>8)+1); } while (0)
+#define SHA() do { DT = AX & XI & ((ET>>8)+1);          } while (0)
+#define SHY() do { DT = YI & ((ET>>8)+1);               } while (0)
+#define SHX() do { DT = XI & ((ET>>8)+1);               } while (0)
+#define SHS() do { SP = AX & XI; DT = SP & ((ET>>8)+1); } while (0)
 
 #define CPX() do {                  \
     WT = (WORD)XI - (WORD)DT;       \
@@ -382,10 +382,12 @@ flags.
 } while (0)
 
 #define SBX() do {          \
-    WT = (AX&XI) - DT;      \
+    XI &= AX;               \
+    PS |= C_FLAG;           \
+    WT  = XI - DT;          \
     TST_FLAG(WT < 0x100, C_FLAG);   \
-    XI = WT & 0xFF;         \
-    SET_ZN_FLAG(AX);        \
+    XI  = (BYTE)WT;         \
+    SET_ZN_FLAG(XI);        \
 } while (0)
 
 #define NOP() do {} while (0)
