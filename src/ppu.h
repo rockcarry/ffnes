@@ -13,7 +13,7 @@ typedef struct {
 
 // private:
     void *vdevctxt;
-    int   pin_vbl;
+    int   pinvbl;
     int   toggle;
     int   finex;
     WORD  vaddr;
@@ -21,6 +21,7 @@ typedef struct {
     WORD  temp1; // correspond to finex
     BYTE _2007_lazy;
     BYTE _2001_lazy;
+    BYTE _2002_last;
     BYTE *chrom_bkg;
     BYTE *chrom_spr;
 

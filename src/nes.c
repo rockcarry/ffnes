@@ -41,10 +41,10 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
 
         totalpclk = NES_HTOTAL * NES_VTOTAL;
         do {
+            cpu_run_pclk(&(nes->cpu));
             apu_run_pclk(&(nes->apu));
             ppu_run_pclk(&(nes->ppu));
-            cpu_run_pclk(&(nes->cpu));
-            cpu_nmi(&(nes->cpu), nes->ppu.pin_vbl);
+            cpu_nmi(&(nes->cpu), nes->ppu.pinvbl);
         } while (--totalpclk > 0);
 
         //++ framerate control ++//

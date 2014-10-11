@@ -959,7 +959,7 @@ void CffndbdebugDlg::DrawPpuDebugging()
             "%04X  %-4d  %04X  %04X  %c%c%c%c %c%c",
             (m_pNES->ppu.regs[0x0000] & (1 << 7)) ? 'e' : 'd',
             (m_pNES->ppu.regs[0x0002] & (1 << 7)) ? 1 : 0,
-            m_pNES->ppu.pin_vbl ? 'h' : 'l',
+            m_pNES->ppu.pinvbl ? 'h' : 'l',
             (m_pNES->ppu.regs[0x0001] & (1 << 0)) ? 'm' : 'c',
             (m_pNES->ppu.regs[0x0001] >> 5),
             m_pNES->ppu.pclk_line,

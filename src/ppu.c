@@ -331,14 +331,20 @@ static void sprite_render(PPU *ppu, int pixelc)
 
 void ppu_run_pclk(PPU *ppu)
 {
+    //++ update vblank pin status
+    if (  ppu->pclk_frame >= NES_HTOTAL * 241 + 4 && ppu->pclk_frame <= NES_HTOTAL * 261 + 1
+       || ppu->pclk_frame == NES_HTOTAL * 261 + 7 )
+    {
+        ppu->pinvbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
+    }
+    //-- update vblank pin status
+
     // scanline 261 pre-render scanline
     if (ppu->pclk_frame == NES_HTOTAL * 261 + 1) // scanline 261, tick 1
     {
         // clear vblank bit of reg $2002
+        ppu->_2002_last = ppu->regs[0x0002];
         ppu->regs[0x0002] &= ~(7 << 5);
-
-        // update vblank pin status
-        ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
 
         // update _2001_lazy variable
         ppu->_2001_lazy = ppu->regs[0x0001];
@@ -438,12 +444,8 @@ void ppu_run_pclk(PPU *ppu)
         vdev_unlock(ppu->vdevctxt);
 
         // set vblank bit of reg $2002
+        ppu->_2002_last = ppu->regs[0x0002];
         ppu->regs[0x0002] |= (1 << 7);
-    }
-    else if (ppu->pclk_frame > NES_HTOTAL * 241 + 1 && ppu->pclk_frame < NES_HTOTAL * 261)
-    {
-        // this code will keep pull low vblank pin
-        ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
     }
 
     if (++ppu->pclk_frame == NES_HTOTAL * NES_VTOTAL)
@@ -491,7 +493,7 @@ void ppu_reset(PPU *ppu)
 {
     NES *nes = container_of(ppu, NES, ppu);
 
-    ppu->pin_vbl    = 1;
+    ppu->pinvbl     = 1;
     ppu->toggle     = 0;
     ppu->finex      = 0;
     ppu->vaddr      = 0;
@@ -519,6 +521,11 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
     {
     case 0x0002:
         pm->data[0x0002] &= ~(1 << 7); // after a read occurs, D7 is set to 0 
+        if (  ppu->pclk_frame == NES_HTOTAL * 241 + 2
+           || ppu->pclk_frame == NES_HTOTAL * 261 + 2)
+        {
+            byte = ppu->_2002_last;
+        }
         ppu->toggle = 0; // after a read occurs, toggle is reset
         break;
 
