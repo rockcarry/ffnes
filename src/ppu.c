@@ -329,7 +329,7 @@ static void sprite_render(PPU *ppu, int pixelc)
     }
 }
 
-static void ppu_run_step(PPU *ppu)
+void ppu_run_pclk(PPU *ppu)
 {
     // scanline 261 pre-render scanline
     if (ppu->pclk_frame == NES_HTOTAL * 261 + 1) // scanline 261, tick 1
@@ -432,7 +432,7 @@ static void ppu_run_step(PPU *ppu)
     // do nothing
 
     // scanline 241 - 260 vblank
-    else if (ppu->pclk_frame == NES_HTOTAL * 241 + 15) // scanline 241, tick 15
+    else if (ppu->pclk_frame == NES_HTOTAL * 241 + 1) // scanline 241, tick 15
     {
         // unlock video device
         vdev_unlock(ppu->vdevctxt);
@@ -440,7 +440,7 @@ static void ppu_run_step(PPU *ppu)
         // set vblank bit of reg $2002
         ppu->regs[0x0002] |= (1 << 7);
     }
-    else if (ppu->pclk_frame >  NES_HTOTAL * 241 + 15 && ppu->pclk_frame < NES_HTOTAL * 261)
+    else if (ppu->pclk_frame > NES_HTOTAL * 241 + 1 && ppu->pclk_frame < NES_HTOTAL * 261)
     {
         // this code will keep pull low vblank pin
         ppu->pin_vbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
@@ -459,11 +459,6 @@ static void ppu_run_step(PPU *ppu)
         ppu->pclk_line = 0;
         ppu->scanline++;
     }
-}
-
-void ppu_run_pclk(PPU *ppu, int pclk)
-{
-    do { ppu_run_step(ppu); } while (--pclk);
 }
 
 // º¯ÊýÊµÏÖ

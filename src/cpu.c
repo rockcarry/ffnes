@@ -129,7 +129,7 @@ flags.
 #define EA_IY()    do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI;                 } while (0)
 #define MW_ZP()    do { ZPWRB(EA, DT);                                                  } while (0)
 #define MW_EA()    do { WRITEB(EA, DT);                                                 } while (0)
-#define CHECK_EA() do { if ((ET & 0xFF00) != (EA & 0xFF00)) cclk--;                     } while (0)
+#define CHECK_EA() do { if ((ET & 0xFF00) != (EA & 0xFF00)) cpu->cclk_counter--;        } while (0)
 //-- addressing mode --//
 
 //++ instruction ++//
@@ -325,7 +325,7 @@ flags.
     ET = PC;                \
     EA = PC + (char)DT;     \
     PC = EA;                \
-    cclk--;                 \
+    cpu->cclk_counter--;    \
     CHECK_EA();             \
 } while (0)
 
@@ -434,15 +434,16 @@ void cpu_free(CPU *cpu)
 
 void cpu_reset(CPU *cpu)
 {
-    cpu->pc  = bus_readw(cpu->cbus, RST_VECTOR);
-    cpu->sp -= 0x03;
-    cpu->ps |= I_FLAG;
-    cpu->nmi_last  = 1;
-    cpu->nmi_cur   = 1;
-    cpu->irq_flag  = 1;
-    cpu->pclk_diff = 0;
-    cpu->cclk_diff = 0;
-    cpu->cclk_dma  = 0;
+    cpu->pc           = READW(RST_VECTOR);
+    cpu->cclk_instr   = CPU_CYCLE_TAB[READB(PC)];
+    cpu->sp          -= 0x03;
+    cpu->ps          |= I_FLAG;
+    cpu->nmi_last     = 1;
+    cpu->nmi_cur      = 1;
+    cpu->irq_flag     = 1;
+    cpu->pclk_divider = 3;
+    cpu->cclk_counter = 0;
+    cpu->cclk_dma     = 0;
 }
 
 void cpu_nmi(CPU *cpu, int nmi)
@@ -455,66 +456,17 @@ void cpu_irq(CPU *cpu, int irq)
     cpu->irq_flag = irq;
 }
 
-static void cpu_run_cclk(CPU *cpu, int cclk)
+static void cpu_run_cclk(CPU *cpu)
 {
-    BYTE opcode = 0;
-    BYTE opmat  = 0;
-    BYTE opopt  = 0;
-    BYTE DT     = 0;
-    WORD EA     = 0;
-    WORD ET     = 0;
-    WORD WT     = 0;
+    BYTE opcode, opmat, opopt, DT;
+    WORD ET, EA, WT;
 
-    // for cclk diff
-    cclk += cpu->cclk_diff;
+    //++ dma cclk counting ++//
+    if (cpu->cclk_dma > 0) { cpu->cclk_dma--; return; }
+    //-- dma cclk counting --//
 
-    while (cclk > 0)
+    if (++cpu->cclk_counter == cpu->cclk_instr)
     {
-        //++ dma cclk counting ++//
-        if (cpu->cclk_dma > 0)
-        {
-            if (cclk > cpu->cclk_dma)
-            {
-                cclk -= cpu->cclk_dma;
-                cpu->cclk_dma = 0;
-            }
-            else
-            {
-                cpu->cclk_dma -= cclk;
-                cclk = 0;
-                break;
-            }
-        }
-        //-- dma cclk counting --//
-
-        //++ handle nmi interrupt ++//
-        if (cpu->nmi_last != cpu->nmi_cur) {
-            cpu->nmi_last  = cpu->nmi_cur;
-            if (cpu->nmi_cur == 0) { // negative edge
-                PUSH((PC >> 8) & 0xff);
-                PUSH((PC >> 0) & 0xff);
-                CLR_FLAG(B_FLAG);
-                PUSH(PS);
-                SET_FLAG(I_FLAG);
-                PC = READW(NMI_VECTOR);
-                cclk -= 7;
-            }
-        }
-        //-- handle nmi interrupt --//
-
-        //++ handle irq interrupt ++//
-        if (!cpu->irq_flag && !(cpu->ps & I_FLAG))
-        {
-            PUSH((PC >> 8) & 0xff);
-            PUSH((PC >> 0) & 0xff);
-            CLR_FLAG(B_FLAG);
-            PUSH(PS);
-            SET_FLAG(I_FLAG);
-            PC = READW(IRQ_VECTOR);
-            cclk -= 7;
-        }
-        //-- handle irq interrupt --//
-
         //++ for ndb cpu debug ++//
         {
             NES *nes = container_of(cpu, NES, cpu);
@@ -527,8 +479,8 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
         opmat  = (opcode & 0x1c) >> 2;
         opopt  = (opcode >> 5);
 
-        // calculate new cclk
-        cclk -= CPU_CYCLE_TAB[opcode];
+        // after executed cclk_counter become 0
+        cpu->cclk_counter = 0;
 
         //++ ORA, AND, EOR, ADC, STA, LDA, CMP, SBC ++//
         if ((opcode & 0x3) == 0x01)
@@ -539,13 +491,13 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
                 if (opcode == 0xbd)
                 {
                     ET = READW(PC); PC += 2; EA = ET + XI;
-                    if ((ET & 0xFF00) != (EA & 0xFF00)) { READB(ET + (EA & 0xff)); cclk--; }
+                    if ((ET & 0xFF00) != (EA & 0xFF00)) { READB(ET + (EA & 0xff)); cpu->cclk_counter--; }
                     DT = READB(EA);
                 }
                 else if (opcode == 0xb1)
                 {
                     DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI;
-                    if ((ET & 0xFF00) != (EA & 0xFF00)) { READB(ET + (EA & 0xff)); cclk--; }
+                    if ((ET & 0xFF00) != (EA & 0xFF00)) { READB(ET + (EA & 0xff)); cpu->cclk_counter--; }
                     DT = READB(EA);
                 }
                 else
@@ -591,7 +543,7 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
                 case 7: EA_AX(); READB(ET + (EA & 0xff)); STA(); MW_EA(); break; // STA absolute,x
                 }
             }
-            continue;
+            goto done;
         }
         //-- ORA, AND, EOR, ADC, LDA, CMP, SBC --//
 
@@ -627,7 +579,7 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
             case 5: MW_ZP(); break;
             default:MW_EA(); break;
             }
-            continue;
+            goto done;
         }
         //-- SLO, RLA, SRE, RRA --//
 
@@ -674,7 +626,7 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
             case 2: AX = DT; break;
             default:MW_EA(); break;
             }
-            continue;
+            goto done;
         }
         //-- ASL, ROL, LSR, ROR --//
 
@@ -846,18 +798,47 @@ static void cpu_run_cclk(CPU *cpu, int cclk)
 
         default: UDF(); break; // undefined opcode
         }
-    }
 
-    // for cclk diff
-    cpu->cclk_diff = cclk;
+done:
+        //++ handle nmi interrupt ++//
+        if (cpu->nmi_last != cpu->nmi_cur) {
+            cpu->nmi_last  = cpu->nmi_cur;
+            if (cpu->nmi_cur == 0) { // negative edge
+                PUSH((PC >> 8) & 0xff);
+                PUSH((PC >> 0) & 0xff);
+                CLR_FLAG(B_FLAG);
+                PUSH(PS);
+                SET_FLAG(I_FLAG);
+                PC = READW(NMI_VECTOR);
+                cpu->cclk_counter -= 7;
+            }
+        }
+        //-- handle nmi interrupt --//
+
+        //++ handle irq interrupt ++//
+        if (!cpu->irq_flag && !(cpu->ps & I_FLAG))
+        {
+            PUSH((PC >> 8) & 0xff);
+            PUSH((PC >> 0) & 0xff);
+            CLR_FLAG(B_FLAG);
+            PUSH(PS);
+            SET_FLAG(I_FLAG);
+            PC = READW(IRQ_VECTOR);
+            cpu->cclk_counter -= 7;
+        }
+        //-- handle irq interrupt --//
+
+        // cclk cycles needed of next instruction
+        cpu->cclk_instr = CPU_CYCLE_TAB[READB(PC)];
+    }
 }
 
-void cpu_run_pclk(CPU *cpu, int pclk)
+void cpu_run_pclk(CPU *cpu)
 {
-    int cclk = 0;
-    pclk += cpu->pclk_diff;
-    cclk  = pclk / 3;
-    cpu->pclk_diff = pclk - cclk * 3;
-    cpu_run_cclk(cpu, cclk);
+    if (--cpu->pclk_divider == 0)
+    {
+        cpu_run_cclk(cpu);
+        cpu->pclk_divider = 3;
+    }
 }
 

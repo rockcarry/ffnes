@@ -22,12 +22,13 @@ typedef struct {
     BYTE cram[2048]; // cpu ram, 2KB
 
 // private:
-    int  nmi_last;
-    int  nmi_cur;
-    int  irq_flag;
-    long pclk_diff;
-    long cclk_diff;
-    long cclk_dma;
+    int nmi_last;
+    int nmi_cur;
+    int irq_flag;
+    int pclk_divider;
+    int cclk_counter;
+    int cclk_instr;
+    int cclk_dma;
 } CPU;
 
 // º¯ÊýÉùÃ÷
@@ -36,7 +37,7 @@ void cpu_free    (CPU *cpu);
 void cpu_reset   (CPU *cpu);
 void cpu_nmi     (CPU *cpu, int nmi);
 void cpu_irq     (CPU *cpu, int irq);
-void cpu_run_pclk(CPU *cpu, int pclk);
+void cpu_run_pclk(CPU *cpu);
 
 #endif
 

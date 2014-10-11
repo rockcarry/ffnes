@@ -28,7 +28,6 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
     DWORD dwTickDiff  = 0;
     DWORD dwTickSleep = 0;
     int   totalpclk;
-    int   torunpclk;
 
     while (1)
     {
@@ -42,14 +41,11 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
 
         totalpclk = NES_HTOTAL * NES_VTOTAL;
         do {
-            torunpclk  = (totalpclk < 8) ? totalpclk : 8;
-            totalpclk -= torunpclk;
-
-            apu_run_pclk(&(nes->apu), torunpclk);
-            cpu_run_pclk(&(nes->cpu), torunpclk);
-            ppu_run_pclk(&(nes->ppu), torunpclk);
+            apu_run_pclk(&(nes->apu));
+            ppu_run_pclk(&(nes->ppu));
+            cpu_run_pclk(&(nes->cpu));
             cpu_nmi(&(nes->cpu), nes->ppu.pin_vbl);
-        } while (totalpclk > 0);
+        } while (--totalpclk > 0);
 
         //++ framerate control ++//
         dwTickCur  = GetTickCount();

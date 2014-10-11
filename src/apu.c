@@ -182,10 +182,9 @@ void apu_reset(APU *apu)
     apu->pclk_frame = 0;
 }
 
-void apu_run_pclk(APU *apu, int pclk)
+void apu_run_pclk(APU *apu)
 {
     int fel = 0;
-    int i;
 
     if (apu->pclk_frame == 0) {
         // request audio buffer
@@ -197,67 +196,61 @@ void apu_run_pclk(APU *apu, int pclk)
     }
 
     //++ render audio data on audio buffer ++//
-    for (i=0; i<pclk; i++)
+    //+ frame sequencer
+    if (--apu->frame_divider == 0)
     {
-        //+ frame sequencer
-        if (--apu->frame_divider == 0)
-        {
-            if (apu->regs[0x0017] & (1 << 7))
-            {   // 5 step
-                switch (apu->frame_counter)
-                {
-                case 0: fel |= (3 << 0); break; //  el
-                case 1: fel |= (1 << 0); break; //  e
-                case 2: fel |= (3 << 0); break; //  el
-                case 3: fel |= (1 << 0); break; //  e
-                }
-                apu->frame_counter++;
-                apu->frame_counter %= 5;
-            }
-            else // 4 step
+        if (apu->regs[0x0017] & (1 << 7))
+        {   // 5 step
+            switch (apu->frame_counter)
             {
-                switch (apu->frame_counter)
-                {
-                case 0: fel |= (1 << 0); break; //  e
-                case 1: fel |= (3 << 0); break; //  el
-                case 2: fel |= (1 << 0); break; //  e
-                case 3: fel |= (7 << 0); break; // fel
-                }
-                apu->frame_counter++;
-                apu->frame_counter %= 4;
+            case 0: fel |= (3 << 0); break; //  el
+            case 1: fel |= (1 << 0); break; //  e
+            case 2: fel |= (3 << 0); break; //  el
+            case 3: fel |= (1 << 0); break; //  e
             }
-
-            // frame interrupt
-            if ((fel & (1 << 2)) && !(apu->regs[0x0017] & (1 << 6))) apu->frame_interrupt = 1;
-
-            // reload frame divider
-            apu->frame_divider = FRAME_DIVIDER;
+            apu->frame_counter++;
+            apu->frame_counter %= 5;
         }
-        //- frame sequencer
-
-        // render square channel 1 & 2
-        apu_render_square_channel(&(apu->sch1), (BYTE*)apu->regs + 0, fel);
-        apu_render_square_channel(&(apu->sch2), (BYTE*)apu->regs + 4, fel);
-
-        // for mixer ouput
-        if (--apu->mixer_divider == 0)
+        else // 4 step
         {
-            int triangle = 0;
-            int noise    = 0;
-            int dmc      = 0;
-            int squ_out  = apu->mixer_table_ss [apu->sch1.output_value + apu->sch2.output_value];
-            int tnd_out  = apu->mixer_table_tnd[3 * triangle + 2 * noise + dmc];
-            int sample   = squ_out + tnd_out;
-            ((DWORD*)apu->audiobuf->lpdata)[apu->mixer_counter++] = (sample << 16) | (sample << 0);
-            apu->mixer_divider = MIXER_DIVIDER;
+            switch (apu->frame_counter)
+            {
+            case 0: fel |= (1 << 0); break; //  e
+            case 1: fel |= (3 << 0); break; //  el
+            case 2: fel |= (1 << 0); break; //  e
+            case 3: fel |= (7 << 0); break; // fel
+            }
+            apu->frame_counter++;
+            apu->frame_counter %= 4;
         }
+
+        // frame interrupt
+        if ((fel & (1 << 2)) && !(apu->regs[0x0017] & (1 << 6))) apu->frame_interrupt = 1;
+
+        // reload frame divider
+        apu->frame_divider = FRAME_DIVIDER;
+    }
+    //- frame sequencer
+
+    // render square channel 1 & 2
+    apu_render_square_channel(&(apu->sch1), (BYTE*)apu->regs + 0, fel);
+    apu_render_square_channel(&(apu->sch2), (BYTE*)apu->regs + 4, fel);
+
+    // for mixer ouput
+    if (--apu->mixer_divider == 0)
+    {
+        int triangle = 0;
+        int noise    = 0;
+        int dmc      = 0;
+        int squ_out  = apu->mixer_table_ss [apu->sch1.output_value + apu->sch2.output_value];
+        int tnd_out  = apu->mixer_table_tnd[3 * triangle + 2 * noise + dmc];
+        int sample   = squ_out + tnd_out;
+        ((DWORD*)apu->audiobuf->lpdata)[apu->mixer_counter++] = (sample << 16) | (sample << 0);
+        apu->mixer_divider = MIXER_DIVIDER;
     }
     //-- render audio data on audio buffer --//
 
-    // add pclk to pclk_frame
-    apu->pclk_frame += pclk;
-
-    if (apu->pclk_frame == NES_HTOTAL * NES_VTOTAL) {
+    if (++apu->pclk_frame == NES_HTOTAL * NES_VTOTAL) {
         ((DWORD*)apu->audiobuf->lpdata)[797] = ((DWORD*)apu->audiobuf->lpdata)[796];
         ((DWORD*)apu->audiobuf->lpdata)[798] = ((DWORD*)apu->audiobuf->lpdata)[796];
         adev_audio_buf_post(apu->adevctxt,  (apu->audiobuf));
