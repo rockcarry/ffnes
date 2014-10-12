@@ -28,7 +28,10 @@ typedef struct {
     //++ for step pclk rendering ++//
     int   pclk_frame; // current pclk cycles in one frame
     int   pclk_line;  // current pclk cycles in one line
+    int   pclk_fend;  // frame end pclk for odd/even frame
+    int   oddevenflag;// odd/even frame toggle flag
     int   scanline;   // current scanline
+
     DWORD*draw_buffer;
     int   draw_stride;
     BYTE  cdatal;

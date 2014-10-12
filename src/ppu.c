@@ -438,7 +438,7 @@ void ppu_run_pclk(PPU *ppu)
     // do nothing
 
     // scanline 241 - 260 vblank
-    else if (ppu->pclk_frame == NES_HTOTAL * 241 + 1) // scanline 241, tick 15
+    else if (ppu->pclk_frame == NES_HTOTAL * 241 + 1) // scanline 241, tick 1
     {
         // unlock video device
         vdev_unlock(ppu->vdevctxt);
@@ -448,14 +448,23 @@ void ppu_run_pclk(PPU *ppu)
         ppu->regs[0x0002] |= (1 << 7);
     }
 
-    if (++ppu->pclk_frame == NES_HTOTAL * NES_VTOTAL)
+    if (++ppu->pclk_frame == ppu->pclk_fend)
     {
         // frame change
         ppu->pclk_frame = 0;
-        ppu->scanline   = 0;
-    }
+        ppu->pclk_line  = 0;
+        ppu->scanline   = 1;
 
-    if (++ppu->pclk_line == NES_HTOTAL)
+        // toggle odd/even frame flag
+        ppu->oddevenflag = !ppu->oddevenflag;
+
+        if (ppu->regs[0x0001] & (0x3 << 3))
+        {
+            ppu->pclk_fend = ppu->oddevenflag ? NES_HTOTAL * NES_VTOTAL - 1 : NES_HTOTAL * NES_VTOTAL;
+        }
+        else ppu->pclk_fend = NES_HTOTAL * NES_VTOTAL;
+    }
+    else if (++ppu->pclk_line == NES_HTOTAL)
     {
         // scanline change
         ppu->pclk_line = 0;
@@ -505,7 +514,9 @@ void ppu_reset(PPU *ppu)
     ppu->chrom_spr  = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
     ppu->pclk_frame = 0;
     ppu->pclk_line  = 0;
-    ppu->scanline   = 0;
+    ppu->pclk_fend  = NES_HTOTAL * NES_VTOTAL;
+    ppu->oddevenflag= 0;
+    ppu->scanline   = 1;
     ppu_set_vdev_pal(ppu, 0);
     memset(ppu->regs, 0, 8); // reset need clear regs
 }
