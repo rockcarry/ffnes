@@ -219,12 +219,12 @@ static void sprite_evaluate(PPU *ppu)
     sprsrc = ppu->sprram;
     sprdst = ppu->sprbuf;
 
-    ppu->sprnum = 0;
+    ppu->sprnum  = 0;
+    ppu->sprzero = NULL;
     if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh)
     {
         ppu->sprzero = sprdst;
     }
-    else ppu->sprzero = NULL;
 
     for (i=0; i<64; i++)
     {
@@ -236,8 +236,8 @@ static void sprite_evaluate(PPU *ppu)
                 break;
             }
 
-            sy   = ppu->scanline - sprsrc[0]; // sy
             tile = sprsrc[1];
+            sy   = ppu->scanline - sprsrc[0]; // sy
             if (sprsrc[2] & (1 << 7)) sy = sh - sy - 1; // vflip
 
             switch (sh)
@@ -285,25 +285,26 @@ static void sprite_render(PPU *ppu, int pixelc)
     {
         sprdata -= 4; // minus 4 sprdata point to the correct data
 
-        if (!(sprdata[2] & (1 << 3))
-           && sprdata[3] == ppu->pclk_line)
+        if (  sprdata[3] == ppu->pclk_line
+           && !(sprdata[2] & (1 << 3)) )
         {
-            if ((ppu->_2001_lazy & (1 << 2)) || ppu->pclk_line >= 8)
+            if (sprdata[2] & (1 << 7)) // hflip - 1
             {
-                if (sprdata[2] & (1 << 7)) // hflip - 1
-                {
-                    scolor = (sprdata[0] & 1) | ((sprdata[1] & 1) << 1);
-                    sprdata[0] >>= 1;
-                    sprdata[1] >>= 1;
-                }
-                else // hflip - 0
-                {
-                    scolor = (sprdata[0] >> 7) | ((sprdata[1] >> 7) << 1);
-                    sprdata[0] <<= 1;
-                    sprdata[1] <<= 1;
-                }
+                scolor = (sprdata[0] & 1) | ((sprdata[1] & 1) << 1);
+                sprdata[0] >>= 1;
+                sprdata[1] >>= 1;
             }
-            else scolor = 0;
+            else // hflip - 0
+            {
+                scolor = (sprdata[0] >> 7) | ((sprdata[1] >> 7) << 1);
+                sprdata[0] <<= 1;
+                sprdata[1] <<= 1;
+            }
+
+            if (!(ppu->_2001_lazy & (1 << 2)) && ppu->pclk_line < 8)
+            {
+                scolor = 0;
+            }
 
             if (scolor)
             {
@@ -379,7 +380,7 @@ void ppu_run_pclk(PPU *ppu)
             if (ppu->_2001_lazy & (1 << 3))
             {
                 // write pixel on adev
-                if ((ppu->_2001_lazy & (1 << 3)) || ppu->pclk_line >= 8)
+                if ((ppu->_2001_lazy & (1 << 1)) || ppu->pclk_line >= 8)
                 {
                     pixelc = ppu->pixelh | ((ppu->cdatal >> 7) << 0) | ((ppu->cdatah >> 7) << 1);
                 }
