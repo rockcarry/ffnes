@@ -40,7 +40,7 @@ typedef struct {
     //-- for step pclk rendering --//
 
     // sprite buffer for rendering
-    BYTE  sprbuf[32]; // sprite buffer
+    BYTE  sprbuf[64]; // sprite buffer
     BYTE  sprnum;     // sprite number
     BYTE *sprzero;    // sprite zero
 

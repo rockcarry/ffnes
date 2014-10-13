@@ -213,11 +213,12 @@ static void sprite_evaluate(PPU *ppu)
 {
     NES  *nes = container_of(ppu, NES, ppu);
     int   sh  = (ppu->regs[0x0000] & (1 << 5)) ? 16 : 8;
-    int   sy, tile, i;
-    BYTE *chrrom, *sprsrc, *sprdst;
+    int   sy, tile;
+    BYTE *chrrom, *sprsrc, *sprend, *sprdst;
 
     sprsrc = ppu->sprram;
     sprdst = ppu->sprbuf;
+    sprend = sprsrc + 256;
 
     ppu->sprnum  = 0;
     ppu->sprzero = NULL;
@@ -226,14 +227,14 @@ static void sprite_evaluate(PPU *ppu)
         ppu->sprzero = sprdst;
     }
 
-    for (i=0; i<64; i++)
+    while (sprsrc < sprend)
     {
         if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh)
         {
-            if (ppu->sprnum++ == 8) // sprite overflow
+            switch (ppu->sprnum++)
             {
-                ppu->regs[0x0002] |= (1 << 5);
-                break;
+            case 8 : ppu->regs[0x0002] |= (1 << 5); break; // sprite overflow
+            case 15: return; // sprite buffer full
             }
 
             tile = sprsrc[1];
@@ -276,11 +277,10 @@ static void sprite_evaluate(PPU *ppu)
 
 static void sprite_render(PPU *ppu, int pixelc)
 {
-    int   n       = ppu->sprnum;
-	BYTE *sprdata = ppu->sprbuf + n * 4;
+    BYTE *sprdata = ppu->sprbuf + ppu->sprnum * 4;
     int   scolor;
 
-    while (n-- > 0)
+    while (sprdata > ppu->sprbuf)
     {
         sprdata -= 4; // minus 4 sprdata point to the correct data
 
