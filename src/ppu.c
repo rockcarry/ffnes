@@ -230,7 +230,7 @@ static void sprite_evaluate(PPU *ppu)
     {
         if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh)
         {
-            if (ppu->sprnum == 8) // sprite overflow
+            if (ppu->sprnum++ == 8) // sprite overflow
             {
                 ppu->regs[0x0002] |= (1 << 5);
                 break;
@@ -267,7 +267,6 @@ static void sprite_evaluate(PPU *ppu)
             *sprdst++ = chrrom[tile * 16 + 8 * 1 + sy];
             *sprdst++ = ((sprsrc[2] << 1) & 0xc0) | ((sprsrc[2] << 4) & 0x30);
             *sprdst++ = sprsrc[3];
-            ppu->sprnum++;
         }
 
         // next sprite
@@ -344,7 +343,7 @@ void ppu_run_pclk(PPU *ppu)
     if (ppu->pclk_frame == NES_HTOTAL * 261 + 1) // scanline 261, tick 1
     {
         // clear vblank bit of reg $2002
-        ppu->_2002_last = ppu->regs[0x0002];
+        ppu->vblklast = ppu->regs[0x0002] & (1 << 7);
         ppu->regs[0x0002] &= ~(7 << 5);
 
         // update _2001_lazy variable
@@ -410,13 +409,13 @@ void ppu_run_pclk(PPU *ppu)
             // next pixel of vdev draw buffer
             ppu->draw_buffer++;
         }
-        else if (ppu->pclk_line == NES_HTOTAL - 1)
+        else if (ppu->pclk_line == 256)
         {
-            // evaluate sprite
-            if (ppu->_2001_lazy & (1 << 4)) sprite_evaluate(ppu);
-
             if (ppu->_2001_lazy & (0x3 << 3))
             {
+                // evaluate sprite
+                if (ppu->scanline < 240) sprite_evaluate(ppu);
+
                 // at dot 256, reget vaddr from temp0
                 ppu->vaddr &= ~0x041f;
                 ppu->vaddr |= (ppu->temp0 & 0x041f);
@@ -445,7 +444,7 @@ void ppu_run_pclk(PPU *ppu)
         vdev_unlock(ppu->vdevctxt);
 
         // set vblank bit of reg $2002
-        ppu->_2002_last = ppu->regs[0x0002];
+        ppu->vblklast = ppu->regs[0x0002] & (1 << 7);
         ppu->regs[0x0002] |= (1 << 7);
     }
 
@@ -547,7 +546,8 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
         if (  ppu->pclk_frame == NES_HTOTAL * 241 + 2
            || ppu->pclk_frame == NES_HTOTAL * 261 + 2)
         {
-            byte = ppu->_2002_last;
+            byte &= ~(1 << 7);
+            byte |=  ppu->vblklast;
         }
         ppu->toggle = 0; // after a read occurs, toggle is reset
         break;

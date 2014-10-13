@@ -21,7 +21,6 @@ typedef struct {
     WORD  temp1; // correspond to finex
     BYTE _2007_lazy;
     BYTE _2001_lazy;
-    BYTE _2002_last;
     BYTE *chrom_bkg;
     BYTE *chrom_spr;
 
@@ -31,6 +30,7 @@ typedef struct {
     int   pclk_fend;  // frame end pclk for odd/even frame
     int   oddevenflag;// odd/even frame toggle flag
     int   scanline;   // current scanline
+    BYTE  vblklast;   // for vblk flag read suppression
 
     DWORD*draw_buffer;
     int   draw_stride;
