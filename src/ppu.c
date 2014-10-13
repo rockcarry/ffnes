@@ -449,23 +449,34 @@ void ppu_run_pclk(PPU *ppu)
         ppu->regs[0x0002] |= (1 << 7);
     }
 
-    if (++ppu->pclk_frame == ppu->pclk_fend)
+    // the last tick of frame, odd frame with tick skipping
+    else if (ppu->pclk_frame == NES_HTOTAL * NES_VTOTAL - 2)
+    {
+        if (ppu->oddevenflag && (ppu->regs[0x0001] & (0x3 << 3)))
+        {
+            // frame change
+            ppu->pclk_frame = 0;
+            ppu->pclk_line  = 0;
+            ppu->scanline   = 1;
+            ppu->oddevenflag= 0; // next frame is even frame
+            return;
+        }
+    }
+
+    // the last tick of frame, even frame or without tick skipping
+    else if (ppu->pclk_frame == NES_HTOTAL * NES_VTOTAL - 1)
     {
         // frame change
-        ppu->pclk_frame = 0;
-        ppu->pclk_line  = 0;
-        ppu->scanline   = 1;
-
-        // toggle odd/even frame flag
-        ppu->oddevenflag = !ppu->oddevenflag;
-
-        if (ppu->regs[0x0001] & (0x3 << 3))
-        {
-            ppu->pclk_fend = ppu->oddevenflag ? NES_HTOTAL * NES_VTOTAL - 1 : NES_HTOTAL * NES_VTOTAL;
-        }
-        else ppu->pclk_fend = NES_HTOTAL * NES_VTOTAL;
+        ppu->pclk_frame  = 0;
+        ppu->pclk_line   = 0;
+        ppu->scanline    = 1;
+        ppu->oddevenflag = !ppu->oddevenflag; // toggle odd/even frame flag
+        return;
     }
-    else if (++ppu->pclk_line == NES_HTOTAL)
+
+    ppu->pclk_frame++;
+    ppu->pclk_line ++;
+    if (ppu->pclk_line == NES_HTOTAL)
     {
         // scanline change
         ppu->pclk_line = 0;
