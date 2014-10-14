@@ -484,15 +484,16 @@ void ppu_run_pclk(PPU *ppu)
 }
 
 // º¯ÊýÊµÏÖ
-//++ for power up palette
-static BYTE power_up_pal[32] =
-{
-    0x09,0x01,0x00,0x01,0x00,0x02,0x02,0x0D,0x08,0x10,0x08,0x24,0x00,0x00,0x04,0x2C,
-    0x09,0x01,0x34,0x03,0x00,0x04,0x00,0x14,0x08,0x3A,0x00,0x02,0x00,0x20,0x2C,0x08,
-};
-//-- for power up palette
 void ppu_init(PPU *ppu, DWORD extra)
 {
+    //++ for power up palette
+    static BYTE power_up_pal[32] =
+    {
+        0x09,0x01,0x00,0x01,0x00,0x02,0x02,0x0D,0x08,0x10,0x08,0x24,0x00,0x00,0x04,0x2C,
+        0x09,0x01,0x34,0x03,0x00,0x04,0x00,0x14,0x08,0x3A,0x00,0x02,0x00,0x20,0x2C,0x08,
+    };
+    //-- for power up palette
+
     // create vdev for ppu
     ppu->vdevctxt = vdev_create(PPU_IMAGE_WIDTH, PPU_IMAGE_HEIGHT, 32, extra);
     if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
@@ -523,13 +524,18 @@ void ppu_reset(PPU *ppu)
     ppu->_2001_lazy = 0;
     ppu->chrom_bkg  = (ppu->regs[0x0000] & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
     ppu->chrom_spr  = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
+    ppu->open_busv  = 0;
     ppu->pclk_frame = 0;
     ppu->pclk_line  = 0;
     ppu->pclk_fend  = NES_HTOTAL * NES_VTOTAL;
     ppu->oddevenflag= 0;
     ppu->scanline   = 1;
+
+    // set default palette color
     ppu_set_vdev_pal(ppu, 0);
-    memset(ppu->regs, 0, 8); // reset need clear regs
+
+    // reset need clear regs
+    memset(ppu->regs, 0, 8);
 }
 
 BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
@@ -538,6 +544,9 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
     PPU *ppu   = &(nes->ppu);
     BYTE byte  = pm->data[addr];
     int  vaddr = ppu->vaddr & 0x3fff;
+
+    // for open bus mask
+    static BYTE open_bus_mask[8] = { 0xff, 0xff, 0x1f, 0xff, 0x00, 0xff, 0xff, 0x00 };
 
     switch (addr)
     {
@@ -571,6 +580,11 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
         ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
         break;
     }
+
+    byte &=~open_bus_mask[addr];
+    byte |= open_bus_mask[addr] & ppu->open_busv;
+    ppu->open_busv &= open_bus_mask[addr];
+    ppu->open_busv |=~open_bus_mask[addr] & byte;
     return byte;
 }
 
@@ -579,6 +593,9 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
     NES *nes   = container_of(pm, NES, ppuregs);
     PPU *ppu   = &(nes->ppu);
     int  vaddr = ppu->vaddr & 0x3fff;
+
+    // update open bus value when writing
+    ppu->open_busv = byte;
 
     switch (addr)
     {

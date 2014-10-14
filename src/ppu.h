@@ -23,6 +23,7 @@ typedef struct {
     BYTE _2001_lazy;
     BYTE *chrom_bkg;
     BYTE *chrom_spr;
+    BYTE  open_busv;  // for ppu open bus
 
     //++ for step pclk rendering ++//
     int   pclk_frame; // current pclk cycles in one frame
