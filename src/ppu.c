@@ -451,6 +451,20 @@ void ppu_run_pclk(PPU *ppu)
     // the last tick of frame, odd frame with tick skipping
     else if (ppu->pclk_frame == NES_HTOTAL * NES_VTOTAL - 2)
     {
+        //++ for ppu open bus ++//
+        int i;
+        for (i=0; i<8; i++)
+        {
+            if (ppu->open_bust[i] > 0)
+            {
+                if (--ppu->open_bust[i] == 0)
+                {
+                    ppu->open_busv &= ~(1 << i);
+                }
+            }
+        }
+        //-- for ppu open bus --//
+
         if (ppu->oddevenflag && (ppu->regs[0x0001] & (0x3 << 3)))
         {
             // frame change
@@ -501,6 +515,14 @@ void ppu_init(PPU *ppu, DWORD extra)
     // init power up palette
     memcpy(ppu->palette, power_up_pal, 32);
 
+    // init clear ppu regs
+    memset(ppu->regs, 0, 8);
+
+    //++ for ppu open bus ++//
+    memset(ppu->open_bust, 0, 8);
+    ppu->open_busv = 0;
+    //-- for ppu open bus --//
+
     // reset ppu
     ppu_reset(ppu);
 }
@@ -514,6 +536,9 @@ void ppu_reset(PPU *ppu)
 {
     NES *nes = container_of(ppu, NES, ppu);
 
+    ppu->regs[0]    = 0;
+    ppu->regs[1]    = 0;
+    ppu->regs[5]    = 0;
     ppu->pinvbl     = 1;
     ppu->toggle     = 0;
     ppu->finex      = 0;
@@ -524,7 +549,6 @@ void ppu_reset(PPU *ppu)
     ppu->_2001_lazy = 0;
     ppu->chrom_bkg  = (ppu->regs[0x0000] & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
     ppu->chrom_spr  = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
-    ppu->open_busv  = 0;
     ppu->pclk_frame = 0;
     ppu->pclk_line  = 0;
     ppu->pclk_fend  = NES_HTOTAL * NES_VTOTAL;
@@ -533,9 +557,6 @@ void ppu_reset(PPU *ppu)
 
     // set default palette color
     ppu_set_vdev_pal(ppu, 0);
-
-    // reset need clear regs
-    memset(ppu->regs, 0, 8);
 }
 
 BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
@@ -545,8 +566,11 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
     BYTE byte  = pm->data[addr];
     int  vaddr = ppu->vaddr & 0x3fff;
 
-    // for open bus mask
+    //++ for ppu open bus ++//
+    int  mask, i;
     static BYTE open_bus_mask[8] = { 0xff, 0xff, 0x1f, 0xff, 0x00, 0xff, 0xff, 0x00 };
+    mask = open_bus_mask[addr];
+    //-- for ppu open bus --//
 
     switch (addr)
     {
@@ -563,6 +587,8 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
 
     case 0x0004:
         byte = ppu->sprram[pm->data[0x0003]];
+        // read sprite attributes byte, d2-d4 always 0
+        if ((pm->data[0x0003] & 0x3) == 2) byte &= ~(0x7 << 2);
         break;
 
     case 0x0007:
@@ -573,18 +599,26 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
         }
         else
         {
-            byte            = bus_readb(nes->pbus, vaddr);
-            ppu->_2007_lazy = bus_readb(nes->pbus, vaddr & 0x2fff);
+            //++ for ppu open bus & palette read ++//
+            mask            = 0xc0;
+            byte            = bus_readb(nes->pbus, vaddr) & 0x3f;
+            byte           |= ppu->open_busv & 0xc0;
+            //-- for ppu open bus & palette read --//
+            ppu->_2007_lazy = bus_readb(nes->pbus, vaddr & 0x2fff); // palette addr dummy read
         }
         // increase vaddr by 1 or 32
         ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
         break;
     }
 
-    byte &=~open_bus_mask[addr];
-    byte |= open_bus_mask[addr] & ppu->open_busv;
-    ppu->open_busv &= open_bus_mask[addr];
-    ppu->open_busv |=~open_bus_mask[addr] & byte;
+    //++ for ppu open bus ++//
+    byte &=~mask;
+    byte |= mask & ppu->open_busv;
+    ppu->open_busv &= mask;
+    ppu->open_busv |=~mask & byte;
+    for (i=0; i<8; i++) if (~mask & (1 << i)) ppu->open_bust[i] = 60;
+    //-- for ppu open bus --//
+
     return byte;
 }
 
@@ -594,8 +628,10 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
     PPU *ppu   = &(nes->ppu);
     int  vaddr = ppu->vaddr & 0x3fff;
 
-    // update open bus value when writing
+    //++ for ppu open bus ++//
     ppu->open_busv = byte;
+    memset(ppu->open_bust, 60, 8);
+    //-- for ppu open bus --//
 
     switch (addr)
     {
