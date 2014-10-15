@@ -12,6 +12,7 @@ typedef struct {
     BUS        cbus;
     BUS        pbus;
     int        number; // mapper number
+    BYTE       regs[8];// mmc internel regs
 
     // for bank switch
     int        pbanksize;
