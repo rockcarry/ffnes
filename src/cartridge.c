@@ -130,15 +130,15 @@ BOOL cartridge_has_trainer(CARTRIDGE *pcart)
     return (pcart->romctrl_byte1 & (1 << 2));
 }
 
-static int vram_mirroring_map[4][4] =
-{
-    {1, 1, 2, 2},
-    {1, 2, 1, 2},
-    {1, 2, 3, 4},
-    {1, 1, 1, 1},
-};
 int* cartridge_get_vram_mirroring(CARTRIDGE *pcart)
 {
+    static int vram_mirroring_map[4][4] =
+    {
+        {0, 0, 1, 1},
+        {0, 1, 0, 1},
+        {0, 1, 2, 3},
+        {0, 0, 0, 0},
+    };
     int mirroring = ((pcart->romctrl_byte1 & (1 << 3)) >> 2) | (pcart->romctrl_byte1 & (1 << 0));
     return vram_mirroring_map[mirroring];
 }
