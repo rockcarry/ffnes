@@ -276,6 +276,7 @@ flags.
 } while (0)
 
 #define BRK() do { \
+    READB(PC);              \
     PC++;                   \
     PUSH((PC >> 8) & 0xff); \
     PUSH((PC >> 0) & 0xff); \
@@ -294,12 +295,14 @@ flags.
 } while (0)
 
 #define RTI() do { \
+    READB(PC);              \
     PS  = POP() | R_FLAG;   \
     PC  = POP() << 0;       \
     PC |= POP() << 8;       \
 } while (0)
 
 #define RTS() do { \
+    READB(PC);              \
     PC  = POP();            \
     PC |= POP() << 8;       \
     PC++;                   \
