@@ -49,6 +49,14 @@ BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
             return TRUE;
         }
 
+        // ctrl+o pressed
+        if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'O')
+        {
+            FreeNesRom();
+            LoadNesRom();
+            return TRUE;
+        }
+
         switch (pMsg->wParam)
         {
         case 'E': joypad_setkey(&(m_nes.pad), 0, NES_KEY_UP     , 1); break;
@@ -114,13 +122,8 @@ BOOL CffemulatorDlg::OnInitDialog()
     y = y > 0 ? y : 0;
     MoveWindow(x, y, w, h, FALSE);
 
-    char file[MAX_PATH] = {0};
-    CFileDialog dlg(TRUE, NULL, NULL, 0, "nes rom file (*.nes)|*.nes||");
-    if (dlg.DoModal() != IDOK) OnOK();
-
-    strcpy(file, dlg.GetPathName());
-    nes_init(&m_nes, file, (DWORD)GetSafeHwnd());
-    nes_run (&m_nes);
+    // load nes
+    LoadNesRom();
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -133,6 +136,23 @@ void CffemulatorDlg::OnDestroy()
     CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
     if (dlg) dlg->DestroyWindow();
 
+    // free nes
+    FreeNesRom();
+}
+
+void CffemulatorDlg::LoadNesRom()
+{
+    char file[MAX_PATH] = {0};
+    CFileDialog dlg(TRUE, NULL, NULL, 0, "nes rom file (*.nes)|*.nes||");
+    if (dlg.DoModal() != IDOK) OnOK();
+
+    strcpy(file, dlg.GetPathName());
+    nes_init(&m_nes, file, (DWORD)GetSafeHwnd());
+    nes_run (&m_nes);
+}
+
+void CffemulatorDlg::FreeNesRom()
+{
     // free nes
     nes_free(&m_nes);
 }

@@ -33,5 +33,9 @@ protected:
     afx_msg void   OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
 
 private:
+    void LoadNesRom();
+    void FreeNesRom();
+
+private:
     NES m_nes; // nes object
 };
