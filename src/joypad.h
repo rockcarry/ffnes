@@ -33,6 +33,7 @@ typedef struct {
     BOOL   bExitThread;
 } JOYPAD;
 
+// º¯ÊýÉùÃ÷
 void joypad_init  (JOYPAD *jp);
 void joypad_free  (JOYPAD *jp);
 void joypad_reset (JOYPAD *jp);

@@ -16,6 +16,9 @@ static void nes_do_reset(NES* nes)
     // reset joypad
     joypad_reset(&(nes->pad));
 
+    // reset replay
+    replay_reset(&(nes->replay));
+
     // restart ndb
     ndb_set_debug(&(nes->ndb), NDB_DEBUG_MODE_RESTART);
 }
@@ -191,6 +194,9 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     joypad_setkey(&(nes->pad), 0, NES_PAD_CONNECT, 1);
     joypad_setkey(&(nes->pad), 1, NES_PAD_CONNECT, 1);
 
+    // init replay
+    replay_init(&(nes->replay), NULL, 0);
+
     // create nes event & thread
     nes->hNesEvent  = CreateEvent (NULL, TRUE, FALSE, NULL);
     nes->hNesThread = CreateThread(NULL, 0, nes_thread_proc, (LPVOID)nes, 0, 0);
@@ -203,11 +209,19 @@ void nes_free(NES *nes)
     ndb_set_debug(&(nes->ndb), NDB_DEBUG_MODE_DISABLE);
 
     // destroy nes event & thread
-    nes->bExitThread = TRUE;
-    SetEvent(nes->hNesEvent);
-    WaitForSingleObject(nes->hNesThread, -1);
-    CloseHandle(nes->hNesEvent );
-    CloseHandle(nes->hNesThread);
+    if (nes->hNesEvent && nes->hNesThread)
+    {
+        nes->bExitThread = TRUE;
+        SetEvent(nes->hNesEvent);
+        WaitForSingleObject(nes->hNesThread, -1);
+        CloseHandle(nes->hNesEvent );
+        CloseHandle(nes->hNesThread);
+        nes->hNesEvent  = NULL;
+        nes->hNesThread = NULL;
+    }
+
+    // free replay
+    replay_free(&(nes->replay));
 
     // free joypad
     joypad_setkey(&(nes->pad), 0, NES_PAD_CONNECT, 0);
@@ -236,4 +250,10 @@ void nes_reset(NES *nes)
 
 void nes_run  (NES *nes) { nes->isrunning = 1;   SetEvent(nes->hNesEvent); }
 void nes_pause(NES *nes) { nes->isrunning = 0; ResetEvent(nes->hNesEvent); }
+
+void nes_replay(NES *nes, char *file, int mode)
+{
+    replay_free(&(nes->replay));
+    replay_init(&(nes->replay), file, mode);
+}
 

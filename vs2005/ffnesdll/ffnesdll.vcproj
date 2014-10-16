@@ -227,6 +227,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\replay.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\vdev.c"
 				>
 			</File>
@@ -282,6 +286,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\ppu.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\replay.h"
 				>
 			</File>
 			<File

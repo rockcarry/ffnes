@@ -5,6 +5,7 @@ nes_free
 nes_reset
 nes_run
 nes_pause
+nes_replay
 
 joypad_reset
 joypad_setkey

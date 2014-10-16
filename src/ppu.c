@@ -647,7 +647,7 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         if (!(byte & 0x18)) ppu->_2001_lazy = byte;
 
         // if d7-d5 or d0 changed, we need update palette
-        if ((ppu->regs[0x0001] & 0xe1) != (byte & 0xe1))
+        if ((byte & 0xe1) != (ppu->regs[0x0001] & 0xe1))
         {
             ppu_set_vdev_pal(ppu, byte & 0xe1);
         }

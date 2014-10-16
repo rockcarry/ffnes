@@ -12,6 +12,7 @@
 #include "ndb.h"
 #include "cartridge.h"
 #include "joypad.h"
+#include "replay.h"
 
 // 常量定义
 // clock defines
@@ -80,16 +81,20 @@ typedef struct tagNES {
     HANDLE hNesEvent;
     BOOL   bExitThread;
 
+    // for replay
+    REPLAY replay;
+
     // ndb object
     struct tagNDB ndb;
 } NES;
 
 // 函数声明
-BOOL nes_init (NES *nes, char *file, DWORD extra);
-void nes_free (NES *nes);
-void nes_reset(NES *nes);
-void nes_run  (NES *nes);
-void nes_pause(NES *nes);
+BOOL nes_init  (NES *nes, char *file, DWORD extra);
+void nes_free  (NES *nes);
+void nes_reset (NES *nes);
+void nes_run   (NES *nes);
+void nes_pause (NES *nes);
+void nes_replay(NES *nes, char *file, int mode);
 
 #endif
 

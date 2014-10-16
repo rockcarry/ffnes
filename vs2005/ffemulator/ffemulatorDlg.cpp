@@ -57,6 +57,35 @@ BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
             return TRUE;
         }
 
+        // ctrl+r pressed
+        if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'R')
+        {
+            char file[MAX_PATH] = {0};
+            CFileDialog dlg(FALSE, NULL, NULL, 0, "nes replay file (*.rep)|*.rep||");
+            if (dlg.DoModal() == IDOK)
+            {
+                strcpy(file, dlg.GetPathName());
+                if (!strstr(file, ".rep")) strcat(file, ".rep");
+                nes_replay(&m_nes, file, NES_REPLAY_RECORD);
+                nes_reset (&m_nes);
+            }
+            return TRUE;
+        }
+
+        // ctrl+p pressed
+        if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'P')
+        {
+            char file[MAX_PATH] = {0};
+            CFileDialog dlg(TRUE, NULL, NULL, 0, "nes replay file (*.rep)|*.rep||");
+            if (dlg.DoModal() == IDOK)
+            {
+                strcpy(file, dlg.GetPathName());
+                nes_replay(&m_nes, file, NES_REPLAY_PLAY);
+                nes_reset (&m_nes);
+            }
+            return TRUE;
+        }
+
         switch (pMsg->wParam)
         {
         case 'E': joypad_setkey(&(m_nes.pad), 0, NES_KEY_UP     , 1); break;
@@ -142,13 +171,17 @@ void CffemulatorDlg::OnDestroy()
 
 void CffemulatorDlg::LoadNesRom()
 {
+    // clear nes context first
+    memset(&m_nes, 0, sizeof(NES));
+
     char file[MAX_PATH] = {0};
     CFileDialog dlg(TRUE, NULL, NULL, 0, "nes rom file (*.nes)|*.nes||");
-    if (dlg.DoModal() != IDOK) OnOK();
-
-    strcpy(file, dlg.GetPathName());
-    nes_init(&m_nes, file, (DWORD)GetSafeHwnd());
-    nes_run (&m_nes);
+    if (dlg.DoModal() == IDOK)
+    {
+        strcpy(file, dlg.GetPathName());
+        nes_init(&m_nes, file, (DWORD)GetSafeHwnd());
+        nes_run (&m_nes);
+    }
 }
 
 void CffemulatorDlg::FreeNesRom()
