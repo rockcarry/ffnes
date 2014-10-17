@@ -18,6 +18,7 @@ OBJS = \
     ndb.o \
     cartridge.o \
     joypad.o \
+    replay.o \
     adev.o \
     vdev.o \
 
