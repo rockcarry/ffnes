@@ -1,9 +1,14 @@
 # makefile for ffnes project
 # written by rockcarry
 
+# for pthreads-win32
+PTHREADSW32_DLL = ../pthreads-win32/dll/pthreadGC2.dll
+PTHREADSW32_INC = ../pthreads-win32/include
+PTHREADSW32_LIB = ../pthreads-win32/lib
+
 # 编译器定义
 CC      = i586-mingw32msvc-gcc
-CCFLAGS = -mwindows -Wall
+CCFLAGS = -mwindows -Wall -I$(PTHREADSW32_INC) -L$(PTHREADSW32_LIB)
 
 # 所有的目标文件
 OBJS = \
@@ -29,11 +34,14 @@ EXES = \
 # 输出的库文件
 DLL = ffnes.dll
 
+# pthread dll
+PTHREADDLL = pthreadGC2.dll
+
 # 编译规则
-all : $(DLL) $(EXES)
+all : $(DLL) $(EXES) $(PTHREADDLL)
 
 $(DLL) : $(OBJS)
-	$(CC) $(CCFLAGS) -o $@ $(OBJS) --share -lwinmm
+	$(CC) $(CCFLAGS) -o $@ $(OBJS) --share -lwinmm -lpthreadGC2
 
 %.o : %.c %.h stdefine.h
 	$(CC) $(CCFLAGS) -o $@ $< -c
@@ -52,6 +60,9 @@ $(DLL) : $(OBJS)
 
 %.exe : %.cpp %.h $(DLL)
 	$(CC) $(CCFLAGS) -o $@ $< $(DLL)
+
+$(PTHREADDLL) : $(PTHREADSW32_DLL)
+	cp $< .
 
 clean :
 	-rm -f *.o

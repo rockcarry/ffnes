@@ -23,19 +23,22 @@ static void nes_do_reset(NES* nes)
     ndb_set_debug(&(nes->ndb), NDB_DEBUG_MODE_RESTART);
 }
 
-static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
+static void* nes_thread_proc(void *param)
 {
-    NES *nes = (NES*)lpParam;
+    NES *nes = (NES*)param;
     DWORD dwTickLast  = 0;
     DWORD dwTickCur   = 0;
     DWORD dwTickDiff  = 0;
     DWORD dwTickSleep = 0;
     int   totalpclk;
 
-    while (1)
+    while (!nes->thread_exit)
     {
-        WaitForSingleObject(nes->hNesEvent, -1);
-        if (nes->bExitThread) break;
+        if (!nes->isrunning)
+        {
+            Sleep(16);
+            continue;
+        }
 
         if (nes->request_reset == 1) {
             nes->request_reset = 0;
@@ -68,7 +71,7 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
 
 //      log_printf("%d, %d\n", dwTickDiff, dwTickSleep);
     }
-    return 0;
+    return NULL;
 }
 
 // º¯ÊýÊµÏÖ
@@ -201,8 +204,8 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     replay_init(&(nes->replay), NULL, 0);
 
     // create nes event & thread
-    nes->hNesEvent  = CreateEvent (NULL, TRUE, FALSE, NULL);
-    nes->hNesThread = CreateThread(NULL, 0, nes_thread_proc, (LPVOID)nes, 0, 0);
+    pthread_create(&(nes->thread_id), NULL, nes_thread_proc, nes);
+
     return TRUE;
 }
 
@@ -211,17 +214,9 @@ void nes_free(NES *nes)
     // disable ndb debugging will make cpu keep running
     ndb_set_debug(&(nes->ndb), NDB_DEBUG_MODE_DISABLE);
 
-    // destroy nes event & thread
-    if (nes->hNesEvent && nes->hNesThread)
-    {
-        nes->bExitThread = TRUE;
-        SetEvent(nes->hNesEvent);
-        WaitForSingleObject(nes->hNesThread, -1);
-        CloseHandle(nes->hNesEvent );
-        CloseHandle(nes->hNesThread);
-        nes->hNesEvent  = NULL;
-        nes->hNesThread = NULL;
-    }
+    // destroy nes thread
+    nes->thread_exit = TRUE;
+    pthread_join(nes->thread_id, NULL);
 
     // free replay
     replay_free(&(nes->replay));
@@ -251,8 +246,8 @@ void nes_reset(NES *nes)
     nes->request_reset = 1; // request reset
 }
 
-void nes_run  (NES *nes) { nes->isrunning = 1;   SetEvent(nes->hNesEvent); }
-void nes_pause(NES *nes) { nes->isrunning = 0; ResetEvent(nes->hNesEvent); }
+void nes_run  (NES *nes) { nes->isrunning = 1; }
+void nes_pause(NES *nes) { nes->isrunning = 0; }
 
 void nes_replay(NES *nes, char *file, int mode)
 {

@@ -2,6 +2,7 @@
 #define _NES_NES_H_
 
 // 包含头文件
+#include <pthread.h>
 #include "stdefine.h"
 #include "cpu.h"
 #include "ppu.h"
@@ -74,12 +75,11 @@ typedef struct tagNES {
 
     // for reset nes
     int request_reset;
-    int isrunning;
 
-    // nes thread
-    HANDLE hNesThread;
-    HANDLE hNesEvent;
-    BOOL   bExitThread;
+    // for nes thread
+    pthread_t thread_id;
+    BOOL      thread_exit;
+    BOOL      isrunning;
 
     // for replay
     REPLAY replay;
