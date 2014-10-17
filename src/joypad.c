@@ -1,45 +1,15 @@
 // 包含头文件
 #include "nes.h"
 
-// 内部函数实现
-#define TURBOKEY_THREAD_DELAY  50
-static DWORD WINAPI turbokey_thread_proc(LPVOID lpParam)
-{
-    JOYPAD *jp = (JOYPAD*)lpParam;
-    int     i;
-
-    while (1)
-    {
-        WaitForSingleObject(jp->hTurboEvent, -1);
-        if (jp->bExitThread) break;
-        if (jp->strobe     ) continue;
-
-        for (i=0; i<4; i++)
-        {
-            if (jp->pad_data[i] & (NES_KEY_TURBO_A)) jp->pad_data[i] ^= NES_KEY_A;
-            if (jp->pad_data[i] & (NES_KEY_TURBO_B)) jp->pad_data[i] ^= NES_KEY_B;
-        }
-
-        // delay some time
-        Sleep(TURBOKEY_THREAD_DELAY);
-    }
-    return 0;
-}
-
 // 函数实现
 void joypad_init(JOYPAD *jp)
 {
-    jp->hTurboEvent  = CreateEvent (NULL, TRUE, FALSE, NULL);
-    jp->hTurboThread = CreateThread(NULL, 0, turbokey_thread_proc, (LPVOID)jp, 0, 0);
+    joypad_reset(jp);
 }
 
 void joypad_free(JOYPAD *jp)
 {
-    jp->bExitThread = TRUE;
-    SetEvent(jp->hTurboEvent);
-    WaitForSingleObject(jp->hTurboThread, -1);
-    CloseHandle(jp->hTurboEvent );
-    CloseHandle(jp->hTurboThread);
+    // do nothing..
 }
 
 void joypad_reset(JOYPAD *jp)
@@ -51,15 +21,11 @@ void joypad_reset(JOYPAD *jp)
     jp->pad_data[1]  = 0;
     jp->pad_data[2]  = 0;
     jp->pad_data[3]  = 0;
-    jp->bTurboFlag   = FALSE;
-    ResetEvent(jp->hTurboEvent);
+    jp->divider      = JOYPAD_DIVIDER;
 }
 
 void joypad_setkey(JOYPAD *jp, int pad, int key, int value)
 {
-    BOOL flag = FALSE;
-    int  i;
-
     //++ handle pad connect/disconnect ++//
     if (key == NES_PAD_CONNECT)
     {
@@ -73,24 +39,6 @@ void joypad_setkey(JOYPAD *jp, int pad, int key, int value)
     if (value) jp->pad_data[pad] |=  key;
     else       jp->pad_data[pad] &= ~key;
     //-- handle pad key up/down --//
-
-    //++ handle turbo keys ++//
-    for (i=0; i<4; i++)
-    {
-        if (jp->pad_data[i] & (0x3 << 24))
-        {
-            flag = TRUE;
-            break;
-        }
-    }
-
-    if (jp->bTurboFlag != flag)
-    {
-        if (flag) SetEvent(jp->hTurboEvent);
-        else    ResetEvent(jp->hTurboEvent);
-        jp->bTurboFlag = flag;
-    }
-    //-- handle turbo keys --//
 }
 
 BYTE NES_PAD_REG_RCB(MEM *pm, int addr)
@@ -124,6 +72,7 @@ BYTE NES_PAD_REG_RCB(MEM *pm, int addr)
             }
             if (pad->counter_4016 < 32) pad->counter_4016++;
             break;
+
         case 0x0017: // 4017
             if (pad->counter_4017 < 8) {
                 pm->data[addr] = (BYTE)(pad->pad_data[1] >> (pad->counter_4017 - 0)) & 0x1;
@@ -142,6 +91,20 @@ BYTE NES_PAD_REG_RCB(MEM *pm, int addr)
         }
     }
     return pm->data[addr];
+}
+
+void joypad_run(JOYPAD *jp)
+{
+    if (--jp->divider == 0)
+    {
+        DWORD *paddata_cur = jp->pad_data;
+        DWORD *paddata_end = paddata_cur + 4;
+        do {
+            if (*paddata_cur & NES_KEY_TURBO_A) *paddata_cur ^= NES_KEY_A;
+            if (*paddata_cur & NES_KEY_TURBO_B) *paddata_cur ^= NES_KEY_B;
+        } while (++paddata_cur < paddata_end);
+        jp->divider = JOYPAD_DIVIDER;
+    }
 }
 
 void NES_PAD_REG_WCB(MEM *pm, int addr, BYTE byte)

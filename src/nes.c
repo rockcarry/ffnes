@@ -50,6 +50,9 @@ static DWORD WINAPI nes_thread_proc(LPVOID lpParam)
             cpu_nmi(&(nes->cpu), nes->ppu.pinvbl);
         } while (--totalpclk > 0);
 
+        // run joypad for turbo key function
+        joypad_run(&(nes->pad));
+
         //++ framerate control ++//
         dwTickCur  = GetTickCount();
         dwTickDiff = dwTickCur - dwTickLast;
