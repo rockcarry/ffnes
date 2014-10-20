@@ -20,7 +20,6 @@ typedef struct {
     WORD  temp0; // correspond to vaddr
     WORD  temp1; // correspond to finex
     BYTE _2007_lazy;
-    BYTE _2001_lazy;
     BYTE *chrom_bkg;
     BYTE *chrom_spr;
 
@@ -43,6 +42,11 @@ typedef struct {
     BYTE  cdatah;
     BYTE  pixelh;
     //-- for step pclk rendering --//
+
+    //++ for ppu reset delay ++//
+    int   reset_delay;
+    int   _2001_delay;
+    //-- for ppu reset delay --//
 
     // sprite buffer for rendering
     BYTE  sprbuf[64]; // sprite buffer

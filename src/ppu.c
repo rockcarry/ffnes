@@ -132,9 +132,7 @@ static void ppu_set_vdev_pal(PPU *ppu, int flags)
         *pdst++ = (BYTE)g;
         *pdst++ = (BYTE)r;
         *pdst++ = (BYTE)0;
-        if (psrc == pend) {
-            psrc = DEF_PPU_PAL;
-        }
+        if (psrc == pend) psrc = DEF_PPU_PAL;
     }
 }
 
@@ -275,9 +273,10 @@ static void sprite_evaluate(PPU *ppu)
     }
 }
 
-static void sprite_render(PPU *ppu, int pixelc)
+static int sprite_render(PPU *ppu, int pixelc)
 {
     BYTE *sprdata = ppu->sprbuf + ppu->sprnum * 4;
+    int   result  = pixelc;
     int   scolor;
 
     while (sprdata > ppu->sprbuf)
@@ -300,7 +299,7 @@ static void sprite_render(PPU *ppu, int pixelc)
                 sprdata[1] <<= 1;
             }
 
-            if (!(ppu->_2001_lazy & (1 << 2)) && ppu->pclk_line < 8)
+            if (!(ppu->regs[0x0001] & (1 << 2)) && ppu->pclk_line < 8)
             {
                 scolor = 0;
             }
@@ -309,12 +308,11 @@ static void sprite_render(PPU *ppu, int pixelc)
             {
                 if ((sprdata[2] & (1 << 6)) && (pixelc & 0x3))
                 {
-                    *ppu->draw_buffer = ((DWORD*)ppu->vdevpal)[ppu->palette[pixelc]];
+                    result = pixelc;
                 }
                 else
                 {
-                    scolor |= (sprdata[2] >> 2) & 0xc;
-                    *ppu->draw_buffer = ((DWORD*)ppu->vdevpal)[ppu->palette[16 + scolor]];
+                    result = (scolor | (sprdata[2] >> 2) & 0xc) + 16;
                 }
 
                 // update sprite 0 hit flag
@@ -327,6 +325,8 @@ static void sprite_render(PPU *ppu, int pixelc)
             sprdata[3]++;
         }
     }
+
+    return result;
 }
 
 void ppu_run_pclk(PPU *ppu)
@@ -346,11 +346,8 @@ void ppu_run_pclk(PPU *ppu)
         ppu->vblklast = ppu->regs[0x0002] & (1 << 7);
         ppu->regs[0x0002] &= ~(7 << 5);
 
-        // update _2001_lazy variable
-        ppu->_2001_lazy = ppu->regs[0x0001];
-
         // if sprite or name-tables are visible.
-        if (ppu->_2001_lazy & (0x3 << 3))
+        if (ppu->regs[0x0001] & (0x3 << 3))
         {
             // the ppu address copies the ppu's
             // temp at the beginning of the line
@@ -373,45 +370,38 @@ void ppu_run_pclk(PPU *ppu)
     {
         if (ppu->pclk_line < 256)
         {
-            int pixelc = 0;
+            int pixelc = 0; // pixel value for rendering
+            if (!(ppu->regs[0x0001] & (0x3 << 3)) && ppu->vaddr > 0x3f00)
+            {
+                pixelc = ppu->vaddr & 0x1f;
+            }
 
             // render background
-            if (ppu->_2001_lazy & (1 << 3))
+            if (ppu->regs[0x0001] & (1 << 3))
             {
-                // write pixel on adev
-                if ((ppu->_2001_lazy & (1 << 1)) || ppu->pclk_line >= 8)
+                if ((ppu->regs[0x0001] & (1 << 1)) || ppu->pclk_line >= 8)
                 {
                     pixelc = ppu->pixelh | ((ppu->cdatal >> 7) << 0) | ((ppu->cdatah >> 7) << 1);
                 }
                 ppu->cdatal <<= 1; ppu->cdatah <<= 1;
-                *ppu->draw_buffer = ((DWORD*)ppu->vdevpal)[ppu->palette[pixelc]];
             }
 
             // render sprite
-            if (ppu->_2001_lazy & (1 << 4)) sprite_render(ppu, pixelc);
+            if (ppu->regs[0x0001] & (1 << 4)) pixelc = sprite_render(ppu, pixelc);
 
             // do x increment
-            if (ppu->_2001_lazy & (0x3 << 3))
+            if (ppu->regs[0x0001] & (0x3 << 3))
             {
-                if (ppu_xincrement(ppu)) {
-                    // fetch tile data
-                    ppu_fetch_tile(ppu);
-                }
-            }
-            else
-            {
-                if (ppu->vaddr > 0x3f00)
-                {
-                    *ppu->draw_buffer = ((DWORD*)ppu->vdevpal)[ppu->palette[ppu->vaddr & 0x1f]];
-                }
+                // fetch tile data
+                if (ppu_xincrement(ppu)) ppu_fetch_tile(ppu);
             }
 
-            // next pixel of vdev draw buffer
-            ppu->draw_buffer++;
+            // write pixel on vdev
+            *ppu->draw_buffer++ = ((DWORD*)ppu->vdevpal)[ppu->palette[pixelc]];
         }
         else if (ppu->pclk_line == 256)
         {
-            if (ppu->_2001_lazy & (0x3 << 3))
+            if (ppu->regs[0x0001] & (0x3 << 3))
             {
                 // evaluate sprite
                 if (ppu->scanline < 240) sprite_evaluate(ppu);
@@ -464,6 +454,16 @@ void ppu_run_pclk(PPU *ppu)
             }
         }
         //-- for ppu open bus --//
+
+        //++ for ppu reset delay ++//
+        if (ppu->reset_delay > 0)
+        {
+            if (--ppu->reset_delay == 0)
+            {
+                ppu->regs[0x0001] = ppu->_2001_delay;
+            }
+        }
+        //-- for ppu reset delay --//
 
         if (ppu->oddevenflag && (ppu->regs[0x0001] & (0x3 << 3)))
         {
@@ -546,14 +546,14 @@ void ppu_reset(PPU *ppu)
     ppu->temp0      = 0;
     ppu->temp1      = 0;
     ppu->_2007_lazy = 0;
-    ppu->_2001_lazy = 0;
     ppu->chrom_bkg  = (ppu->regs[0x0000] & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
     ppu->chrom_spr  = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
-    ppu->pclk_frame = 0;
+    ppu->pclk_frame = NES_HTOTAL * 240;
     ppu->pclk_line  = 0;
     ppu->pclk_fend  = NES_HTOTAL * NES_VTOTAL;
     ppu->oddevenflag= 0;
     ppu->scanline   = 1;
+    ppu->reset_delay= 4;
 
     // set default palette color
     ppu_set_vdev_pal(ppu, 0);
@@ -643,14 +643,19 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         break;
 
     case 0x0001:
-        // if write d3 & d4 to zero, update _2001_lazy immediately
-        if (!(byte & 0x18)) ppu->_2001_lazy = byte;
-
         // if d7-d5 or d0 changed, we need update palette
-        if ((byte & 0xe1) != (ppu->regs[0x0001] & 0xe1))
+        if ((ppu->regs[0x0001] & 0xe1) != (byte & 0xe1))
         {
             ppu_set_vdev_pal(ppu, byte & 0xe1);
         }
+
+        //++ for ppu reset delay
+        if (ppu->reset_delay)
+        {
+            ppu->_2001_delay = byte;
+            byte = ppu->regs[0x0001];
+        }
+        //-- for ppu reset delay
         break;
 
     case 0x0002:
