@@ -367,7 +367,7 @@ void ppu_run_pclk(PPU *ppu)
         if (ppu->pclk_line < 256)
         {
             int pixelc = 0; // pixel value for rendering
-            if (!(ppu->regs[0x0001] & (0x3 << 3)) && ppu->vaddr > 0x3f00)
+            if (!(ppu->regs[0x0001] & (0x3 << 3)) && (ppu->vaddr & 0xff00) == 0x3f00)
             {
                 pixelc = ppu->vaddr & 0x1f;
             }
