@@ -50,6 +50,10 @@ BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
         // ctrl+o pressed
         if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'O')
         {
+            //++ if ffndb dialog is opend, close it first ++//
+            CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
+            if (dlg) dlg->PostMessage(WM_CLOSE);
+            //-- if ffndb dialog is opend, close it first --//
             FreeNesRom();
             LoadNesRom();
             return TRUE;
