@@ -89,9 +89,9 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     nes->extra = extra;
 
     // load cartridge first
-    if (!cartridge_load(&(nes->cart), file)) {
+    if (!cartridge_load(&(nes->cart), file))
+    {
         log_printf("failed to load nes rom file !");
-        return FALSE;
     }
 
     //++ cbus mem map ++//

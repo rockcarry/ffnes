@@ -12,8 +12,6 @@
 // 内部常量定义
 #define SCREEN_WIDTH    GetSystemMetrics(SM_CXSCREEN)
 #define SCREEN_HEIGHT   GetSystemMetrics(SM_CYSCREEN)
-#define NES_WIDTH       256
-#define NES_HEIGHT      240
 
 // CffemulatorDlg dialog
 CffemulatorDlg::CffemulatorDlg(CWnd* pParent /*=NULL*/)
@@ -176,12 +174,9 @@ void CffemulatorDlg::LoadNesRom()
 
     char file[MAX_PATH] = {0};
     CFileDialog dlg(TRUE, NULL, NULL, 0, "nes rom file (*.nes)|*.nes||");
-    if (dlg.DoModal() == IDOK)
-    {
-        strcpy(file, dlg.GetPathName());
-        nes_init(&m_nes, file, (DWORD)GetSafeHwnd());
-        nes_run (&m_nes);
-    }
+    if (dlg.DoModal() == IDOK) strcpy(file, dlg.GetPathName());
+    nes_init(&m_nes, file, (DWORD)GetSafeHwnd());
+    nes_run (&m_nes);
 }
 
 void CffemulatorDlg::FreeNesRom()

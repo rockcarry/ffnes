@@ -10,7 +10,21 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
 
     strcpy(pcart->file, file);
     fp = fopen(file, "rb");
-    if (!fp) return FALSE;
+    if (!fp)
+    {
+        memset(pcart, 0, sizeof(CARTRIDGE));
+        pcart->signature[0] = 'N';
+        pcart->signature[1] = 'E';
+        pcart->signature[2] = 'S';
+        pcart->signature[3] = 0x1a;
+        pcart->prom_count   = 1;
+        pcart->crom_count   = 1;
+        pcart->buf_prom     = malloc(0x4000);
+        pcart->buf_crom     = malloc(0x2000);
+        if (pcart->buf_prom) memset(pcart->buf_prom, 0xea, 0x4000);
+        if (pcart->buf_crom) memset(pcart->buf_crom, 0x00, 0x2000);
+        return FALSE;
+    }
 
     // read ines file header
     fread(pcart, INES_HEADER_SIZE, 1, fp);

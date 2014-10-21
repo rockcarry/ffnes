@@ -3,10 +3,6 @@
 #include "vdev.h"
 #include "log.h"
 
-// 内部常量定义
-#define PPU_IMAGE_WIDTH  256
-#define PPU_IMAGE_HEIGHT 240
-
 // 内部全局变量定义
 BYTE DEF_PPU_PAL[64 * 3] =
 {
@@ -509,7 +505,7 @@ void ppu_init(PPU *ppu, DWORD extra)
     //-- for power up palette
 
     // create vdev for ppu
-    ppu->vdevctxt = vdev_create(PPU_IMAGE_WIDTH, PPU_IMAGE_HEIGHT, 32, extra);
+    ppu->vdevctxt = vdev_create(NES_WIDTH, NES_HEIGHT, 32, extra);
     if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
 
     // init power up palette

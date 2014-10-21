@@ -22,6 +22,8 @@
 #define NES_FREQ_PPU   (NES_FREQ_MCLK / 4 ) // ppu freq
 #define NES_HTOTAL      341                 // htotal
 #define NES_VTOTAL      262                 // vtotal
+#define NES_WIDTH       256                 // screen width
+#define NES_HEIGHT      240                 // screen height
 #define NES_FRAMERATE  (FREQ_PPU / (NES_HTOTAL*NES_VTOTAL))  // frame rate
 
 // memory size defines
