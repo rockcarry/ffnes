@@ -211,6 +211,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\lzw.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\mem.c"
 				>
 			</File>
@@ -270,6 +274,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\log.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\lzw.h"
 				>
 			</File>
 			<File

@@ -15,10 +15,9 @@ enum
 
 // 类型定义
 typedef struct {
+    char  file[MAX_PATH];
     int   mode;
-    FILE *fp;
-    BYTE  counter;
-    BYTE  value;
+    void *lzwfp;
 } REPLAY;
 
 // 函数声明
