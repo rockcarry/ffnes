@@ -395,7 +395,7 @@ void ppu_run_pclk(PPU *ppu)
             // write pixel on vdev
             *ppu->draw_buffer++ = ((DWORD*)ppu->vdevpal)[ppu->palette[pixelc]];
         }
-        else if (ppu->pclk_line == 256)
+        else if (ppu->pclk_line == 321)
         {
             if (ppu->regs[0x0001] & (0x3 << 3))
             {
