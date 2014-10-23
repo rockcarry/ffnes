@@ -214,6 +214,9 @@ static void sprite_evaluate(PPU *ppu)
     sprdst = ppu->sprbuf;
     sprend = sprsrc + 256;
 
+    // sprite 0 hit flag should always clear when Y = 255
+    if (sprsrc[0] == 255) ppu->regs[0x0002] &= ~(1 << 6);
+
     ppu->sprnum  = 0;
     ppu->sprzero = NULL;
     if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh)
@@ -336,11 +339,15 @@ void ppu_run_pclk(PPU *ppu)
     //-- update vblank pin status
 
     // scanline 261 pre-render scanline
-    if (ppu->pclk_frame == NES_HTOTAL * 261 + 1) // scanline 261, tick 1
+    if (ppu->pclk_frame == NES_HTOTAL * 261 + 0) // scanline 261, tick 0
+    {
+        ppu->regs[0x0002] &= ~(3 << 5);
+    }
+    else if (ppu->pclk_frame == NES_HTOTAL * 261 + 1) // scanline 261, tick 1
     {
         // clear vblank bit of reg $2002
         ppu->vblklast = ppu->regs[0x0002] & (1 << 7);
-        ppu->regs[0x0002] &= ~(7 << 5);
+        ppu->regs[0x0002] &= ~(1 << 7);
 
         // if sprite or name-tables are visible.
         if (ppu->regs[0x0001] & (0x3 << 3))
