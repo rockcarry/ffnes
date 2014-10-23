@@ -402,20 +402,23 @@ void ppu_run_pclk(PPU *ppu)
             // write pixel on vdev
             *ppu->draw_buffer++ = ((DWORD*)ppu->vdevpal)[ppu->palette[pixelc]];
         }
-        else if (ppu->pclk_line == 321)
+        else if (ppu->pclk_line == 321) // tick 321
         {
             if (ppu->regs[0x0001] & (0x3 << 3))
             {
                 // evaluate sprite
                 if (ppu->scanline < 240) sprite_evaluate(ppu);
 
-                // at dot 256, reget vaddr from temp0
+                // reget vaddr from temp0
                 ppu->vaddr &= ~0x041f;
                 ppu->vaddr |= (ppu->temp0 & 0x041f);
                 ppu->finex  = ppu->temp1;
 
-                // at dot 257, do y increment
+                // do y increment
                 ppu_yincrement(ppu);
+
+                // set need fetch tile flag to 1
+                ppu->ndtile = 1;
             }
 
             // next scanline of vdev draw buffer
