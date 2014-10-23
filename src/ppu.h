@@ -41,6 +41,7 @@ typedef struct {
     BYTE  cdatal;
     BYTE  cdatah;
     BYTE  pixelh;
+    int   ndtile;
     //-- for step pclk rendering --//
 
     //++ for ppu reset delay ++//
@@ -48,10 +49,11 @@ typedef struct {
     int   _2001_delay;
     //-- for ppu reset delay --//
 
-    // sprite buffer for rendering
+    //++ sprite buffer for rendering
     BYTE  sprbuf[64]; // sprite buffer
     BYTE  sprnum;     // sprite number
     BYTE *sprzero;    // sprite zero
+    //-- sprite buffer for rendering
 
     // palette for vdev rendering
     BYTE  vdevpal[64*4];

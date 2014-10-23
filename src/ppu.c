@@ -350,11 +350,8 @@ void ppu_run_pclk(PPU *ppu)
             ppu->vaddr = ppu->temp0;
             ppu->finex = ppu->temp1;
 
-            // y increment
-            ppu_yincrement(ppu);
-
-            // fetch tile data
-            ppu_fetch_tile(ppu);
+            // set need fetch tile flag to 1
+            ppu->ndtile = 1;
         }
 
         // lock video device, obtain draw buffer address & stride
@@ -372,6 +369,15 @@ void ppu_run_pclk(PPU *ppu)
                 pixelc = ppu->vaddr & 0x1f;
             }
 
+            if (ppu->regs[0x0001] & (0x3 << 3))
+            {
+                // fetch tile data if needed
+                if (ppu->ndtile) ppu_fetch_tile(ppu);
+
+                // do x increment
+                ppu->ndtile = ppu_xincrement(ppu);
+            }
+
             // render background
             if (ppu->regs[0x0001] & (1 << 3))
             {
@@ -385,12 +391,6 @@ void ppu_run_pclk(PPU *ppu)
             // render sprite
             if (ppu->regs[0x0001] & (1 << 4)) pixelc = sprite_render(ppu, pixelc);
 
-            // do x increment
-            if (ppu->regs[0x0001] & (0x3 << 3))
-            {
-                // fetch tile data
-                if (ppu_xincrement(ppu)) ppu_fetch_tile(ppu);
-            }
 
             // write pixel on vdev
             *ppu->draw_buffer++ = ((DWORD*)ppu->vdevpal)[ppu->palette[pixelc]];
@@ -409,9 +409,6 @@ void ppu_run_pclk(PPU *ppu)
 
                 // at dot 257, do y increment
                 ppu_yincrement(ppu);
-
-                // fetch tile data
-                ppu_fetch_tile(ppu);
             }
 
             // next scanline of vdev draw buffer
@@ -466,7 +463,7 @@ void ppu_run_pclk(PPU *ppu)
             // frame change
             ppu->pclk_frame = 0;
             ppu->pclk_line  = 0;
-            ppu->scanline   = 1;
+            ppu->scanline   = 0;
             ppu->oddevenflag= 0; // next frame is even frame
             return;
         }
@@ -478,7 +475,7 @@ void ppu_run_pclk(PPU *ppu)
         // frame change
         ppu->pclk_frame  = 0;
         ppu->pclk_line   = 0;
-        ppu->scanline    = 1;
+        ppu->scanline    = 0;
         ppu->oddevenflag = !ppu->oddevenflag; // toggle odd/even frame flag
         return;
     }
@@ -548,7 +545,7 @@ void ppu_reset(PPU *ppu)
     ppu->pclk_line  = 0;
     ppu->pclk_fend  = NES_HTOTAL * NES_VTOTAL;
     ppu->oddevenflag= 0;
-    ppu->scanline   = 1;
+    ppu->scanline   = 0;
     ppu->reset_delay= 4;
 
     // set default palette color
