@@ -21,6 +21,7 @@ OBJS = \
     apu.o \
     mmc.o \
     ndb.o \
+    lzw.o \
     cartridge.o \
     joypad.o \
     replay.o \

@@ -311,7 +311,7 @@ static int sprite_render(PPU *ppu, int pixelc)
                 }
                 else
                 {
-                    result = (scolor | (sprdata[2] >> 2) & 0xc) + 16;
+                    result = (scolor | ((sprdata[2] >> 2) & 0xc)) + 16;
                 }
 
                 // update sprite 0 hit flag
