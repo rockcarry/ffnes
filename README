@@ -1,3 +1,6 @@
+Introduction
+------------
+
 ffnes is a nes emulator.
 
 Now there are a lot of nes emulators, but for me, I still want to write a completely new one. It's an interesting thing.
@@ -5,5 +8,37 @@ Now there are a lot of nes emulators, but for me, I still want to write a comple
 I have already spent a lot of time on study how nes hardware working and how to write a emulator. Now I'm ready to write code and do debugging.
 
 I payed more attention to the quality of the code and portability. I think the code is clear and good for your reading, enjoy it.
+
+
+How to compile
+--------------
+There is a vs2005 project for win32. You need install vs2005, then goto ffnes/vs2005 directory open ffnes.sln, and press run button directly, everything will be OK.
+
+If you are using ubuntu or other linux distribution, you need install a mingw32 gcc compiler, then you could goto src directory, try make.
+The target binary is for win32 due to mingw32. Currently code can't compile for linux platform, need do more porting work.
+
+
+How to use
+----------
+
+Currently, ffemulator has no menu, can only operate by short cut key:
+
+ctrl+o - open nes rom file
+ctrl+d - open ffndb debugging dialog
+ctrl+r - record game replay
+ctrl+p - play game replay
+
+Keyboard definitions for joystick:
+
+up      - E
+down    - D
+left    - S
+right   - F
+A       - J
+B       - K
+turbo A - U
+turbo B - I
+select  - B
+start   - N
 
 
