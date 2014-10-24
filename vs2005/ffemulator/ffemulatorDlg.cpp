@@ -178,7 +178,13 @@ void CffemulatorDlg::LoadNesRom()
 
     char file[MAX_PATH] = {0};
     CFileDialog dlg(TRUE, NULL, NULL, 0, "nes rom file (*.nes)|*.nes||");
-    if (dlg.DoModal() == IDOK) strcpy(file, dlg.GetPathName());
+    if (dlg.DoModal() == IDOK)
+    {
+        SetWindowText(CString("ffemulator - ") + dlg.GetFileName());
+        strcpy(file, dlg.GetPathName());
+    }
+    else SetWindowText("ffemulator");
+
     nes_init(&m_nes, file, (DWORD)GetSafeHwnd());
     nes_run (&m_nes);
 }
