@@ -92,7 +92,7 @@ void ndb_free (NDB *ndb);
 void ndb_reset(NDB *ndb);
 
 // set ndb debug mode
-void ndb_set_debug(NDB *ndb, BOOL en);
+void ndb_set_debug(NDB *ndb, int mode);
 
 // debug cpu
 void ndb_cpu_debug(NDB *ndb);

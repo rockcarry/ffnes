@@ -42,7 +42,7 @@
 #define NES_MAX_BUS_SIZE  10
 
 // 类型声明
-struct tagNDB;
+struct tagNDB; // for ndb
 
 // 类型定义
 typedef struct tagNES {
@@ -97,6 +97,7 @@ void nes_reset (NES *nes);
 void nes_run   (NES *nes);
 void nes_pause (NES *nes);
 void nes_replay(NES *nes, char *file, int mode);
+void nes_joypad(NES *nes, int pad, int key, int value);
 
 #endif
 

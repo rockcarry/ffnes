@@ -255,3 +255,8 @@ void nes_replay(NES *nes, char *file, int mode)
     replay_init(&(nes->replay), file, mode);
 }
 
+void nes_joypad(NES *nes, int pad, int key, int value)
+{
+    joypad_setkey(&(nes->pad), pad, key, value);
+}
+

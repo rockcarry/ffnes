@@ -22,31 +22,31 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpara
     case WM_KEYDOWN:
         switch (wparam)
         {
-        case 'E': joypad_setkey(&(nes->pad), 0, NES_KEY_UP     , 1); break;
-        case 'D': joypad_setkey(&(nes->pad), 0, NES_KEY_DOWN   , 1); break;
-        case 'S': joypad_setkey(&(nes->pad), 0, NES_KEY_LEFT   , 1); break;
-        case 'F': joypad_setkey(&(nes->pad), 0, NES_KEY_RIGHT  , 1); break;
-        case 'J': joypad_setkey(&(nes->pad), 0, NES_KEY_A      , 1); break;
-        case 'K': joypad_setkey(&(nes->pad), 0, NES_KEY_B      , 1); break;
-        case 'U': joypad_setkey(&(nes->pad), 0, NES_KEY_TURBO_A, 1); break;
-        case 'I': joypad_setkey(&(nes->pad), 0, NES_KEY_TURBO_B, 1); break;
-        case 'B': joypad_setkey(&(nes->pad), 0, NES_KEY_SELECT , 1); break;
-        case 'N': joypad_setkey(&(nes->pad), 0, NES_KEY_START  , 1); break;
+        case 'E': nes_joypad(nes, 0, NES_KEY_UP     , 1); break;
+        case 'D': nes_joypad(nes, 0, NES_KEY_DOWN   , 1); break;
+        case 'S': nes_joypad(nes, 0, NES_KEY_LEFT   , 1); break;
+        case 'F': nes_joypad(nes, 0, NES_KEY_RIGHT  , 1); break;
+        case 'J': nes_joypad(nes, 0, NES_KEY_A      , 1); break;
+        case 'K': nes_joypad(nes, 0, NES_KEY_B      , 1); break;
+        case 'U': nes_joypad(nes, 0, NES_KEY_TURBO_A, 1); break;
+        case 'I': nes_joypad(nes, 0, NES_KEY_TURBO_B, 1); break;
+        case 'B': nes_joypad(nes, 0, NES_KEY_SELECT , 1); break;
+        case 'N': nes_joypad(nes, 0, NES_KEY_START  , 1); break;
         }
         break;
     case WM_KEYUP:
         switch (wparam)
         {
-        case 'E': joypad_setkey(&(nes->pad), 0, NES_KEY_UP     , 0); break;
-        case 'D': joypad_setkey(&(nes->pad), 0, NES_KEY_DOWN   , 0); break;
-        case 'S': joypad_setkey(&(nes->pad), 0, NES_KEY_LEFT   , 0); break;
-        case 'F': joypad_setkey(&(nes->pad), 0, NES_KEY_RIGHT  , 0); break;
-        case 'J': joypad_setkey(&(nes->pad), 0, NES_KEY_A      , 0); break;
-        case 'K': joypad_setkey(&(nes->pad), 0, NES_KEY_B      , 0); break;
-        case 'U': joypad_setkey(&(nes->pad), 0, NES_KEY_TURBO_A, 0); break;
-        case 'I': joypad_setkey(&(nes->pad), 0, NES_KEY_TURBO_B, 0); break;
-        case 'B': joypad_setkey(&(nes->pad), 0, NES_KEY_SELECT , 0); break;
-        case 'N': joypad_setkey(&(nes->pad), 0, NES_KEY_START  , 0); break;
+        case 'E': nes_joypad(nes, 0, NES_KEY_UP     , 0); break;
+        case 'D': nes_joypad(nes, 0, NES_KEY_DOWN   , 0); break;
+        case 'S': nes_joypad(nes, 0, NES_KEY_LEFT   , 0); break;
+        case 'F': nes_joypad(nes, 0, NES_KEY_RIGHT  , 0); break;
+        case 'J': nes_joypad(nes, 0, NES_KEY_A      , 0); break;
+        case 'K': nes_joypad(nes, 0, NES_KEY_B      , 0); break;
+        case 'U': nes_joypad(nes, 0, NES_KEY_TURBO_A, 0); break;
+        case 'I': nes_joypad(nes, 0, NES_KEY_TURBO_B, 0); break;
+        case 'B': nes_joypad(nes, 0, NES_KEY_SELECT , 0); break;
+        case 'N': nes_joypad(nes, 0, NES_KEY_START  , 0); break;
         }
         break;
     default:

@@ -6,11 +6,8 @@ nes_reset
 nes_run
 nes_pause
 nes_replay
+nes_joypad
 
-joypad_reset
-joypad_setkey
-
-ndb_reset
 ndb_set_debug
 ndb_cpu_runto
 ndb_dasm_one_inst
