@@ -444,7 +444,7 @@ void cpu_reset(CPU *cpu)
     cpu->nmi_last     = 1;
     cpu->nmi_cur      = 1;
     cpu->irq_flag     = 1;
-    cpu->pclk_divider = 3;
+    cpu->cclk_divider = 3;
     cpu->cclk_counter = 0;
     cpu->cclk_dma     = 0;
 }
@@ -838,10 +838,10 @@ done:
 
 void cpu_run_pclk(CPU *cpu)
 {
-    if (--cpu->pclk_divider == 0)
+    if (--cpu->cclk_divider == 0)
     {
         cpu_run_cclk(cpu);
-        cpu->pclk_divider = 3;
+        cpu->cclk_divider = 3;
     }
 }
 

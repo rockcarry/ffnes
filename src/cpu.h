@@ -25,7 +25,7 @@ typedef struct {
     int nmi_last;
     int nmi_cur;
     int irq_flag;
-    int pclk_divider;
+    int cclk_divider;
     int cclk_counter;
     int cclk_instr;
     int cclk_dma;
