@@ -44,11 +44,6 @@ typedef struct {
     int   ndtile;
     //-- for step pclk rendering --//
 
-    //++ for ppu reset delay ++//
-    int   reset_delay;
-    int   _2001_delay;
-    //-- for ppu reset delay --//
-
     //++ sprite buffer for rendering
     BYTE  sprbuf[64]; // sprite buffer
     BYTE  sprnum;     // sprite number

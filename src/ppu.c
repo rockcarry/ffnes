@@ -228,10 +228,10 @@ static void sprite_evaluate(PPU *ppu)
     {
         if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh)
         {
-            switch (ppu->sprnum++)
+            switch (++ppu->sprnum)
             {
-            case 8 : ppu->regs[0x0002] |= (1 << 5); break; // sprite overflow
-            case 15: return; // sprite buffer full
+            case 9 : ppu->regs[0x0002] |= (1 << 5); break; // sprite overflow
+            case 16: return; // sprite buffer full
             }
 
             tile = sprsrc[1];
@@ -458,16 +458,6 @@ void ppu_run_pclk(PPU *ppu)
         }
         //-- for ppu open bus --//
 
-        //++ for ppu reset delay ++//
-        if (ppu->reset_delay > 0)
-        {
-            if (--ppu->reset_delay == 0)
-            {
-                ppu->regs[0x0001] = ppu->_2001_delay;
-            }
-        }
-        //-- for ppu reset delay --//
-
         if (ppu->oddevenflag && (ppu->regs[0x0001] & (0x3 << 3)))
         {
             // frame change
@@ -556,7 +546,6 @@ void ppu_reset(PPU *ppu)
     ppu->pclk_fend  = NES_HTOTAL * NES_VTOTAL;
     ppu->oddevenflag= 0;
     ppu->scanline   = 0;
-    ppu->reset_delay= 4;
 
     // set default palette color
     ppu_set_vdev_pal(ppu, 0);
@@ -651,14 +640,6 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         {
             ppu_set_vdev_pal(ppu, byte & 0xe1);
         }
-
-        //++ for ppu reset delay
-        if (ppu->reset_delay)
-        {
-            ppu->_2001_delay = byte;
-            byte = ppu->regs[0x0001];
-        }
-        //-- for ppu reset delay
         break;
 
     case 0x0002:
