@@ -331,8 +331,8 @@ static int sprite_render(PPU *ppu, int pixelc)
 void ppu_run_pclk(PPU *ppu)
 {
     //++ update vblank pin status
-    if (  (ppu->pclk_frame >= NES_HTOTAL * 241 + 4 && ppu->pclk_frame <= NES_HTOTAL * 261 + 1)
-       || (ppu->pclk_frame == NES_HTOTAL * 261 + 7) )
+    if (  (ppu->pclk_frame >= NES_HTOTAL * 241 + 4 && ppu->pclk_frame <= NES_HTOTAL * 261)
+       || (ppu->pclk_frame >= NES_HTOTAL * 261 + 4) )
     {
         ppu->pinvbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
     }
