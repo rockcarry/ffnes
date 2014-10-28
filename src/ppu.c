@@ -434,7 +434,7 @@ void ppu_run_pclk(PPU *ppu)
             if (ppu->regs[0x0001] & (0x3 << 3))
             {
                 // evaluate sprite
-                if (ppu->scanline < 240) sprite_evaluate(ppu);
+                sprite_evaluate(ppu);
 
                 // reget vaddr from temp0
                 ppu->vaddr &= ~0x041f;
