@@ -26,25 +26,21 @@ static void nes_do_reset(NES* nes)
 static void* nes_thread_proc(void *param)
 {
     NES *nes = (NES*)param;
-    DWORD dwTickLast  = 0;
-    DWORD dwTickCur   = 0;
-    DWORD dwTickDiff  = 0;
-    DWORD dwTickSleep = 0;
-    int   totalpclk;
+    int  totalpclk;
 
     while (!nes->thread_exit)
     {
-        if (!nes->isrunning)
-        {
-            Sleep(16);
-            continue;
-        }
+        // for run/pause
+        if (!nes->isrunning) goto next;
 
-        if (nes->request_reset == 1) {
+        // for nes reset
+        if (nes->request_reset == 1)
+        {
             nes->request_reset = 0;
             nes_do_reset(nes);
         }
 
+        //++ run cpu & apu & ppu
         totalpclk = NES_HTOTAL * NES_VTOTAL;
         do {
             cpu_run_pclk(&(nes->cpu));
@@ -52,24 +48,15 @@ static void* nes_thread_proc(void *param)
             ppu_run_pclk(&(nes->ppu));
             cpu_nmi(&(nes->cpu), nes->ppu.pinvbl);
         } while (--totalpclk > 0);
+        //-- run cpu & apu & ppu
 
         // run joypad for turbo key function
         joypad_run(&(nes->pad));
 
-        //++ framerate control ++//
-        dwTickCur  = GetTickCount();
-        dwTickDiff = dwTickCur - dwTickLast;
-        dwTickLast = dwTickCur;
-        if (dwTickDiff > 16) {
-            if (dwTickSleep > 0) dwTickSleep--;
-        }
-        else if (dwTickDiff < 16) {
-            dwTickSleep++;
-        }
-        if (dwTickSleep) Sleep(dwTickSleep);
-        //-- framerate control --//
-
-//      log_printf("%d, %d\n", dwTickDiff, dwTickSleep);
+next:
+        // frame rate is synced to 48KHz audio playback
+        // sleep is used to make frame pitch more uniform
+        Sleep(8);
     }
     return NULL;
 }
