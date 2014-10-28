@@ -38,10 +38,9 @@ typedef struct {
 
     DWORD*draw_buffer;
     int   draw_stride;
-    BYTE  cdatal;
-    BYTE  cdatah;
-    BYTE  pixelh;
-    int   ndtile;
+    DWORD tdatal;
+    DWORD tdatah;
+    DWORD adata;
     //-- for step pclk rendering --//
 
     //++ sprite buffer for rendering

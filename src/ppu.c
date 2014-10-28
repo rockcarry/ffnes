@@ -139,45 +139,52 @@ static void ppu_set_vdev_pal(PPU *ppu, int flags)
 static void ppu_fetch_tile(PPU *ppu)
 {
     NES *nes = container_of(ppu, NES, ppu);
-    int  ntabn, toffs, aoffs, ashift;
-    BYTE tdata, adata;
+    int  ntabn, noffs, aoffs, ndata, adata, ashift;
 
-    // ntabn, toffs & aoffs
+    // ntabn, noffs & aoffs
     ntabn = (ppu->vaddr >> 10) & 0x0003;
-    toffs = 0x0000 + (ppu->vaddr & 0x03ff);
+    noffs = 0x0000 + (ppu->vaddr & 0x03ff);
     aoffs = 0x03c0 + ((ppu->vaddr >> 4) & 0x38) + ((ppu->vaddr >> 2) & 0x07);
 
-    // tdata, adata & cdata
-    tdata       = nes->vram[ntabn].data[toffs];
-    adata       = nes->vram[ntabn].data[aoffs];
-    ppu->cdatal = ppu->chrom_bkg[tdata * 16 + 8 * 0 + FINEY] << FINEX;
-    ppu->cdatah = ppu->chrom_bkg[tdata * 16 + 8 * 1 + FINEY] << FINEX;
+    // ndata, adata
+    ndata = nes->vram[ntabn].data[noffs];
+    adata = nes->vram[ntabn].data[aoffs];
+
+    // tdata
+    ppu->tdatal |= ppu->chrom_bkg[ndata * 16 + 8 * 0 + FINEY];
+    ppu->tdatah |= ppu->chrom_bkg[ndata * 16 + 8 * 1 + FINEY];
 
     // ashift & pixelh
-    ashift      = ((TILEY & (1 << 1)) << 1) | ((TILEX & (1 << 1)) << 0);
-    ppu->pixelh = ((adata >> ashift) & 0x3) << 2;
+    ashift      = ((ppu->vaddr & (1 << 6)) >> 4) | ((ppu->vaddr & (1 << 1)));
+    ppu->adata>>= 4;
+    ppu->adata |= ((adata >> ashift) & 0x3) << 10;
 }
 
-static int ppu_xincrement(PPU *ppu)
+// vaddr increment
+static void ppu_vincrement(PPU *ppu)
+{
+    if ((ppu->vaddr & 0x1f) == 31)
+    {
+        ppu->vaddr &=~0x1f;
+        ppu->vaddr ^= (1 << 10);
+    }
+    else ppu->vaddr++;
+}
+
+// x increment
+static void ppu_xincrement(PPU *ppu)
 {
     if (FINEX == 7)
     {
         FINEX = 0;
-        if ((ppu->vaddr & 0x1f) == 31)
-        {
-            ppu->vaddr &=~0x1f;
-            ppu->vaddr ^= (1 << 10);
-        }
-        else ppu->vaddr++;
-        return 1;
+        ppu_fetch_tile(ppu);
+        ppu_vincrement(ppu);
     }
-    else {
-        FINEX++;
-        return 0;
-    }
+    else FINEX++;
 }
 
-static int ppu_yincrement(PPU *ppu)
+// y increment
+static void ppu_yincrement(PPU *ppu)
 {
     if ((ppu->vaddr & 0x7000) == 0x7000)
     {
@@ -195,12 +202,8 @@ static int ppu_yincrement(PPU *ppu)
             ppu->vaddr += (0x01 <<  5);
             break;
         }
-        return 1;
     }
-    else {
-        ppu->vaddr += 0x1000;
-        return 0;
-    }
+    else ppu->vaddr += 0x1000;
 }
 
 static void sprite_evaluate(PPU *ppu)
@@ -272,10 +275,10 @@ static void sprite_evaluate(PPU *ppu)
     }
 }
 
-static int sprite_render(PPU *ppu, int pixelc)
+static int sprite_render(PPU *ppu, int bkcolor)
 {
     BYTE *sprdata = ppu->sprbuf + ppu->sprnum * 4;
-    int   result  = pixelc;
+    int   result  = bkcolor;
     int   scolor;
 
     while (sprdata > ppu->sprbuf)
@@ -293,7 +296,7 @@ static int sprite_render(PPU *ppu, int pixelc)
             }
             else // hflip - 0
             {
-                scolor = (sprdata[0] >> 7) | ((sprdata[1] >> 7) << 1);
+                scolor = (sprdata[0] >> 7) | (sprdata[1] >> 7 << 1);
                 sprdata[0] <<= 1;
                 sprdata[1] <<= 1;
             }
@@ -305,9 +308,9 @@ static int sprite_render(PPU *ppu, int pixelc)
 
             if (scolor)
             {
-                if ((sprdata[2] & (1 << 6)) && (pixelc & 0x3))
+                if ((sprdata[2] & (1 << 6)) && (bkcolor & 0x3))
                 {
-                    result = pixelc;
+                    result = bkcolor;
                 }
                 else
                 {
@@ -315,7 +318,7 @@ static int sprite_render(PPU *ppu, int pixelc)
                 }
 
                 // update sprite 0 hit flag
-                if (ppu->sprzero == sprdata && ppu->pclk_line != 255 && (pixelc & 0x3))
+                if (ppu->sprzero == sprdata && ppu->pclk_line != 255 && (bkcolor & 0x3))
                 {
                     ppu->regs[0x0002] |= (1 << 6);
                 }
@@ -356,9 +359,6 @@ void ppu_run_pclk(PPU *ppu)
             // temp at the beginning of the line
             ppu->vaddr = ppu->temp0;
             ppu->finex = ppu->temp1;
-
-            // set need fetch tile flag to 1
-            ppu->ndtile = 1;
         }
 
         // lock video device, obtain draw buffer address & stride
@@ -370,37 +370,63 @@ void ppu_run_pclk(PPU *ppu)
     {
         if (ppu->pclk_line < 256)
         {
-            int pixelc = 0; // pixel value for rendering
-            if (!(ppu->regs[0x0001] & (0x3 << 3)) && (ppu->vaddr & 0xff00) == 0x3f00)
-            {
-                pixelc = ppu->vaddr & 0x1f;
-            }
+            int pixel = 0; // default pixel value
 
+            // fetch tile and do x increment
             if (ppu->regs[0x0001] & (0x3 << 3))
             {
-                // fetch tile data if needed
-                if (ppu->ndtile) ppu_fetch_tile(ppu);
+                // according to ppu pipeline, on each visiable scanline
+                //++ pre-fetch three times tile data for rendering
+                if (ppu->pclk_line == 0)
+                {
+                    // clear it first
+                    ppu->tdatal  = 0;
+                    ppu->tdatah  = 0;
+
+                    // tile data 1
+                    ppu_fetch_tile(ppu);
+                    ppu_vincrement(ppu);
+                    ppu->tdatal<<= 8;
+                    ppu->tdatah<<= 8;
+
+                    // tile data 2
+                    ppu_fetch_tile(ppu);
+                    ppu_vincrement(ppu);
+                    ppu->tdatal<<= 8;
+                    ppu->tdatah<<= 8;
+
+                    // tile data 3
+                    ppu_fetch_tile(ppu);
+                    ppu_vincrement(ppu);
+                    ppu->tdatal<<= FINEX;
+                    ppu->tdatah<<= FINEX;
+                }
+                //-- pre-fetch three times tile data for rendering
+
+                // render background
+                if (ppu->regs[0x0001] & (1 << 3))
+                {
+                    if ((ppu->regs[0x0001] & (1 << 1)) || ppu->pclk_line >= 8)
+                    {
+                        pixel = (ppu->adata & 0xf) | (ppu->tdatah << 8 >> 31 << 1) | (ppu->tdatal << 8 >> 31);
+                    }
+                    ppu->tdatal <<= 1; ppu->tdatah <<= 1;
+                }
+
+                // render sprite
+                if (ppu->regs[0x0001] & (1 << 4)) pixel = sprite_render(ppu, pixel);
 
                 // do x increment
-                ppu->ndtile = ppu_xincrement(ppu);
+                ppu_xincrement(ppu);
             }
-
-            // render background
-            if (ppu->regs[0x0001] & (1 << 3))
+            else if ((ppu->vaddr & 0xff00) == 0x3f00)
             {
-                if ((ppu->regs[0x0001] & (1 << 1)) || ppu->pclk_line >= 8)
-                {
-                    pixelc = ppu->pixelh | ((ppu->cdatal >> 7) << 0) | ((ppu->cdatah >> 7) << 1);
-                }
-                ppu->cdatal <<= 1; ppu->cdatah <<= 1;
+                // pixel value for palette hack
+                pixel = ppu->vaddr & 0x1f;
             }
-
-            // render sprite
-            if (ppu->regs[0x0001] & (1 << 4)) pixelc = sprite_render(ppu, pixelc);
-
 
             // write pixel on vdev
-            *ppu->draw_buffer++ = ((DWORD*)ppu->vdevpal)[ppu->palette[pixelc]];
+            *ppu->draw_buffer++ = ((DWORD*)ppu->vdevpal)[ppu->palette[pixel]];
         }
         else if (ppu->pclk_line == 321) // tick 321
         {
@@ -416,9 +442,6 @@ void ppu_run_pclk(PPU *ppu)
 
                 // do y increment
                 ppu_yincrement(ppu);
-
-                // set need fetch tile flag to 1
-                ppu->ndtile = 1;
             }
 
             // next scanline of vdev draw buffer
@@ -445,9 +468,8 @@ void ppu_run_pclk(PPU *ppu)
     else if (ppu->pclk_frame == NES_HTOTAL * NES_VTOTAL - 2)
     {
         //++ for ppu open bus ++//
-        int i;
-        for (i=0; i<8; i++)
-        {
+        int i = 7;
+        do {
             if (ppu->open_bust[i] > 0)
             {
                 if (--ppu->open_bust[i] == 0)
@@ -455,7 +477,7 @@ void ppu_run_pclk(PPU *ppu)
                     ppu->open_busv &= ~(1 << i);
                 }
             }
-        }
+        } while (i--);
         //-- for ppu open bus --//
 
         if (ppu->oddevenflag && (ppu->regs[0x0001] & (0x3 << 3)))
@@ -480,6 +502,7 @@ void ppu_run_pclk(PPU *ppu)
         return;
     }
 
+    // pclk increment
     ppu->pclk_frame++;
     ppu->pclk_line ++;
     if (ppu->pclk_line == NES_HTOTAL)
