@@ -210,8 +210,8 @@ static void sprite_evaluate(PPU *ppu)
 {
     NES  *nes = container_of(ppu, NES, ppu);
     int   sh  = (ppu->regs[0x0000] & (1 << 5)) ? 16 : 8;
-    int   sy, tile;
-    BYTE *chrrom, *sprsrc, *sprend, *sprdst;
+    int   sy, tile, oy = 0, onum = 0;
+    BYTE *chrrom, *sprsrc, *sprdst, *sprend;
 
     sprsrc = ppu->sprram;
     sprdst = ppu->sprbuf;
@@ -220,23 +220,14 @@ static void sprite_evaluate(PPU *ppu)
     // sprite 0 hit flag should always clear when Y = 255
     if (sprsrc[0] == 255) ppu->regs[0x0002] &= ~(1 << 6);
 
+    // for ppu->sprnum & ppu->sprzero
     ppu->sprnum  = 0;
     ppu->sprzero = NULL;
-    if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh)
-    {
-        ppu->sprzero = sprdst;
-    }
+    if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh) ppu->sprzero = sprdst;
 
-    while (sprsrc < sprend)
-    {
+    do {
         if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh)
         {
-            switch (++ppu->sprnum)
-            {
-            case 9 : ppu->regs[0x0002] |= (1 << 5); break; // sprite overflow
-            case 16: return; // sprite buffer full
-            }
-
             tile = sprsrc[1];
             sy   = ppu->scanline - sprsrc[0]; // sy
             if (sprsrc[2] & (1 << 7)) sy = sh - sy - 1; // vflip
@@ -268,11 +259,21 @@ static void sprite_evaluate(PPU *ppu)
             *sprdst++ = chrrom[tile * 16 + 8 * 1 + sy];
             *sprdst++ = ((sprsrc[2] << 1) & 0xc0) | ((sprsrc[2] << 4) & 0x30);
             *sprdst++ = sprsrc[3];
+
+            // sprnum++
+            ppu->sprnum++;
         }
+
+        //++ for sprite overflow obscure
+        if (ppu->scanline >= sprsrc[oy] && ppu->scanline < sprsrc[oy] + sh) onum++;
+        if (onum >= 9 ) { oy++; oy &= 3; }
+        if (onum == 8 ) { onum++;        }
+        if (onum == 10) { onum++; ppu->regs[0x0002] |= (1 << 5); }
+        //-- for sprite overflow obscure
 
         // next sprite
         sprsrc += 4;
-    }
+    } while (sprsrc < sprend && ppu->sprnum < 16);
 }
 
 static int sprite_render(PPU *ppu, int bkcolor)
