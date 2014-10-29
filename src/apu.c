@@ -9,7 +9,7 @@
 #define MIXER_DIVIDER       (NES_HTOTAL*NES_VTOTAL / 800 + 1)
 #define SCH_ENVLOP_DIVIDER  ((regs[0x0000] & 0xf) + 1)
 #define SCH_SWEEPU_DIVIDER  (((regs[0x0001] >> 4) & 0x7) + 1)
-#define SCH_WAVSEQ_DIVIDER  (48 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
+#define SCH_WAVSEQ_DIVIDER  (6 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
 
 // 内部全局变量定义
 static int length_table[32] =
