@@ -26,7 +26,7 @@ static void nes_do_reset(NES* nes)
 static void* nes_thread_proc(void *param)
 {
     NES *nes = (NES*)param;
-    int  totalpclk;
+    int  totalpclk, nmi, irq;
 
     while (!nes->thread_exit)
     {
@@ -43,10 +43,16 @@ static void* nes_thread_proc(void *param)
         //++ run cpu & apu & ppu
         totalpclk = NES_HTOTAL * NES_VTOTAL;
         do {
-            cpu_run_pclk(&(nes->cpu));
-            apu_run_pclk(&(nes->apu));
-            ppu_run_pclk(&(nes->ppu));
-            cpu_nmi(&(nes->cpu), nes->ppu.pinvbl);
+            cpu_run_pclk(&(nes->cpu)); // run cpu
+            ppu_run_pclk(&(nes->ppu)); // run ppu
+            apu_run_pclk(&(nes->apu)); // run apu
+
+            //+ for cpu nmi & irq
+            nmi =  nes->ppu.pinvbl;
+            irq = !nes->apu.frame_interrupt;
+            cpu_nmi(&(nes->cpu), nmi);
+            cpu_irq(&(nes->cpu), irq);
+            //- for cpu nmi & irq
         } while (--totalpclk > 0);
         //-- run cpu & apu & ppu
 
