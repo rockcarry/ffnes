@@ -3,6 +3,14 @@
 #include "vdev.h"
 #include "log.h"
 
+// 预编译开关
+// on real nes, sprite 0 hit detection is ignored at x=255
+// but for scrolltest rom (scroll.nes), if detection is enabled
+// at x=255, it will get a better performance, without any
+// image flicker when you scrolling the screen.
+// so I enable this feature for ffnes by default.
+#define ENABLE_SPRITE0_HIT_ATX255 TRUE
+
 // 内部全局变量定义
 BYTE DEF_PPU_PAL[64 * 3] =
 {
@@ -319,7 +327,11 @@ static int sprite_render(PPU *ppu, int bkcolor)
                 }
 
                 // update sprite 0 hit flag
+#if ENABLE_SPRITE0_HIT_ATX255
+                if (ppu->sprzero == sprdata && (bkcolor & 0x3))
+#else
                 if (ppu->sprzero == sprdata && ppu->pclk_line != 255 && (bkcolor & 0x3))
+#endif
                 {
                     ppu->regs[0x0002] |= (1 << 6);
                 }
