@@ -3,7 +3,7 @@
 
 // 内部常量定义
 #define APU_ABUF_NUM  16
-#define APU_ABUF_LEN  (799 * 4)
+#define APU_ABUF_LEN  (797 * 4)
 
 #define FRAME_DIVIDER       (NES_FREQ_PPU / 240)
 #define MIXER_DIVIDER       (NES_HTOTAL*NES_VTOTAL / 800 + 1)
@@ -21,7 +21,7 @@ static int length_table[32] =
 // 内部函数实现
 static void apu_reset_square_channel(SQUARE_CHANNEL *sch, BYTE *regs)
 {
-    // reset square channel 0
+    // reset square channel
     sch->length_counter = 0;
     sch->envlop_divider = SCH_ENVLOP_DIVIDER;
     sch->envlop_counter = 0;
@@ -34,6 +34,24 @@ static void apu_reset_square_channel(SQUARE_CHANNEL *sch, BYTE *regs)
     sch->wavseq_counter = 0;
     sch->output_value   = 0;
     regs[0x0001]        = 0x08;
+}
+
+static void apu_reset_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs)
+{
+    // reset triangle channel
+    tch->output_value = 0;
+}
+
+static void apu_reset_noise_channel(NOISE_CHANNEL *nch, BYTE *regs)
+{
+    // reset noise channel
+    nch->output_value = 0;
+}
+
+static void apu_reset_dmc_channel(DMC_CHANNEL *dmc, BYTE *regs)
+{
+    // reset dmc channel
+    dmc->output_value = 0;
 }
 
 static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int fel)
@@ -122,7 +140,7 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int fel)
     //+wave generator
     if (--sch->wavseq_divider == 0)
     {
-        int w = 0;
+        int w = -1;
         switch (regs[0x0000] >> 6)
         {
         case 0: if (sch->wavseq_counter == 1) w = 1;
@@ -131,9 +149,9 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int fel)
         case 3: if (sch->wavseq_counter == 0 && sch->wavseq_counter >= 3) w = 1;
         }
 
-        if (sch->length_counter && !sch->sweepu_silence && w)
+        if (sch->length_counter && !sch->sweepu_silence)
         {
-            sch->output_value = sch->envlop_volume;
+            sch->output_value = w * sch->envlop_volume;
         }
         else sch->output_value = 0;
 
@@ -149,15 +167,8 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int fel)
 // 函数实现
 void apu_init(APU *apu, DWORD extra)
 {
-    int i;
-
     // create adev & request buffer
     apu->adevctxt = adev_create(APU_ABUF_NUM, APU_ABUF_LEN);
-
-    // create mixer lookup table
-    apu->mixer_table_ss[0] = apu->mixer_table_tnd[0] = 0;
-    for (i=1; i<31 ; i++) apu->mixer_table_ss [i] = (int)(0x10000 * 95.52  / (8128.0  / i + 100));
-    for (i=1; i<203; i++) apu->mixer_table_tnd[i] = (int)(0x10000 * 163.67 / (24329.0 / i + 100));
 
     // reset apu
     apu_reset(apu);
@@ -170,16 +181,20 @@ void apu_free(APU *apu)
 
 void apu_reset(APU *apu)
 {
+    // reset pclk_frame value
+    apu->pclk_frame = 0;
+
     // reset frame sequencer
     apu->frame_interrupt = 0;
     apu->frame_divider   = FRAME_DIVIDER;
     apu->frame_counter   = 0;
 
     // reset square channel 1 & 2
-    apu_reset_square_channel(&(apu->sch1), (BYTE*)apu->regs + 0);
-    apu_reset_square_channel(&(apu->sch2), (BYTE*)apu->regs + 4);
-
-    apu->pclk_frame = 0;
+    apu_reset_square_channel  (&(apu->sch1), (BYTE*)apu->regs + 0x0000);
+    apu_reset_square_channel  (&(apu->sch2), (BYTE*)apu->regs + 0x0004);
+    apu_reset_triangle_channel(&(apu->tch ), (BYTE*)apu->regs + 0x0008);
+    apu_reset_noise_channel   (&(apu->nch ), (BYTE*)apu->regs + 0x000c);
+    apu_reset_dmc_channel     (&(apu->dmc ), (BYTE*)apu->regs + 0x0010);
 }
 
 void apu_run_pclk(APU *apu)
@@ -239,20 +254,16 @@ void apu_run_pclk(APU *apu)
     // for mixer ouput
     if (--apu->mixer_divider == 0)
     {
-        int triangle = 0;
-        int noise    = 0;
-        int dmc      = 0;
-        int squ_out  = apu->mixer_table_ss [apu->sch1.output_value + apu->sch2.output_value];
-        int tnd_out  = apu->mixer_table_tnd[3 * triangle + 2 * noise + dmc];
-        int sample   = squ_out + tnd_out;
+        short sample = (short)( 247 *(apu->sch1.output_value + apu->sch2.output_value)
+                              + 279 * apu->tch.output_value
+                              + 162 * apu->nch.output_value
+                              + 110 * apu->dmc.output_value);
         ((DWORD*)apu->audiobuf->lpdata)[apu->mixer_counter++] = (sample << 16) | (sample << 0);
         apu->mixer_divider = MIXER_DIVIDER;
     }
     //-- render audio data on audio buffer --//
 
     if (++apu->pclk_frame == NES_HTOTAL * NES_VTOTAL) {
-        ((DWORD*)apu->audiobuf->lpdata)[797] = ((DWORD*)apu->audiobuf->lpdata)[796];
-        ((DWORD*)apu->audiobuf->lpdata)[798] = ((DWORD*)apu->audiobuf->lpdata)[796];
         adev_audio_buf_post(apu->adevctxt,  (apu->audiobuf));
         apu->pclk_frame = 0;
     }
@@ -333,12 +344,11 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         break;
 
     case 0x0016:
+        // call joypad memrw callback
         NES_PAD_REG_WCB(pm, addr, byte);
-        break;
+        return; // return directly
 
     case 0x0017:
-        NES_PAD_REG_WCB(pm, addr, byte);
-
         //++ for frame sequencer
         nes->apu.frame_divider = FRAME_DIVIDER;
         nes->apu.frame_counter = 0;
@@ -353,7 +363,10 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
             apu_render_square_channel(&(nes->apu.sch1), (BYTE*)nes->apu.regs + 0, 0x03);
             apu_render_square_channel(&(nes->apu.sch2), (BYTE*)nes->apu.regs + 4, 0x03);
         }
-        break;
+
+        // call joypad memrw callback
+        NES_PAD_REG_WCB(pm, addr, byte);
+        return; // return directly
     }
 
     // save reg write value

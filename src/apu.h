@@ -9,19 +9,34 @@
 // 类型定义
 typedef struct
 {
-    int length_counter;
-    int envlop_divider;
-    int envlop_counter;
-    int envlop_volume;
-    int envlop_reset;
-    int sweepu_divider;
-    int sweepu_value;
-    int sweepu_reset;
-    int sweepu_silence;
-    int wavseq_divider;
-    int wavseq_counter;
-    int output_value;
+    int  length_counter;
+    int  envlop_divider;
+    int  envlop_counter;
+    int  envlop_volume;
+    int  envlop_reset;
+    int  sweepu_divider;
+    int  sweepu_value;
+    int  sweepu_reset;
+    int  sweepu_silence;
+    int  wavseq_divider;
+    int  wavseq_counter;
+    char output_value;
 } SQUARE_CHANNEL;
+
+typedef struct
+{
+    char output_value;
+} TRIANGLE_CHANNEL;
+
+typedef struct
+{
+    char output_value;
+} NOISE_CHANNEL;
+
+typedef struct
+{
+    char output_value;
+} DMC_CHANNEL;
 
 typedef struct {
     BYTE regs[0x20];
@@ -32,16 +47,17 @@ typedef struct {
 
     int  mixer_divider;
     int  mixer_counter;
-    int  mixer_table_ss [31];
-    int  mixer_table_tnd[203];
 
-    SQUARE_CHANNEL sch1;
-    SQUARE_CHANNEL sch2;
+    SQUARE_CHANNEL   sch1;
+    SQUARE_CHANNEL   sch2;
+    TRIANGLE_CHANNEL tch;
+    NOISE_CHANNEL    nch;
+    DMC_CHANNEL      dmc;
 
 // private:
     void     *adevctxt;
     AUDIOBUF *audiobuf;
-    long      pclk_frame;
+    int       pclk_frame;
 } APU;
 
 // 函数声明
