@@ -421,7 +421,8 @@ void ppu_run_pclk(PPU *ppu)
                 {
                     if ((ppu->regs[0x0001] & (1 << 1)) || ppu->pclk_line >= 8)
                     {
-                        pixel = (ppu->adata & 0xf) | (ppu->tdatah << 8 >> 31 << 1) | (ppu->tdatal << 8 >> 31);
+                        pixel = (ppu->tdatah << 8 >> 31 << 1) | (ppu->tdatal << 8 >> 31);
+                        if (pixel) pixel |= (ppu->adata & 0xf);
                     }
                     ppu->tdatal <<= 1; ppu->tdatah <<= 1;
                 }
@@ -432,7 +433,7 @@ void ppu_run_pclk(PPU *ppu)
                 // do x increment
                 ppu_xincrement(ppu);
             }
-            else if ((ppu->vaddr & 0xff00) == 0x3f00)
+            else if ((ppu->vaddr & 0x3f00) == 0x3f00)
             {
                 // pixel value for palette hack
                 pixel = ppu->vaddr & 0x1f;
@@ -724,23 +725,16 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
         if (vaddr < 0x3f00) bus_writeb(nes->pbus, vaddr, byte);
         else
         {
-            // for ppu palette mirroring
-            vaddr &= 0x001f;
-            if (vaddr == 0x0000 || vaddr == 0x0010)
+            //+ for ppu palette mirroring
+            vaddr &= 0x1f;
+            byte  &= 0x3f;
+            if (vaddr & 0x03) ppu->palette[vaddr] = byte;
+            else
             {
-                ppu->palette[0x00] = byte;
-                ppu->palette[0x04] = byte;
-                ppu->palette[0x08] = byte;
-                ppu->palette[0x0c] = byte;
-                ppu->palette[0x10] = byte;
-                ppu->palette[0x14] = byte;
-                ppu->palette[0x18] = byte;
-                ppu->palette[0x1c] = byte;
+                ppu->palette[vaddr & ~0x10] = byte;
+                ppu->palette[vaddr |  0x10] = byte;
             }
-            else if (vaddr & 0x3)
-            {
-                ppu->palette[vaddr] = byte;
-            }
+            //- for ppu palette mirroring
         }
         // increase vaddr by 1 or 32
         ppu->vaddr += (pm->data[0x0000] & (1 << 2)) ? 32 : 1;
