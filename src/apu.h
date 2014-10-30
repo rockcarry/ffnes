@@ -25,17 +25,23 @@ typedef struct
 
 typedef struct
 {
-    int ttimer_divider;
-    int ttimer_output;
+    int length_counter;
     int linear_haltflg;
     int linear_counter;
-    int length_counter;
+    int ttimer_divider;
     int tchseq_counter;
     int output_value;
 } TRIANGLE_CHANNEL;
 
 typedef struct
 {
+    int length_counter;
+    int envlop_divider;
+    int envlop_counter;
+    int envlop_volume;
+    int envlop_reset;
+    int ntimer_divider;
+    int nshift_register;
     int output_value;
 } NOISE_CHANNEL;
 
