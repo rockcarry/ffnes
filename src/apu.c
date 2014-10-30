@@ -9,7 +9,8 @@
 #define MIXER_DIVIDER       (NES_HTOTAL*NES_VTOTAL / 800 + 1)
 #define SCH_ENVLOP_DIVIDER  ((regs[0x0000] & 0xf) + 1)
 #define SCH_SWEEPU_DIVIDER  (((regs[0x0001] >> 4) & 0x7) + 1)
-#define SCH_WAVSEQ_DIVIDER  (6 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
+#define SCH_STIMER_DIVIDER  (6 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
+#define TCH_TTIMER_DIVIDER  (3 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
 
 // 内部全局变量定义
 static int length_table[32] =
@@ -30,8 +31,8 @@ static void apu_reset_square_channel(SQUARE_CHANNEL *sch, BYTE *regs)
     sch->sweepu_value   = 0;
     sch->sweepu_reset   = 0;
     sch->sweepu_silence = 0;
-    sch->wavseq_divider = SCH_WAVSEQ_DIVIDER;
-    sch->wavseq_counter = 0;
+    sch->stimer_divider = SCH_STIMER_DIVIDER;
+    sch->schseq_counter = 0;
     sch->output_value   = 0;
     regs[0x0001]        = 0x08;
 }
@@ -39,7 +40,13 @@ static void apu_reset_square_channel(SQUARE_CHANNEL *sch, BYTE *regs)
 static void apu_reset_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs)
 {
     // reset triangle channel
-    tch->output_value = 0;
+    tch->ttimer_divider = TCH_TTIMER_DIVIDER;
+    tch->ttimer_output  = 0;
+    tch->linear_haltflg = 1;
+    tch->linear_counter = 0;
+    tch->length_counter = 0;
+    tch->tchseq_counter = 0;
+    tch->output_value   = 0;
 }
 
 static void apu_reset_noise_channel(NOISE_CHANNEL *nch, BYTE *regs)
@@ -103,14 +110,14 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int wfel)
             int negate    = (regs[0x0001] & (1 << 3)) ? -1 : 1;
             int shifterc  = regs[0x0001] & 0x7;
             int shifterv  = (SCH_SWEEPU_DIVIDER / 48) >> shifterc;
-            int tarperiod = sch->wavseq_divider + 48 * negate * shifterv;
+            int tarperiod = sch->stimer_divider + 48 * negate * shifterv;
 
-            if (SCH_WAVSEQ_DIVIDER < 8 * 48 || tarperiod > 0x7ff * 48) sch->sweepu_silence = 1;
+            if (SCH_STIMER_DIVIDER < 8 * 48 || tarperiod > 0x7ff * 48) sch->sweepu_silence = 1;
             else
             {
                 if (regs[0x0001] & (1 << 7) && shifterc)
                 {
-                    sch->wavseq_divider = tarperiod;
+                    sch->stimer_divider = tarperiod;
                 }
                 sch->sweepu_silence = 0;
             }
@@ -137,18 +144,18 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int wfel)
         //-- length counter
     }
 
-    //+wave generator
     if (wfel & (1 << 3))
     {
-        if (--sch->wavseq_divider == 0)
+        //++ square channel sequencer
+        if (--sch->stimer_divider == 0)
         {
             int w = -1;
             switch (regs[0x0000] >> 6)
             {
-            case 0: if (sch->wavseq_counter == 1) w = 1;
-            case 1: if (sch->wavseq_counter >= 1 && sch->wavseq_counter <= 2) w = 1;
-            case 2: if (sch->wavseq_counter >= 1 && sch->wavseq_counter <= 4) w = 1;
-            case 3: if (sch->wavseq_counter == 0 && sch->wavseq_counter >= 3) w = 1;
+            case 0: if (sch->schseq_counter == 1) w = 1;
+            case 1: if (sch->schseq_counter >= 1 && sch->schseq_counter <= 2) w = 1;
+            case 2: if (sch->schseq_counter >= 1 && sch->schseq_counter <= 4) w = 1;
+            case 3: if (sch->schseq_counter == 0 && sch->schseq_counter >= 3) w = 1;
             }
 
             if (sch->length_counter && !sch->sweepu_silence)
@@ -157,14 +164,68 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int wfel)
             }
             else sch->output_value = 0;
 
-            sch->wavseq_counter++;
-            sch->wavseq_counter %= 8;
+            sch->schseq_counter++;
+            sch->schseq_counter %= 8;
+
+            // reload square channel timer divider
+            sch->stimer_divider = SCH_STIMER_DIVIDER;
+        }
+        //-- square channel sequencer
+    }
+}
+
+static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int wfel)
+{
+    if (wfel & (1 << 3))
+    {
+        //++ timer generator
+        if (--tch->ttimer_divider == 0)
+        {
+            // output clock
+            tch->ttimer_output  = 1;
 
             // reload wave sequencer divider
-            sch->wavseq_divider = SCH_WAVSEQ_DIVIDER;
+            tch->ttimer_divider = TCH_TTIMER_DIVIDER;
         }
+        else tch->ttimer_output = 0;
+        //-- timer generator
     }
-    //-wave generator
+
+    if ((wfel & (1 << 1)))
+    {
+        //++ linear counter
+        // if halt flag is set, set counter to reload value,
+        // otherwise if counter is non-zero, decrement it.
+        if (tch->linear_haltflg) tch->linear_counter = regs[0x0000] & 0x7f;
+        else if (tch->linear_counter > 0) tch->linear_counter--;
+
+        // if control flag is clear, clear halt flag.
+        if (!(regs[0x0000] & (1 << 7))) tch->linear_haltflg = 0;
+        //-- linear counter
+    }
+
+    if ((wfel & (1 << 0)))
+    {
+        //++ length counter
+        // when clocked by the frame sequencer, if the halt flag is clear
+        // and the counter is non-zero, it is decremented
+        if (!(regs[0x0000] & (1 << 7)))
+        {
+            if (tch->length_counter > 0) tch->length_counter--;
+        }
+        //-- length counter
+    }
+
+    if (tch->ttimer_output && tch->linear_counter && tch->length_counter)
+    {
+        //-- triangle channel sequencer
+        if (tch->tchseq_counter < 16) tch->output_value = 15 - 2 * tch->tchseq_counter;
+        else tch->output_value = 2 * tch->tchseq_counter - 47;
+        tch->tchseq_counter++;
+        tch->tchseq_counter %= 32;
+        //-- triangle channel sequencer
+    }
+    else tch->output_value = 0;
 }
 
 // 函数实现
@@ -251,8 +312,9 @@ void apu_run_pclk(APU *apu)
     //- frame sequencer
 
     // render square channel 1 & 2
-    apu_render_square_channel(&(apu->sch1), (BYTE*)apu->regs + 0, wfel);
-    apu_render_square_channel(&(apu->sch2), (BYTE*)apu->regs + 4, wfel);
+    apu_render_square_channel  (&(apu->sch1), (BYTE*)apu->regs + 0, wfel);
+    apu_render_square_channel  (&(apu->sch2), (BYTE*)apu->regs + 4, wfel);
+    apu_render_triangle_channel(&(apu->tch ), (BYTE*)apu->regs + 8, wfel);
 
     // for mixer ouput
     if (--apu->mixer_divider == 0)
@@ -328,6 +390,13 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         // the counter with the value from a lookup table
         if (pm->data[0x0015] & (1 << 1)) nes->apu.sch2.length_counter = length_table[byte >> 3];
         nes->apu.sch2.envlop_reset = 1; // set square channel's envelop reset flag
+        break;
+
+    case 0x000B:
+        // unless disabled, write this register immediately reloads
+        // the counter with the value from a lookup table
+        if (pm->data[0x0015] & (1 << 2)) nes->apu.tch.length_counter = length_table[byte >> 3];
+        nes->apu.tch.linear_haltflg = 1; // when register $400B is written to, the halt flag is set.
         break;
 
     case 0x0014:

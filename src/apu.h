@@ -9,33 +9,39 @@
 // 类型定义
 typedef struct
 {
-    int  length_counter;
-    int  envlop_divider;
-    int  envlop_counter;
-    int  envlop_volume;
-    int  envlop_reset;
-    int  sweepu_divider;
-    int  sweepu_value;
-    int  sweepu_reset;
-    int  sweepu_silence;
-    int  wavseq_divider;
-    int  wavseq_counter;
-    char output_value;
+    int length_counter;
+    int envlop_divider;
+    int envlop_counter;
+    int envlop_volume;
+    int envlop_reset;
+    int sweepu_divider;
+    int sweepu_value;
+    int sweepu_reset;
+    int sweepu_silence;
+    int stimer_divider;
+    int schseq_counter;
+    int output_value;
 } SQUARE_CHANNEL;
 
 typedef struct
 {
-    char output_value;
+    int ttimer_divider;
+    int ttimer_output;
+    int linear_haltflg;
+    int linear_counter;
+    int length_counter;
+    int tchseq_counter;
+    int output_value;
 } TRIANGLE_CHANNEL;
 
 typedef struct
 {
-    char output_value;
+    int output_value;
 } NOISE_CHANNEL;
 
 typedef struct
 {
-    char output_value;
+    int output_value;
 } DMC_CHANNEL;
 
 typedef struct {
