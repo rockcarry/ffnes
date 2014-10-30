@@ -54,11 +54,11 @@ static void apu_reset_dmc_channel(DMC_CHANNEL *dmc, BYTE *regs)
     dmc->output_value = 0;
 }
 
-static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int fel)
+static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int wfel)
 {
-    //+envelope generator
-    if ((fel & (1 << 1))) // envelope clocked by the frame sequencer
+    if ((wfel & (1 << 1))) // envelope clocked by the frame sequencer
     {
+        //++ envelope generator
         // if the start flag is set, the counter is loaded with 15,
         // and the divider's period is immediately reloaded
         if (sch->envlop_reset)
@@ -91,12 +91,12 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int fel)
         }
         // otherwise it is the value in the counter
         else sch->envlop_volume = sch->envlop_counter;
+        //-- envelope generator
     }
-    //-envelope generator
 
-    //+sweep unit
-    if ((fel & (1 << 0)))
+    if ((wfel & (1 << 0)))
     {
+        //++ sweep unit
         // the divider is *first* clocked
         if (--sch->sweepu_divider == 0)
         {
@@ -125,41 +125,44 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int fel)
             sch->sweepu_divider = SCH_SWEEPU_DIVIDER;
             sch->sweepu_reset   = 0;
         }
-    }
-    //-sweep unit
+        //-- sweep unit
 
-    //+length counter
-    // when clocked by the frame sequencer, if the halt flag is clear
-    // and the counter is non-zero, it is decremented
-    if ((fel & (1 << 0)) && !(regs[0x0000] & (1 << 5)))
-    {
-        if (sch->length_counter > 0) sch->length_counter--;
+        //++ length counter
+        // when clocked by the frame sequencer, if the halt flag is clear
+        // and the counter is non-zero, it is decremented
+        if (!(regs[0x0000] & (1 << 5)))
+        {
+            if (sch->length_counter > 0) sch->length_counter--;
+        }
+        //-- length counter
     }
-    //-length counter
 
     //+wave generator
-    if (--sch->wavseq_divider == 0)
+    if (wfel & (1 << 3))
     {
-        int w = -1;
-        switch (regs[0x0000] >> 6)
+        if (--sch->wavseq_divider == 0)
         {
-        case 0: if (sch->wavseq_counter == 1) w = 1;
-        case 1: if (sch->wavseq_counter >= 1 && sch->wavseq_counter <= 2) w = 1;
-        case 2: if (sch->wavseq_counter >= 1 && sch->wavseq_counter <= 4) w = 1;
-        case 3: if (sch->wavseq_counter == 0 && sch->wavseq_counter >= 3) w = 1;
+            int w = -1;
+            switch (regs[0x0000] >> 6)
+            {
+            case 0: if (sch->wavseq_counter == 1) w = 1;
+            case 1: if (sch->wavseq_counter >= 1 && sch->wavseq_counter <= 2) w = 1;
+            case 2: if (sch->wavseq_counter >= 1 && sch->wavseq_counter <= 4) w = 1;
+            case 3: if (sch->wavseq_counter == 0 && sch->wavseq_counter >= 3) w = 1;
+            }
+
+            if (sch->length_counter && !sch->sweepu_silence)
+            {
+                sch->output_value = w * sch->envlop_volume;
+            }
+            else sch->output_value = 0;
+
+            sch->wavseq_counter++;
+            sch->wavseq_counter %= 8;
+
+            // reload wave sequencer divider
+            sch->wavseq_divider = SCH_WAVSEQ_DIVIDER;
         }
-
-        if (sch->length_counter && !sch->sweepu_silence)
-        {
-            sch->output_value = w * sch->envlop_volume;
-        }
-        else sch->output_value = 0;
-
-        sch->wavseq_counter++;
-        sch->wavseq_counter %= 8;
-
-        // reload wave sequencer divider
-        sch->wavseq_divider = SCH_WAVSEQ_DIVIDER;
     }
     //-wave generator
 }
@@ -199,7 +202,7 @@ void apu_reset(APU *apu)
 
 void apu_run_pclk(APU *apu)
 {
-    int fel = 0;
+    int wfel = (1 << 3);
 
     if (apu->pclk_frame == 0) {
         // request audio buffer
@@ -218,10 +221,10 @@ void apu_run_pclk(APU *apu)
         {   // 5 step
             switch (apu->frame_counter)
             {
-            case 0: fel |= (3 << 0); break; //  el
-            case 1: fel |= (1 << 0); break; //  e
-            case 2: fel |= (3 << 0); break; //  el
-            case 3: fel |= (1 << 0); break; //  e
+            case 0: wfel |= (3 << 0); break; //  el
+            case 1: wfel |= (1 << 0); break; //  e
+            case 2: wfel |= (3 << 0); break; //  el
+            case 3: wfel |= (1 << 0); break; //  e
             }
             apu->frame_counter++;
             apu->frame_counter %= 5;
@@ -230,17 +233,17 @@ void apu_run_pclk(APU *apu)
         {
             switch (apu->frame_counter)
             {
-            case 0: fel |= (1 << 0); break; //  e
-            case 1: fel |= (3 << 0); break; //  el
-            case 2: fel |= (1 << 0); break; //  e
-            case 3: fel |= (7 << 0); break; // fel
+            case 0: wfel |= (1 << 0); break; //  e
+            case 1: wfel |= (3 << 0); break; //  el
+            case 2: wfel |= (1 << 0); break; //  e
+            case 3: wfel |= (7 << 0); break; // fel
             }
             apu->frame_counter++;
             apu->frame_counter %= 4;
         }
 
         // frame interrupt
-        if ((fel & (1 << 2)) && !(apu->regs[0x0017] & (1 << 6))) apu->frame_interrupt = 1;
+        if ((wfel & (1 << 2)) && !(apu->regs[0x0017] & (1 << 6))) apu->frame_interrupt = 1;
 
         // reload frame divider
         apu->frame_divider = FRAME_DIVIDER;
@@ -248,8 +251,8 @@ void apu_run_pclk(APU *apu)
     //- frame sequencer
 
     // render square channel 1 & 2
-    apu_render_square_channel(&(apu->sch1), (BYTE*)apu->regs + 0, fel);
-    apu_render_square_channel(&(apu->sch2), (BYTE*)apu->regs + 4, fel);
+    apu_render_square_channel(&(apu->sch1), (BYTE*)apu->regs + 0, wfel);
+    apu_render_square_channel(&(apu->sch2), (BYTE*)apu->regs + 4, wfel);
 
     // for mixer ouput
     if (--apu->mixer_divider == 0)
