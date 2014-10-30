@@ -13,7 +13,7 @@
 #define TCH_TTIMER_DIVIDER  (3 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
 
 // 内部全局变量定义
-static int length_table[32] =
+static BYTE length_table[32] =
 {
     10, 254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14,
     12,  16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30,
@@ -61,9 +61,9 @@ static void apu_reset_dmc_channel(DMC_CHANNEL *dmc, BYTE *regs)
     dmc->output_value = 0;
 }
 
-static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int wfel)
+static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int flew)
 {
-    if ((wfel & (1 << 1))) // envelope clocked by the frame sequencer
+    if ((flew & (1 << 1))) // envelope clocked by the frame sequencer
     {
         //++ envelope generator
         // if the start flag is set, the counter is loaded with 15,
@@ -101,7 +101,7 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int wfel)
         //-- envelope generator
     }
 
-    if ((wfel & (1 << 0)))
+    if ((flew & (1 << 2)))
     {
         //++ sweep unit
         // the divider is *first* clocked
@@ -144,7 +144,7 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int wfel)
         //-- length counter
     }
 
-    if (wfel & (1 << 3))
+    if (flew & (1 << 0))
     {
         //++ square channel sequencer
         if (--sch->stimer_divider == 0)
@@ -152,10 +152,10 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int wfel)
             int w = -1;
             switch (regs[0x0000] >> 6)
             {
-            case 0: if (sch->schseq_counter == 1) w = 1;
-            case 1: if (sch->schseq_counter >= 1 && sch->schseq_counter <= 2) w = 1;
-            case 2: if (sch->schseq_counter >= 1 && sch->schseq_counter <= 4) w = 1;
-            case 3: if (sch->schseq_counter == 0 && sch->schseq_counter >= 3) w = 1;
+            case 0: if (sch->schseq_counter == 1                            ) w = 1; break;
+            case 1: if (sch->schseq_counter == 1 || sch->schseq_counter == 2) w = 1; break;
+            case 2: if (sch->schseq_counter >= 1 && sch->schseq_counter <= 4) w = 1; break;
+            case 3: if (sch->schseq_counter == 0 || sch->schseq_counter >= 3) w = 1; break;
             }
 
             if (sch->length_counter && !sch->sweepu_silence)
@@ -174,9 +174,9 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int wfel)
     }
 }
 
-static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int wfel)
+static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int flew)
 {
-    if (wfel & (1 << 3))
+    if (flew & (1 << 0))
     {
         //++ timer generator
         if (--tch->ttimer_divider == 0)
@@ -191,7 +191,7 @@ static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int w
         //-- timer generator
     }
 
-    if ((wfel & (1 << 1)))
+    if ((flew & (1 << 1)))
     {
         //++ linear counter
         // if halt flag is set, set counter to reload value,
@@ -204,7 +204,7 @@ static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int w
         //-- linear counter
     }
 
-    if ((wfel & (1 << 0)))
+    if ((flew & (1 << 2)))
     {
         //++ length counter
         // when clocked by the frame sequencer, if the halt flag is clear
@@ -219,13 +219,27 @@ static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int w
     if (tch->ttimer_output && tch->linear_counter && tch->length_counter)
     {
         //-- triangle channel sequencer
-        if (tch->tchseq_counter < 16) tch->output_value = 15 - 2 * tch->tchseq_counter;
-        else tch->output_value = 2 * tch->tchseq_counter - 47;
+        if ((regs[0x0003] & 0x7) + regs[0x0002] < 2)
+        {
+            // at the lowest two periods ($400B = 0 and $400A = 0 or 1),
+            // the resulting frequency is so high that the DAC effectively
+            // outputs a value half way between 7 and 8.
+            tch->output_value = 7 + (tch->tchseq_counter & 1);
+        }
+        else
+        {
+            static char tch_seq_out_tab[32] =
+            {
+                15, 13, 11, 9, 7, 5, 3, 1,-1,-3,-5,-7,-9,-11,-13,-15,
+               -15,-13,-11,-9,-7,-5,-3,-1, 1, 3, 5, 7, 9, 11, 13, 15,
+            };
+            tch->output_value = tch_seq_out_tab[tch->tchseq_counter];
+        }
         tch->tchseq_counter++;
         tch->tchseq_counter %= 32;
         //-- triangle channel sequencer
     }
-    else tch->output_value = 0;
+//  else tch->output_value = 0;
 }
 
 // 函数实现
@@ -263,7 +277,7 @@ void apu_reset(APU *apu)
 
 void apu_run_pclk(APU *apu)
 {
-    int wfel = (1 << 3);
+    int flew = (1 << 0);
 
     if (apu->pclk_frame == 0) {
         // request audio buffer
@@ -282,10 +296,10 @@ void apu_run_pclk(APU *apu)
         {   // 5 step
             switch (apu->frame_counter)
             {
-            case 0: wfel |= (3 << 0); break; //  el
-            case 1: wfel |= (1 << 0); break; //  e
-            case 2: wfel |= (3 << 0); break; //  el
-            case 3: wfel |= (1 << 0); break; //  e
+            case 0: flew |= (3 << 1); break; //  le
+            case 1: flew |= (1 << 1); break; //   e
+            case 2: flew |= (3 << 1); break; //  le
+            case 3: flew |= (1 << 1); break; //   e
             }
             apu->frame_counter++;
             apu->frame_counter %= 5;
@@ -294,17 +308,17 @@ void apu_run_pclk(APU *apu)
         {
             switch (apu->frame_counter)
             {
-            case 0: wfel |= (1 << 0); break; //  e
-            case 1: wfel |= (3 << 0); break; //  el
-            case 2: wfel |= (1 << 0); break; //  e
-            case 3: wfel |= (7 << 0); break; // fel
+            case 0: flew |= (1 << 1); break; //   e
+            case 1: flew |= (3 << 1); break; //  le
+            case 2: flew |= (1 << 1); break; //   e
+            case 3: flew |= (7 << 1); break; // fle
             }
             apu->frame_counter++;
             apu->frame_counter %= 4;
         }
 
         // frame interrupt
-        if ((wfel & (1 << 2)) && !(apu->regs[0x0017] & (1 << 6))) apu->frame_interrupt = 1;
+        if ((flew & (1 << 3)) && !(apu->regs[0x0017] & (1 << 6))) apu->frame_interrupt = 1;
 
         // reload frame divider
         apu->frame_divider = FRAME_DIVIDER;
@@ -312,9 +326,9 @@ void apu_run_pclk(APU *apu)
     //- frame sequencer
 
     // render square channel 1 & 2
-    apu_render_square_channel  (&(apu->sch1), (BYTE*)apu->regs + 0, wfel);
-    apu_render_square_channel  (&(apu->sch2), (BYTE*)apu->regs + 4, wfel);
-    apu_render_triangle_channel(&(apu->tch ), (BYTE*)apu->regs + 8, wfel);
+    apu_render_square_channel  (&(apu->sch1), (BYTE*)apu->regs + 0, flew);
+    apu_render_square_channel  (&(apu->sch2), (BYTE*)apu->regs + 4, flew);
+    apu_render_triangle_channel(&(apu->tch ), (BYTE*)apu->regs + 8, flew);
 
     // for mixer ouput
     if (--apu->mixer_divider == 0)
@@ -412,6 +426,7 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         //++ apu status register
         if (!(byte & (1 << 0))) nes->apu.sch1.length_counter = 0;
         if (!(byte & (1 << 1))) nes->apu.sch2.length_counter = 0;
+        if (!(byte & (1 << 2))) nes->apu.tch .length_counter = 0;
         //-- apu status register
         break;
 
@@ -432,8 +447,9 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         // if the 5-step is selected the sequencer is immediately clocked once
         if (byte & (1 << 7))
         {
-            apu_render_square_channel(&(nes->apu.sch1), (BYTE*)nes->apu.regs + 0, 0x03);
-            apu_render_square_channel(&(nes->apu.sch2), (BYTE*)nes->apu.regs + 4, 0x03);
+            apu_render_square_channel  (&(nes->apu.sch1), (BYTE*)nes->apu.regs + 0, 6);
+            apu_render_square_channel  (&(nes->apu.sch2), (BYTE*)nes->apu.regs + 4, 6);
+            apu_render_triangle_channel(&(nes->apu.tch ), (BYTE*)nes->apu.regs + 8, 6);
         }
 
         // call joypad memrw callback
