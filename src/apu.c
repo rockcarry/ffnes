@@ -232,7 +232,7 @@ static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int f
                     static char tch_seq_out_tab[32] =
                     {
                         15, 13, 11, 9, 7, 5, 3, 1,-1,-3,-5,-7,-9,-11,-13,-15,
-                        -15,-13,-11,-9,-7,-5,-3,-1, 1, 3, 5, 7, 9, 11, 13, 15,
+                       -15,-13,-11,-9,-7,-5,-3,-1, 1, 3, 5, 7, 9, 11, 13, 15,
                     };
                     tch->output_value = tch_seq_out_tab[tch->tchseq_counter];
                 }
@@ -317,9 +317,10 @@ static void apu_render_noise_channel(NOISE_CHANNEL *nch, BYTE *regs, int flew)
             nch->nshift_register >>= 1;
             nch->nshift_register  |= (xor << 14);
 
-            if (nch->length_counter && (nch->nshift_register & 1))
+            if (nch->length_counter)
             {
-                nch->output_value = 2 * nch->envlop_volume - 15;
+                if (nch->nshift_register & 1) nch->output_value =  nch->envlop_volume;
+                else                          nch->output_value = -nch->envlop_volume;
             }
             else nch->output_value = 0;
 
