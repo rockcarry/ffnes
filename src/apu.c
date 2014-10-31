@@ -240,7 +240,7 @@ static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int f
                     // at the lowest two periods ($400B = 0 and $400A = 0 or 1),
                     // the resulting frequency is so high that the DAC effectively
                     // outputs a value half way between 7 and 8.
-                    tch->output_value = 7 + (tch->tchseq_counter & 1);
+                    tch->output_value = (tch->tchseq_counter & 1) ? -1 : 1;
                 }
                 else
                 {
