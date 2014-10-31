@@ -7,11 +7,9 @@
 
 #define FRAME_DIVIDER       (NES_FREQ_PPU / 240)
 #define MIXER_DIVIDER       (NES_HTOTAL*NES_VTOTAL / 800 + 1)
-#define SCH_ENVLOP_DIVIDER  ((regs[0x0000] & 0xf) + 1)
 #define SCH_SWEEPU_DIVIDER  (((regs[0x0001] >> 4) & 0x7) + 1)
 #define SCH_STIMER_DIVIDER  (6 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
 #define TCH_TTIMER_DIVIDER  (3 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
-#define NCH_ENVLOP_DIVIDER  ((regs[0x0000] & 0xf) + 1)
 #define NCH_NTIMER_DIVIDER  (3 * (noise_timer_period_table[regs[0x0002] & 0xf]))
 
 // 内部全局变量定义
@@ -27,14 +25,63 @@ static short noise_timer_period_table[16] =
 };
 
 // 内部函数实现
+//+++ for envelope unit +++//
+#define ENVELOPE_VOLUME(env)  (env[0])
+#define ENVELOPE_RESET(env)   (env[1])
+#define ENVELOPE_DIVIDER(env) (env[2])
+#define ENVELOPE_COUNTER(env) (env[3])
+#define ENVELOPE_DRELOAD      ((reg & 0xf) + 1)
+static void apu_envelope_unit_reset(int *env, BYTE reg)
+{
+    ENVELOPE_VOLUME(env)  = 0;
+    ENVELOPE_RESET(env)   = 0;
+    ENVELOPE_DIVIDER(env) = ENVELOPE_DRELOAD;
+    ENVELOPE_COUNTER(env) = 0;
+}
+
+static void apu_envelope_unit_clocked(int *env, BYTE reg)
+{
+    //++ envelope generator
+    // if the start flag is set, the counter is loaded with 15,
+    // and the divider's period is immediately reloaded
+    if (ENVELOPE_RESET(env))
+    {
+        ENVELOPE_COUNTER(env) = 15;
+        ENVELOPE_DIVIDER(env) = ENVELOPE_DRELOAD;
+        ENVELOPE_RESET(env)   = 0;
+    }
+    else
+    {
+        // otherwise the envelope's divider is clocked
+        if (--ENVELOPE_DIVIDER(env) == 0)
+        {
+            // when the envelope's divider outputs a clock
+            // if the counter is non-zero, it is decremented
+            if (ENVELOPE_COUNTER(env) > 0) ENVELOPE_COUNTER(env)--;
+
+            // if loop is set and counter is zero, it is set to 15
+            else if (reg & (1 << 5)) ENVELOPE_COUNTER(env) = 15;
+
+            // reloaded with the period
+            ENVELOPE_DIVIDER(env) = ENVELOPE_DRELOAD;
+        }
+    }
+
+    // when constant volume is set, the channel's volume is n
+    if (reg & (1 << 4))
+    {
+        ENVELOPE_VOLUME(env) = reg & 0x0f;
+    }
+    // otherwise it is the value in the counter
+    else ENVELOPE_VOLUME(env) = ENVELOPE_COUNTER(env);
+    //-- envelope generator
+}
+//--- for envelope unit ---//
+
 static void apu_reset_square_channel(SQUARE_CHANNEL *sch, BYTE *regs)
 {
     // reset square channel
     sch->length_counter = 0;
-    sch->envlop_divider = SCH_ENVLOP_DIVIDER;
-    sch->envlop_counter = 0;
-    sch->envlop_volume  = 0;
-    sch->envlop_reset   = 0;
     sch->sweepu_divider = SCH_SWEEPU_DIVIDER;
     sch->sweepu_value   = 0;
     sch->sweepu_reset   = 0;
@@ -42,6 +89,7 @@ static void apu_reset_square_channel(SQUARE_CHANNEL *sch, BYTE *regs)
     sch->stimer_divider = SCH_STIMER_DIVIDER;
     sch->schseq_counter = 0;
     sch->output_value   = 0;
+    apu_envelope_unit_reset(sch->envlop_unit, regs[0x0000]);
 }
 
 static void apu_reset_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs)
@@ -59,12 +107,9 @@ static void apu_reset_noise_channel(NOISE_CHANNEL *nch, BYTE *regs)
 {
     // reset noise channel
     nch->length_counter = 0;
-    nch->envlop_divider = NCH_ENVLOP_DIVIDER;
-    nch->envlop_counter = 0;
-    nch->envlop_volume  = 0;
-    nch->envlop_reset   = 0;
     nch->ntimer_divider = NCH_NTIMER_DIVIDER;
     nch->output_value   = 0;
+    apu_envelope_unit_reset(nch->envlop_unit, regs[0x0000]);
 }
 
 static void apu_reset_dmc_channel(DMC_CHANNEL *dmc, BYTE *regs)
@@ -75,42 +120,10 @@ static void apu_reset_dmc_channel(DMC_CHANNEL *dmc, BYTE *regs)
 
 static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int flew)
 {
-    if ((flew & (1 << 1))) // envelope clocked by the frame sequencer
+    if ((flew & (1 << 1)))
     {
-        //++ envelope generator
-        // if the start flag is set, the counter is loaded with 15,
-        // and the divider's period is immediately reloaded
-        if (sch->envlop_reset)
-        {
-            sch->envlop_counter = 15;
-            sch->envlop_divider = SCH_ENVLOP_DIVIDER;
-            sch->envlop_reset   = 0;
-        }
-        else
-        {
-            // otherwise the envelope's divider is clocked
-            if (--sch->envlop_divider == 0)
-            {
-                // when the envelope's divider outputs a clock
-                // if the counter is non-zero, it is decremented
-                if (sch->envlop_counter > 0) sch->envlop_counter--;
-
-                // if loop is set and counter is zero, it is set to 15
-                else if (regs[0x0000] & (1 << 5)) sch->envlop_counter = 15;
-
-                // reloaded with the period
-                sch->envlop_divider = SCH_ENVLOP_DIVIDER;
-            }
-        }
-
-        // when constant volume is set, the channel's volume is n
-        if (regs[0x0000] & (1 << 4))
-        {
-            sch->envlop_volume = regs[0x0000] & 0x0f;
-        }
-        // otherwise it is the value in the counter
-        else sch->envlop_volume = sch->envlop_counter;
-        //-- envelope generator
+        // envelope clocked by the frame sequencer
+        apu_envelope_unit_clocked(sch->envlop_unit, regs[0x0000]);
     }
 
     if ((flew & (1 << 2)))
@@ -171,7 +184,7 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int flew)
                 case 2: if (sch->schseq_counter >= 1 && sch->schseq_counter <= 4) w = 1; break;
                 case 3: if (sch->schseq_counter == 0 || sch->schseq_counter >= 3) w = 1; break;
                 }
-                sch->output_value = w * sch->envlop_volume;
+                sch->output_value = w * ENVELOPE_VOLUME(sch->envlop_unit);
             }
             else sch->output_value = 0;
 
@@ -250,42 +263,10 @@ static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int f
 
 static void apu_render_noise_channel(NOISE_CHANNEL *nch, BYTE *regs, int flew)
 {
-    if ((flew & (1 << 1))) // envelope clocked by the frame sequencer
+    if ((flew & (1 << 1)))
     {
-        //++ envelope generator
-        // if the start flag is set, the counter is loaded with 15,
-        // and the divider's period is immediately reloaded
-        if (nch->envlop_reset)
-        {
-            nch->envlop_counter = 15;
-            nch->envlop_divider = NCH_ENVLOP_DIVIDER;
-            nch->envlop_reset   = 0;
-        }
-        else
-        {
-            // otherwise the envelope's divider is clocked
-            if (--nch->envlop_divider == 0)
-            {
-                // when the envelope's divider outputs a clock
-                // if the counter is non-zero, it is decremented
-                if (nch->envlop_counter > 0) nch->envlop_counter--;
-
-                // if loop is set and counter is zero, it is set to 15
-                else if (regs[0x0000] & (1 << 5)) nch->envlop_counter = 15;
-
-                // reloaded with the period
-                nch->envlop_divider = NCH_ENVLOP_DIVIDER;
-            }
-        }
-
-        // when constant volume is set, the channel's volume is n
-        if (regs[0x0000] & (1 << 4))
-        {
-            nch->envlop_volume = regs[0x0000] & 0x0f;
-        }
-        // otherwise it is the value in the counter
-        else nch->envlop_volume = nch->envlop_counter;
-        //-- envelope generator
+        // envelope clocked by the frame sequencer
+        apu_envelope_unit_clocked(nch->envlop_unit, regs[0x0000]);
     }
 
     if ((flew & (1 << 2)))
@@ -319,8 +300,8 @@ static void apu_render_noise_channel(NOISE_CHANNEL *nch, BYTE *regs, int flew)
 
             if (nch->length_counter)
             {
-                if (nch->nshift_register & 1) nch->output_value =  nch->envlop_volume;
-                else                          nch->output_value = -nch->envlop_volume;
+                if (nch->nshift_register & 1) nch->output_value =  ENVELOPE_VOLUME(nch->envlop_unit);
+                else                          nch->output_value = -ENVELOPE_VOLUME(nch->envlop_unit);
             }
             else nch->output_value = 0;
 
@@ -489,7 +470,7 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         // unless disabled, write this register immediately reloads
         // the counter with the value from a lookup table
         if (pm->data[0x0015] & (1 << 0)) nes->apu.sch1.length_counter = length_table[byte >> 3];
-        nes->apu.sch1.envlop_reset = 1; // set square channel's envelop reset flag
+        ENVELOPE_RESET(nes->apu.sch1.envlop_unit) = 1; // set square channel's envelop reset flag
         break;
 
     case 0x0005:
@@ -501,7 +482,7 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         // unless disabled, write this register immediately reloads
         // the counter with the value from a lookup table
         if (pm->data[0x0015] & (1 << 1)) nes->apu.sch2.length_counter = length_table[byte >> 3];
-        nes->apu.sch2.envlop_reset = 1; // set square channel's envelop reset flag
+        ENVELOPE_RESET(nes->apu.sch2.envlop_unit) = 1; // set square channel's envelop reset flag
         break;
 
     case 0x000B:
@@ -515,7 +496,7 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         // unless disabled, write this register immediately reloads
         // the counter with the value from a lookup table
         if (pm->data[0x0015] & (1 << 3)) nes->apu.nch.length_counter = length_table[byte >> 3];
-        nes->apu.nch.envlop_reset = 1; // set noise channel's envelop reset flag
+        ENVELOPE_RESET(nes->apu.nch.envlop_unit) = 1; // set noise channel's envelop reset flag
         break;
 
     case 0x0014:

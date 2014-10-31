@@ -10,10 +10,7 @@
 typedef struct
 {
     int length_counter;
-    int envlop_divider;
-    int envlop_counter;
-    int envlop_volume;
-    int envlop_reset;
+    int envlop_unit[4];
     int sweepu_divider;
     int sweepu_value;
     int sweepu_reset;
@@ -36,10 +33,7 @@ typedef struct
 typedef struct
 {
     int length_counter;
-    int envlop_divider;
-    int envlop_counter;
-    int envlop_volume;
-    int envlop_reset;
+    int envlop_unit[4];
     int ntimer_divider;
     int nshift_register;
     int output_value;
