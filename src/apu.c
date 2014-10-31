@@ -132,24 +132,24 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int flew)
         // the divider is *first* clocked
         if (--sch->sweepu_divider == 0)
         {
-            int negate = (regs[0x0001] & (1 << 3)) ? -1 : 1;
-            int shiftc = (regs[0x0001] & 0x7);
-            int shiftv = (((regs[0x0003] & 0x7) << 8) | regs[0x0002]) >> shiftc;
-            int sweep  = 6 * negate * shiftv;
-            int target = sch->stimer_divider + sweep;
+            int negate = (regs[0x0001] & 0x8) ? -1 : 1;
+            int shift  = (regs[0x0001] & 0x7);
+            int period = ((regs[0x0003] & 0x7) << 8) | regs[0x0002];
+            int target = period + negate * (period >> shift);
 
-            if (SCH_STIMER_DIVIDER < 6 * 8 || target > 6 * 0x7ff) sch->sweepu_silence = 1;
+            if (period < 8 || target > 0x7ff) sch->sweepu_silence = 1;
             else
             {
-                if ((regs[0x0001] & (1 << 7)) && shiftc)
+                if (shift && (regs[0x0001] & (1 << 7)))
                 {
-                    sch->stimer_divider = target;
+                    regs[0x0002]  = target & 0xff;
+                    regs[0x0003] &= ~0x7;
+                    regs[0x0003] |= target >> 8;
                 }
                 sch->sweepu_silence = 0;
             }
 
-            // if the sweep is enabled, the counter is set to P
-            if (regs[0x0001] & (1 << 7)) sch->sweepu_divider = SCH_SWEEPU_DIVIDER;
+            sch->sweepu_divider = SCH_SWEEPU_DIVIDER;
         }
 
         // and then if there was a write to the sweep register since the last sweep
