@@ -48,8 +48,8 @@ static void* nes_thread_proc(void *param)
             apu_run_pclk(&(nes->apu)); // run apu
 
             //+ for cpu nmi & irq
-            nmi =  nes->ppu.pinvbl;
-            irq = !nes->apu.frame_interrupt;
+            nmi =   nes->ppu.pinvbl;
+            irq = !(nes->apu.regs[0x0015] & 0xC0);
             cpu_nmi(&(nes->cpu), nmi);
             cpu_irq(&(nes->cpu), irq);
             //- for cpu nmi & irq

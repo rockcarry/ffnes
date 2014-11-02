@@ -11,6 +11,7 @@
 #define SCH_STIMER_DIVIDER  (6 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
 #define TCH_TTIMER_DIVIDER  (3 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
 #define NCH_NTIMER_DIVIDER  (3 * (noise_timer_period_table[regs[0x0002] & 0xf]))
+#define DCH_DTIMER_DIVIDER  (3 * (dmc_timer_period_table  [regs[0x0000] & 0xf]))
 
 // 内部全局变量定义
 static BYTE length_table[32] =
@@ -22,6 +23,11 @@ static BYTE length_table[32] =
 static short noise_timer_period_table[16] =
 {
     4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068,
+};
+
+static short dmc_timer_period_table[16] =
+{
+    428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 84, 72, 54,
 };
 
 // 内部函数实现
@@ -115,7 +121,15 @@ static void apu_reset_noise_channel(NOISE_CHANNEL *nch, BYTE *regs)
 static void apu_reset_dmc_channel(DMC_CHANNEL *dmc, BYTE *regs)
 {
     // reset dmc channel
-    dmc->output_value = 0;
+    dmc->remain_bytes   = 0;
+    dmc->remain_bits    = 0;
+    dmc->sample_buffer  = 0;
+    dmc->sample_empty   = 1;
+    dmc->buffer_bits    = 0;
+    dmc->curdma_addr    = 0xC000;
+    dmc->dmc_silence    = 0;
+    dmc->dtimer_divider = DCH_DTIMER_DIVIDER;
+    dmc->output_value   = 0;
 }
 
 static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int flew)
@@ -256,7 +270,7 @@ static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int f
             tch->tchseq_counter %= 32;
             //-- triangle channel sequencer
 
-            // reload wave sequencer divider
+            // reload triangle channel timer divider
             tch->ttimer_divider = TCH_TTIMER_DIVIDER;
         }
         //-- timer generator
@@ -307,10 +321,79 @@ static void apu_render_noise_channel(NOISE_CHANNEL *nch, BYTE *regs, int flew)
             }
             else nch->output_value = 0;
 
-            // reload wave sequencer divider
+            // reload noise channel timer divider
             nch->ntimer_divider = NCH_NTIMER_DIVIDER;
         }
         //-- timer generator
+    }
+}
+
+static void apu_render_dmc_channel(DMC_CHANNEL *dch, BYTE *regs, int flew)
+{
+    if (flew & (1 << 0))
+    {
+        //++ timer generator
+        if (--dch->dtimer_divider == 0)
+        {
+            APU *apu = container_of(dch, APU, dmc);
+            NES *nes = container_of(apu, NES, apu);
+
+            if (dch->sample_empty && dch->remain_bytes > 0)
+            {
+                nes->cpu.cclk_dma += 4;
+                dch->sample_buffer = bus_readb(nes->cbus, dch->curdma_addr);
+                dch->sample_empty  = 0;
+
+                // the address is incremented; if it exceeds $FFFF, it is wrapped around to $8000.
+                if (++dch->curdma_addr > 0xffff) dch->curdma_addr = 0x8000;
+
+                // the bytes remaining counter is decremented;
+                if (--dch->remain_bytes == 0)
+                {
+                    // if the bytes counter becomes zero and the loop flag is
+                    // set, the sample is restarted
+                    if (regs[0x0000] & (1 << 6))
+                    {
+                        // restart
+                        nes->apu.dmc.curdma_addr  = 0xC000 + (apu->regs[0x0012] << 6);
+                        nes->apu.dmc.remain_bytes = (apu->regs[0x0013] << 4) + 1;
+                    }
+                    // otherwise if the bytes counter becomes zero and the interrupt
+                    // enabled flag is set, the interrupt flag is set.
+                    else if (regs[0x0000] & (1 << 7)) regs[0x0005] |= (1 << 7);
+                }
+            }
+
+            if (dch->remain_bits == 0)
+            {
+                if (dch->sample_empty) dch->dmc_silence = 1;
+                else
+                {
+                    dch->remain_bits  = dch->sample_buffer;
+                    dch->dmc_silence  = 0;
+                    dch->sample_empty = 1;
+                }
+                dch->remain_bits = 8;
+            }
+
+            if (!dch->dmc_silence)
+            {
+                if (dch->buffer_bits & 1)
+                {
+                    if (dch->output_value <= 123) dch->output_value += 4;
+                }
+                else
+                {
+                    if (dch->output_value >=-123) dch->output_value -= 4;
+                }
+            }
+
+            dch->buffer_bits >>= 1;
+            dch->remain_bits--;
+
+            // reload dmc channel timer divider
+            dch->dtimer_divider = DCH_DTIMER_DIVIDER;
+        }
     }
 }
 
@@ -341,9 +424,8 @@ void apu_reset(APU *apu)
     apu->pclk_frame = 0;
 
     // reset frame sequencer
-    apu->frame_interrupt = 0;
-    apu->frame_divider   = FRAME_DIVIDER;
-    apu->frame_counter   = 0;
+    apu->frame_divider = FRAME_DIVIDER;
+    apu->frame_counter = 0;
 
     // reset square channel 1 & 2
     apu_reset_square_channel  (&(apu->sch1), (BYTE*)apu->regs + 0x0000);
@@ -396,7 +478,7 @@ void apu_run_pclk(APU *apu)
         }
 
         // frame interrupt
-        if ((flew & (1 << 3)) && !(apu->regs[0x0017] & (1 << 6))) apu->frame_interrupt = 1;
+        if ((flew & (1 << 3)) && !(apu->regs[0x0017] & (1 << 6))) apu->regs[0x0015] |= (1 << 6);
 
         // reload frame divider
         apu->frame_divider = FRAME_DIVIDER;
@@ -408,6 +490,7 @@ void apu_run_pclk(APU *apu)
     apu_render_square_channel  (&(apu->sch2), (BYTE*)apu->regs + 0x0004, flew);
     apu_render_triangle_channel(&(apu->tch ), (BYTE*)apu->regs + 0x0008, flew);
     apu_render_noise_channel   (&(apu->nch ), (BYTE*)apu->regs + 0x000C, flew);
+    apu_render_dmc_channel     (&(apu->dmc ), (BYTE*)apu->regs + 0x0010, flew);
 
     // for mixer ouput
     if (--apu->mixer_divider == 0)
@@ -436,15 +519,19 @@ BYTE NES_APU_REG_RCB(MEM *pm, int addr)
     {
     case 0x0015:
         //++ apu status register
-        if (nes->apu.frame_interrupt)
+        // reading this register clears the frame interrupt flag
+        // (but not the DMC interrupt flag).
+        if (pm->data[0x0015] & (1 << 6))
         {
-            nes->apu.frame_interrupt = 0;
+            pm->data[0x0015] &= ~(1 << 6);
             byte |= (1 << 6);
         }
+        if (pm->data[0x0015] & (1 << 7)     ) byte |= (1 << 7);
         if (nes->apu.sch1.length_counter > 0) byte |= (1 << 0);
         if (nes->apu.sch2.length_counter > 0) byte |= (1 << 1);
         if (nes->apu.tch .length_counter > 0) byte |= (1 << 2);
         if (nes->apu.nch .length_counter > 0) byte |= (1 << 3);
+        if (nes->apu.dmc .remain_bytes   > 0) byte |= (1 << 4);
         //++ apu status register
         return byte;
 
@@ -501,6 +588,16 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         ENVELOPE_RESET(nes->apu.nch.envlop_unit) = 1; // set noise channel's envelop reset flag
         break;
 
+    case 0x0010:
+        // if the new interrupt enabled status is clear, the interrupt flag is cleared.
+        if (!(byte & (1 << 7))) pm->data[0x0015] &= ~(1 << 7);
+        break;
+
+    case 0x0011:
+        // a write to $4011 sets the counter and DAC to a new value
+        nes->apu.dmc.output_value = byte * 2 - 127;
+        break;
+
     case 0x0014:
         //++ for sprite dma
         for (i=0; i<256; i++) {
@@ -516,6 +613,21 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         if (!(byte & (1 << 1))) nes->apu.sch2.length_counter = 0;
         if (!(byte & (1 << 2))) nes->apu.tch .length_counter = 0;
         if (!(byte & (1 << 3))) nes->apu.nch .length_counter = 0;
+        // if the DMC bit is clear, the DMC bytes remaining will be set to 0
+        // and the DMC will silence when it empties.
+        if (!(byte & (1 << 4))) nes->apu.dmc .remain_bytes   = 0;
+        // if the DMC bit is set, the DMC sample will be restarted only if
+        // its bytes remaining is 0
+        else
+        {
+            if (nes->apu.dmc.remain_bytes == 0)
+            {
+                nes->apu.dmc.curdma_addr  = 0xC000 + (pm->data[0x0012] << 6);
+                nes->apu.dmc.remain_bytes = (pm->data[0x0013] << 4) + 1;
+            }
+        }
+        // writing to this register clears the DMC interrupt flag.
+        byte &= ~(3 << 6); byte |= (pm->data[0x0015] & (1 << 6));
         //-- apu status register
         break;
 
@@ -531,15 +643,16 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         //-- for frame sequencer
 
         // interrupt inhibit flag. if set, the frame interrupt flag is cleared
-        if (byte & (1 << 6)) nes->apu.frame_interrupt = 0;
+        if (byte & (1 << 6)) pm->data[0x0015] &= ~(1 << 6);
 
         // if the 5-step is selected the sequencer is immediately clocked once
         if (byte & (1 << 7))
         {
-            apu_render_square_channel  (&(nes->apu.sch1), (BYTE*)nes->apu.regs + 0x0000, 6);
-            apu_render_square_channel  (&(nes->apu.sch2), (BYTE*)nes->apu.regs + 0x0004, 6);
-            apu_render_triangle_channel(&(nes->apu.tch ), (BYTE*)nes->apu.regs + 0x0008, 6);
-            apu_render_noise_channel   (&(nes->apu.nch ), (BYTE*)nes->apu.regs + 0x000C, 6);
+            apu_render_square_channel  (&(nes->apu.sch1), (BYTE*)pm->data + 0x0000, 6);
+            apu_render_square_channel  (&(nes->apu.sch2), (BYTE*)pm->data + 0x0004, 6);
+            apu_render_triangle_channel(&(nes->apu.tch ), (BYTE*)pm->data + 0x0008, 6);
+            apu_render_noise_channel   (&(nes->apu.nch ), (BYTE*)pm->data + 0x000C, 6);
+            apu_render_dmc_channel     (&(nes->apu.dmc ), (BYTE*)pm->data + 0x0010, 6);
         }
 
         // call joypad memrw callback

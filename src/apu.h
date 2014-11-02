@@ -41,13 +41,20 @@ typedef struct
 
 typedef struct
 {
+    int remain_bytes;
+    int remain_bits;
+    int sample_buffer;
+    int sample_empty;
+    int buffer_bits;
+    int curdma_addr;
+    int dmc_silence;
+    int dtimer_divider;
     int output_value;
 } DMC_CHANNEL;
 
 typedef struct {
     BYTE regs[0x20];
 
-    int  frame_interrupt;
     int  frame_divider;
     int  frame_counter;
 
