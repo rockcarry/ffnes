@@ -1,9 +1,6 @@
 #ifndef __FFENCODER_H_
 #define __FFENCODER_H_
 
-// 包含头文件
-#include "stdefine.h"
-
 // 类型定义
 typedef struct
 {

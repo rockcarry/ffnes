@@ -6,9 +6,14 @@ PTHREADSW32_DLL = ../pthreads-win32/dll/pthreadGC2.dll
 PTHREADSW32_INC = ../pthreads-win32/include
 PTHREADSW32_LIB = ../pthreads-win32/lib
 
+# for ffencoderlib
+FFENCODERLIB_DLL = ../ffencoder/ffencoder.dll
+FFENCODERLIB_INC = ../ffencoder
+FFENCODERLIB_LIB = ../ffencoder
+
 # 编译器定义
 CC      = i586-mingw32msvc-gcc
-CCFLAGS = -mwindows -Wall -I$(PTHREADSW32_INC) -L$(PTHREADSW32_LIB)
+CCFLAGS = -mwindows -Wall -I$(PTHREADSW32_INC) -I$(FFENCODERLIB_INC)
 
 # 所有的目标文件
 OBJS = \
@@ -37,12 +42,13 @@ DLL = ffnes.dll
 
 # pthread dll
 PTHREADDLL = pthreadGC2.dll
+FFENCODERDLL = ffencoder.dll
 
 # 编译规则
 all : $(DLL) $(EXES) $(PTHREADDLL)
 
 $(DLL) : $(OBJS)
-	$(CC) $(CCFLAGS) -o $@ $(OBJS) --share -lwinmm -lpthreadGC2
+	$(CC) $(CCFLAGS) -o $@ $(OBJS) --share -lwinmm $(PTHREADSW32_DLL) $(FFENCODERLIB_DLL)
 
 %.o : %.c %.h stdefine.h
 	$(CC) $(CCFLAGS) -o $@ $< -c
@@ -60,9 +66,12 @@ $(DLL) : $(OBJS)
 	$(CC) $(CCFLAGS) -o $@ $< $(DLL)
 
 %.exe : %.cpp %.h $(DLL)
-	$(CC) $(CCFLAGS) -o $@ $< $(DLL)
+	$(CC) $(CCFLAGS) -o $@ $< $(DLL))
 
 $(PTHREADDLL) : $(PTHREADSW32_DLL)
+	cp $< .
+
+$(FFENCODERDLL) : $(FFENCODERLIB_DLL)
 	cp $< .
 
 clean :
