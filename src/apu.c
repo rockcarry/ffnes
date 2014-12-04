@@ -508,7 +508,7 @@ void apu_run_pclk(APU *apu)
     if (++apu->pclk_frame == NES_HTOTAL * NES_VTOTAL) {
         //++ ffencoder encode audio
         NES  *nes     = container_of(apu, NES, apu);
-        void *data[8] = { apu->audiobuf };
+        void *data[8] = { apu->audiobuf->lpdata };
         ffencoder_audio(nes->encoder, data, apu->mixer_counter);
         //-- ffencoder encode audio
 
