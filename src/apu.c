@@ -1,4 +1,5 @@
 // 包含头文件
+#include <ffencoder.h>
 #include "nes.h"
 
 // 内部常量定义
@@ -505,6 +506,12 @@ void apu_run_pclk(APU *apu)
     //-- render audio data on audio buffer --//
 
     if (++apu->pclk_frame == NES_HTOTAL * NES_VTOTAL) {
+        //++ ffencoder encode audio
+        NES  *nes     = container_of(apu, NES, apu);
+        void *data[8] = { apu->audiobuf };
+        ffencoder_audio(nes->encoder, data, apu->mixer_counter);
+        //-- ffencoder encode audio
+
         adev_audio_buf_post(apu->adevctxt,  (apu->audiobuf));
         apu->pclk_frame = 0;
     }

@@ -88,6 +88,9 @@ typedef struct tagNES {
 
     // ndb object
     struct tagNDB ndb;
+
+    // for ffencoder
+    void *encoder;
 } NES;
 
 // º¯ÊıÉùÃ÷

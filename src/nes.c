@@ -1,4 +1,5 @@
 // 包含头文件
+#include <ffencoder.h>
 #include "nes.h"
 #include "log.h"
 
@@ -196,6 +197,9 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     // init replay
     replay_init(&(nes->replay), NULL, 0);
 
+    // init ffencoder
+    nes->encoder = ffencoder_init(NULL);
+
     // create nes event & thread
     pthread_create(&(nes->thread_id), NULL, nes_thread_proc, nes);
 
@@ -210,6 +214,9 @@ void nes_free(NES *nes)
     // destroy nes thread
     nes->thread_exit = TRUE;
     pthread_join(nes->thread_id, NULL);
+
+    // free ffencoder
+    ffencoder_free(nes->encoder);
 
     // free replay
     replay_free(&(nes->replay));

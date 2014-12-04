@@ -1,4 +1,5 @@
 // 包含头文件
+#include <ffencoder.h>
 #include "nes.h"
 #include "vdev.h"
 #include "log.h"
@@ -508,6 +509,13 @@ void ppu_run_pclk(PPU *ppu)
     // the last tick of frame, even frame or without tick skipping
     else if (ppu->pclk_frame == NES_HTOTAL * NES_VTOTAL - 1)
     {
+        //++ ffencoder encode video
+        NES  *nes         = container_of(ppu, NES, ppu);
+        void *data    [8] = { ppu->draw_buffer     };
+        int   linesize[8] = { ppu->draw_stride * 4 };
+        ffencoder_video(nes->encoder, data, linesize);
+        //-- ffencoder encode video
+
         // frame change
         ppu->pclk_frame  = 0;
         ppu->pclk_line   = 0;

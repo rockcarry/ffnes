@@ -28,8 +28,8 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				Description="copy pthreads-win32 dll file"
-				CommandLine="copy &quot;$(SolutionDir)..\pthreads-win32\dll\pthreadVC2.dll&quot; &quot;$(TargetDir)&quot; /y"
+				Description="copy pthreads-win32 and ffencoder dll file"
+				CommandLine="copy &quot;$(SolutionDir)..\pthreads-win32\dll\pthreadVC2.dll&quot; &quot;$(TargetDir)&quot; /y&#x0D;&#x0A;copy &quot;$(SolutionDir)..\ffencoder\ffencoder.dll&quot; &quot;$(TargetDir)&quot; /y"
 				Outputs="pthreadVC2.dll"
 			/>
 			<Tool
@@ -115,8 +115,8 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				Description="copy pthreads-win32 dll file"
-				CommandLine="copy &quot;$(SolutionDir)..\pthreads-win32\dll\pthreadVC2.dll&quot; &quot;$(TargetDir)&quot; /y"
+				Description="copy pthreads-win32 and ffencoder dll file"
+				CommandLine="copy &quot;$(SolutionDir)..\pthreads-win32\dll\pthreadVC2.dll&quot; &quot;$(TargetDir)&quot; /y&#x0D;&#x0A;copy &quot;$(SolutionDir)..\ffencoder\ffencoder.dll&quot; &quot;$(TargetDir)&quot; /y"
 				Outputs="pthreadVC2.dll"
 			/>
 			<Tool
