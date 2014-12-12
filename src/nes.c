@@ -71,6 +71,7 @@ next:
 // º¯ÊýÊµÏÖ
 BOOL nes_init(NES *nes, char *file, DWORD extra)
 {
+    FFENCODER_PARAMS params = {0};
     int *mirroring = NULL;
     int  i         = 0;
 
@@ -198,7 +199,8 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     replay_init(&(nes->replay), NULL, 0);
 
     // init ffencoder
-    nes->encoder = ffencoder_init(NULL);
+    params.frame_rate = 60;
+    nes->encoder = ffencoder_init(&params);
 
     // create nes event & thread
     pthread_create(&(nes->thread_id), NULL, nes_thread_proc, nes);

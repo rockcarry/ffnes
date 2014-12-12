@@ -8,19 +8,22 @@ typedef struct
     char *filename;
 
     // audio params
-    int audio_disable;
     int audio_bitrate;
     int sample_rate;
     int channel_layout;
+    int start_apts;
 
     // video params
-    int video_disable;
     int video_bitrate;
     int video_width;
     int video_height;
     int frame_rate;
     int pixel_fmt;
     int scale_flags;
+    int start_vpts;
+
+    // for debug
+    int enable_log;
 } FFENCODER_PARAMS;
 
 // º¯ÊıÉùÃ÷
