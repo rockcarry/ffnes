@@ -1,5 +1,6 @@
 // 包含头文件
 #include <ffencoder.h>
+#include "vdev.h"
 #include "nes.h"
 #include "log.h"
 
@@ -26,8 +27,16 @@ static void nes_do_reset(NES* nes)
 
 static void* nes_thread_proc(void *param)
 {
-    NES *nes = (NES*)param;
+    NES  *nes = (NES*)param;
     int  totalpclk, nmi, irq;
+    void *adata[8] = {0};
+    void *vdata[8] = {0};
+    int   lsize[8] = {0};
+
+    vdev_lock(nes->ppu.vdevctxt, &(vdata[0]), &(lsize[0]));
+    vdata[0]  = vdata[0];
+    lsize[0] *= 4;
+    vdev_unlock(nes->ppu.vdevctxt);
 
     while (!nes->thread_exit)
     {
@@ -59,6 +68,12 @@ static void* nes_thread_proc(void *param)
 
         // run joypad for turbo key function
         joypad_run(&(nes->pad));
+
+        //++ for ffencoder
+        adata[0] = nes->apu.audiobuf->lpdata;
+        ffencoder_audio(nes->encoder, adata, 44100 / 60);
+        ffencoder_video(nes->encoder, vdata, lsize     );
+        //-- for ffencoder
 
 next:
         // frame rate is synced to 48KHz audio playback
@@ -199,7 +214,10 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     replay_init(&(nes->replay), NULL, 0);
 
     // init ffencoder
-    params.frame_rate = 60;
+    params.sample_rate   = 44100;
+    params.audio_bitrate = 128000;
+    params.frame_rate    = 60;
+    params.video_bitrate = 512000;
     nes->encoder = ffencoder_init(&params);
 
     // create nes event & thread

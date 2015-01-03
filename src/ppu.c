@@ -1,5 +1,4 @@
 // 包含头文件
-#include <ffencoder.h>
 #include "nes.h"
 #include "vdev.h"
 #include "log.h"
@@ -471,13 +470,6 @@ void ppu_run_pclk(PPU *ppu)
     // scanline 241 - 260 vblank
     else if (ppu->pclk_frame == NES_HTOTAL * 241 + 1) // scanline 241, tick 1
     {
-        //++ ffencoder encode video
-        NES  *nes         = container_of(ppu, NES, ppu);
-        void *data    [8] = { ppu->draw_buffer - 240 * ppu->draw_stride };
-        int   linesize[8] = { ppu->draw_stride * 4 };
-        ffencoder_video(nes->encoder, data, linesize);
-        //-- ffencoder encode video
-
         // unlock video device
         vdev_unlock(ppu->vdevctxt);
 
