@@ -76,7 +76,7 @@ static void* nes_thread_proc(void *param)
         //-- for ffencoder
 
 next:
-        // frame rate is synced to 48KHz audio playback
+        // frame rate is synced to audio playback
         // sleep is used to make frame pitch more uniform
         Sleep(8);
     }

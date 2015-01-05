@@ -31,7 +31,7 @@ OBJS = \
     joypad.o \
     replay.o \
     adev.o \
-    vdev.o \
+    vdev-gdi.o \
 
 # 所有的可执行目标
 EXES = \
@@ -45,7 +45,7 @@ PTHREADDLL = pthreadGC2.dll
 FFENCODERDLL = ffencoder.dll
 
 # 编译规则
-all : $(DLL) $(EXES) $(PTHREADDLL)
+all : $(DLL) $(EXES) $(PTHREADDLL) $(FFENCODERDLL)
 
 $(DLL) : $(OBJS)
 	$(CC) $(CCFLAGS) -o $@ $(OBJS) --share -lwinmm $(PTHREADSW32_DLL) $(FFENCODERLIB_DLL)

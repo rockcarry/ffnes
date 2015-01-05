@@ -9,6 +9,7 @@
 #pragma warning(disable:4311)
 #pragma warning(disable:4312)
 #pragma warning(disable:4996)
+#define ENABLE_DIRECT3D
 #endif
 #else
 
