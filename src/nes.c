@@ -69,11 +69,13 @@ static void* nes_thread_proc(void *param)
         // run joypad for turbo key function
         joypad_run(&(nes->pad));
 
+#if 0
         //++ for ffencoder
         adata[0] = nes->apu.audiobuf->lpdata;
         ffencoder_audio(nes->encoder, adata, 44100 / 60);
         ffencoder_video(nes->encoder, vdata, lsize     );
         //-- for ffencoder
+#endif
 
 next:
         // frame rate is synced to audio playback
