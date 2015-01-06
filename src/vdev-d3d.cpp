@@ -98,9 +98,14 @@ void vdev_d3d_unlock(void *ctxt)
     {
         IDirect3DSurface9 *pback = NULL;
         dev->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback);
-        dev->pD3DDev->StretchRect(dev->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
+        if (pback)
+        {
+            dev->pD3DDev->StretchRect(dev->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
+            pback->Release();
+        }
+
         dev->pD3DDev->EndScene();
+        dev->pD3DDev->Present(NULL, NULL, NULL, NULL);
     }
-    dev->pD3DDev->Present(NULL, NULL, NULL, NULL);
 }
 
