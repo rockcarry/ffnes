@@ -17,7 +17,7 @@ typedef struct
 } VDEVD3D;
 
 // º¯ÊýÊµÏÖ
-void* vdev_d3d_create(int w, int h, DWORD extra)
+void* vdev_d3d_create(int bufnum, int w, int h, DWORD extra)
 {
     VDEVD3D *dev = (VDEVD3D*)malloc(sizeof(VDEVD3D));
     if (!dev) return dev;
@@ -61,23 +61,19 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
 void vdev_d3d_destroy(void *ctxt)
 {
     VDEVD3D *dev = (VDEVD3D*)ctxt;
-    if (dev == NULL) return;
-
     if (dev->pSurface) dev->pSurface->Release();
     if (dev->pD3DDev ) dev->pD3DDev->Release();
     if (dev->pD3D    ) dev->pD3D->Release();
-
     free(dev);
 }
 
-void vdev_d3d_lock(void *ctxt, void **buf, int *stride)
+void vdev_d3d_buf_request(void *ctxt, void **buf, int *stride)
 {
     VDEVD3D *dev = (VDEVD3D*)ctxt;
-    if (dev == NULL) return;
 
     // lock texture rect
     D3DLOCKED_RECT d3d_rect;
-    dev->pSurface->LockRect(&d3d_rect, NULL, 0);
+    dev->pSurface->LockRect(&d3d_rect, NULL, D3DLOCK_DONOTWAIT);
     dev->pdata  = d3d_rect.pBits;
     dev->stride = d3d_rect.Pitch / 4;
 
@@ -85,10 +81,9 @@ void vdev_d3d_lock(void *ctxt, void **buf, int *stride)
     if (stride) *stride = dev->stride;
 }
 
-void vdev_d3d_unlock(void *ctxt)
+void vdev_d3d_buf_post(void *ctxt)
 {
     VDEVD3D *dev = (VDEVD3D*)ctxt;
-    if (dev == NULL) return;
 
     // unlock texture rect
     dev->pSurface->UnlockRect();

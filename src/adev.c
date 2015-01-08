@@ -9,8 +9,9 @@ typedef struct
     HANDLE   bufsem;
     int      bufnum;
     int      buflen;
-    long     head;
-    long     tail;
+    int      head;
+    int      tail;
+    HANDLE   hVDEVEvent;
 } ADEV;
 
 // 内部函数实现
@@ -22,6 +23,7 @@ static void CALLBACK waveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD dwInstance, DWOR
     case WOM_DONE:
         if (++dev->head == dev->bufnum) dev->head = 0;
         ReleaseSemaphore(dev->bufsem, 1, NULL);
+        SetEvent(dev->hVDEVEvent); // for vdev
         break;
     }
 }
@@ -65,6 +67,9 @@ void* adev_create(int bufnum, int buflen)
         waveOutPrepareHeader(dev->hWaveOut, &(dev->pWaveHdr[i]), sizeof(WAVEHDR));
     }
 
+    // create vdev rendering event
+    dev->hVDEVEvent = CreateEvent(NULL, FALSE, TRUE, "FFNES_VDEV_EVENT");
+
     return dev;
 }
 
@@ -72,7 +77,9 @@ void adev_destroy(void *ctxt)
 {
     int i;
     ADEV *dev = (ADEV*)ctxt;
-    if (dev == NULL) return;
+
+    // close vdev rendering event
+    if (dev->hVDEVEvent) CloseHandle(dev->hVDEVEvent);
 
     // unprepare
     for (i=0; i<dev->bufnum; i++) {
@@ -85,20 +92,16 @@ void adev_destroy(void *ctxt)
     free(dev);
 }
 
-void adev_audio_buf_request(void *ctxt, AUDIOBUF **ppab)
+void adev_buf_request(void *ctxt, AUDIOBUF **ppab)
 {
     ADEV *dev = (ADEV*)ctxt;
-    if (dev == NULL) return;
-
     WaitForSingleObject(dev->bufsem, -1);
     *ppab = (AUDIOBUF*)&(dev->pWaveHdr[dev->tail]);
 }
 
-void adev_audio_buf_post(void *ctxt, AUDIOBUF *pab)
+void adev_buf_post(void *ctxt, AUDIOBUF *pab)
 {
     ADEV *dev = (ADEV*)ctxt;
-    if (dev == NULL) return;
-
     waveOutWrite(dev->hWaveOut, (LPWAVEHDR)pab, sizeof(WAVEHDR));
     if (++dev->tail == dev->bufnum) dev->tail = 0;
 }

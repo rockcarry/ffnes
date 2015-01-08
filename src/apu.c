@@ -2,7 +2,7 @@
 #include "nes.h"
 
 // 内部常量定义
-#define APU_ABUF_NUM   6
+#define APU_ABUF_NUM   8
 #define APU_ABUF_LEN  (735 * 4)
 
 #define FRAME_DIVIDER       (NES_FREQ_PPU / 240)
@@ -442,7 +442,7 @@ void apu_run_pclk(APU *apu)
 
     if (apu->pclk_frame == 0) {
         // request audio buffer
-        adev_audio_buf_request(apu->adevctxt, &(apu->audiobuf));
+        adev_buf_request(apu->adevctxt, &(apu->audiobuf));
 
         // reset mixer sequencer
         apu->mixer_divider = MIXER_DIVIDER;
@@ -508,7 +508,7 @@ void apu_run_pclk(APU *apu)
     //-- render audio data on audio buffer --//
 
     if (++apu->pclk_frame == NES_HTOTAL * NES_VTOTAL) {
-        adev_audio_buf_post(apu->adevctxt,  (apu->audiobuf));
+        adev_buf_post(apu->adevctxt,  (apu->audiobuf));
         apu->pclk_frame = 0;
     }
 }

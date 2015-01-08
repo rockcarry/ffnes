@@ -1,5 +1,4 @@
 // 包含头文件
-#include <ffencoder.h>
 #include "vdev.h"
 #include "nes.h"
 #include "log.h"
@@ -27,21 +26,13 @@ static void nes_do_reset(NES* nes)
 
 static void* nes_thread_proc(void *param)
 {
-    NES  *nes = (NES*)param;
-    int  totalpclk, nmi, irq;
-    void *adata[8] = {0};
-    void *vdata[8] = {0};
-    int   lsize[8] = {0};
-
-    vdev_lock(nes->ppu.vdevctxt, &(vdata[0]), &(lsize[0]));
-    vdata[0]  = vdata[0];
-    lsize[0] *= 4;
-    vdev_unlock(nes->ppu.vdevctxt);
+    NES *nes = (NES*)param;
+    int totalpclk, nmi, irq;
 
     while (!nes->thread_exit)
     {
         // for run/pause
-        if (!nes->isrunning) goto next;
+        while (!nes->isrunning) Sleep(20);
 
         // for nes reset
         if (nes->request_reset == 1)
@@ -68,19 +59,6 @@ static void* nes_thread_proc(void *param)
 
         // run joypad for turbo key function
         joypad_run(&(nes->pad));
-
-#if 0
-        //++ for ffencoder
-        adata[0] = nes->apu.audiobuf->lpdata;
-        ffencoder_audio(nes->encoder, adata, 44100 / 60);
-        ffencoder_video(nes->encoder, vdata, lsize     );
-        //-- for ffencoder
-#endif
-
-next:
-        // frame rate is synced to audio playback
-        // sleep is used to make frame pitch more uniform
-        Sleep(8);
     }
     return NULL;
 }
@@ -88,7 +66,6 @@ next:
 // 函数实现
 BOOL nes_init(NES *nes, char *file, DWORD extra)
 {
-    FFENCODER_PARAMS params = {0};
     int *mirroring = NULL;
     int  i         = 0;
 
@@ -215,13 +192,6 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     // init replay
     replay_init(&(nes->replay), NULL, 0);
 
-    // init ffencoder
-    params.sample_rate   = 44100;
-    params.audio_bitrate = 128000;
-    params.frame_rate    = 60;
-    params.video_bitrate = 512000;
-    nes->encoder = ffencoder_init(&params);
-
     // create nes event & thread
     pthread_create(&(nes->thread_id), NULL, nes_thread_proc, nes);
 
@@ -236,9 +206,6 @@ void nes_free(NES *nes)
     // destroy nes thread
     nes->thread_exit = TRUE;
     pthread_join(nes->thread_id, NULL);
-
-    // free ffencoder
-    ffencoder_free(nes->encoder);
 
     // free replay
     replay_free(&(nes->replay));

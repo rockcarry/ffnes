@@ -375,7 +375,7 @@ void ppu_run_pclk(PPU *ppu)
         }
 
         // lock video device, obtain draw buffer address & stride
-        vdev_lock(ppu->vdevctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
+        vdev_buf_request(ppu->vdevctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
     }
 
     // scanline 0 - 239 visible scanlines
@@ -471,7 +471,7 @@ void ppu_run_pclk(PPU *ppu)
     else if (ppu->pclk_frame == NES_HTOTAL * 241 + 1) // scanline 241, tick 1
     {
         // unlock video device
-        vdev_unlock(ppu->vdevctxt);
+        vdev_buf_post(ppu->vdevctxt);
 
         // set vblank bit of reg $2002
         ppu->vblklast = ppu->regs[0x0002] & (1 << 7);
@@ -539,7 +539,7 @@ void ppu_init(PPU *ppu, DWORD extra)
     //-- for power up palette
 
     // create vdev for ppu
-    ppu->vdevctxt = vdev_create(NES_WIDTH, NES_HEIGHT, extra);
+    ppu->vdevctxt = vdev_create(8, NES_WIDTH, NES_HEIGHT, extra);
     if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
 
     // init power up palette
