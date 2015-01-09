@@ -2,11 +2,11 @@
 #include "nes.h"
 
 // 内部常量定义
-#define APU_ABUF_NUM   6
-#define APU_ABUF_LEN  (735 * 4)
+#define APU_ABUF_NUM   5
+#define APU_ABUF_LEN  (738 * 2)
 
 #define FRAME_DIVIDER       (NES_FREQ_PPU / 240)
-#define MIXER_DIVIDER       (NES_HTOTAL*NES_VTOTAL*2 / 735)
+#define MIXER_DIVIDER       (NES_HTOTAL*NES_VTOTAL / 738)
 #define SCH_SWEEPU_DIVIDER  (((regs[0x0001] >> 4) & 0x7) + 1)
 #define SCH_STIMER_DIVIDER  (6 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
 #define TCH_TTIMER_DIVIDER  (3 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
@@ -438,7 +438,6 @@ void apu_reset(APU *apu)
 void apu_run_pclk(APU *apu)
 {
     int flew = (1 << 0);
-    int i    = 2;
 
     if (apu->pclk_frame == 0) {
         // request audio buffer
@@ -494,17 +493,15 @@ void apu_run_pclk(APU *apu)
     apu_render_dmc_channel     (&(apu->dmc ), (BYTE*)apu->regs + 0x0010, flew);
 
     // for mixer ouput
-    do {
-        if (--apu->mixer_divider == 0)
-        {
-            short sample = (short)( 247 *(apu->sch1.output_value + apu->sch2.output_value)
-                + 279 * apu->tch.output_value
-                + 162 * apu->nch.output_value
-                + 110 * apu->dmc.output_value);
-            ((DWORD*)apu->audiobuf->lpdata)[apu->mixer_counter++] = (sample << 16) | (sample << 0);
-            apu->mixer_divider = MIXER_DIVIDER;
-        }
-    } while (--i);
+    if (--apu->mixer_divider == 0)
+    {
+        short sample = (short)( 247 *(apu->sch1.output_value + apu->sch2.output_value)
+            + 279 * apu->tch.output_value
+            + 162 * apu->nch.output_value
+            + 110 * apu->dmc.output_value);
+        ((WORD*)apu->audiobuf->lpdata)[apu->mixer_counter++] = sample;
+        apu->mixer_divider = MIXER_DIVIDER;
+    }
     //-- render audio data on audio buffer --//
 
     if (++apu->pclk_frame == NES_HTOTAL * NES_VTOTAL) {

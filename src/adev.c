@@ -51,7 +51,7 @@ void* adev_create(int bufnum, int buflen)
     wfx.wBitsPerSample  = 16;    // 16bit
     wfx.nSamplesPerSec  = 44100; // 44.1k
 //  wfx.nSamplesPerSec  = 48000; // 48.0k
-    wfx.nChannels       = 2;     // stereo
+    wfx.nChannels       = 1;     // stereo
     wfx.nBlockAlign     = wfx.nChannels * wfx.wBitsPerSample / 8;
     wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
     waveOutOpen(&(dev->hWaveOut), WAVE_MAPPER, &wfx, (DWORD_PTR)waveOutProc, (DWORD)dev, CALLBACK_FUNCTION);
