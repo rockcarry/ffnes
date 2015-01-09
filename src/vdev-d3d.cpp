@@ -42,7 +42,7 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
     d3dpp.hDeviceWindow         = dev->hwnd;
     d3dpp.Windowed              = TRUE;
     d3dpp.EnableAutoDepthStencil= FALSE;
-    d3dpp.PresentationInterval  = D3DPRESENT_INTERVAL_IMMEDIATE; // D3DPRESENT_INTERVAL_DEFAULT
+    d3dpp.PresentationInterval  = D3DPRESENT_INTERVAL_ONE;
     if (SUCCEEDED(dev->pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, dev->hwnd,
                   D3DCREATE_SOFTWARE_VERTEXPROCESSING|D3DCREATE_MULTITHREADED, &d3dpp, &(dev->pD3DDev))))
     {
@@ -72,7 +72,7 @@ void vdev_d3d_buf_request(void *ctxt, void **buf, int *stride)
 
     // lock texture rect
     D3DLOCKED_RECT d3d_rect;
-    dev->pSurface->LockRect(&d3d_rect, NULL, D3DLOCK_DONOTWAIT);
+    dev->pSurface->LockRect(&d3d_rect, NULL, D3DLOCK_DONOTWAIT|D3DLOCK_DISCARD);
 
     if (buf   ) *buf    = d3d_rect.pBits;
     if (stride) *stride = d3d_rect.Pitch / 4;
@@ -81,25 +81,55 @@ void vdev_d3d_buf_request(void *ctxt, void **buf, int *stride)
 void vdev_d3d_buf_post(void *ctxt)
 {
     VDEVD3D *dev = (VDEVD3D*)ctxt;
+    RECT    rect = {0};
+    int     x    = 0;
+    int     y    = 0;
+    int     sw, sh, dw, dh;
 
     // unlock texture rect
     dev->pSurface->UnlockRect();
 
-    // render scene
-    if (SUCCEEDED(dev->pD3DDev->BeginScene()))
+    GetClientRect(dev->hwnd, &rect);
+    sw = dw = rect.right;
+    sh = dh = rect.bottom;
+
+    //++ keep picture w/h ratio when stretching ++//
+    if (256 * sh > 240 * sw)
     {
-        IDirect3DSurface9 *pback = NULL;
-        dev->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback);
-        if (pback)
-        {
-            dev->pD3DDev->StretchRect(dev->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
-            pback->Release();
-        }
+        dh = dw * 240 / 256;
+        y  = (sh - dh) / 2;
 
-        dev->pD3DDev->EndScene();
-        dev->pD3DDev->Present(NULL, NULL, NULL, NULL);
+        rect.bottom = y;
+        InvalidateRect(dev->hwnd, &rect, TRUE);
+        rect.top    = sh - y;
+        rect.bottom = sh;
+        InvalidateRect(dev->hwnd, &rect, TRUE);
     }
+    else
+    {
+        dw = dh * 256 / 240;
+        x  = (sw - dw) / 2;
 
-    Sleep(1); // sleep is used to make frame pitch more uniform
+        rect.right  = x;
+        InvalidateRect(dev->hwnd, &rect, TRUE);
+        rect.left   = sw - x;
+        rect.right  = sw;
+        InvalidateRect(dev->hwnd, &rect, TRUE);
+    }
+    //-- keep picture w/h ratio when stretching --//
+
+    rect.left   = x;
+    rect.top    = y;
+    rect.right  = x + dw;
+    rect.bottom = y + dh;
+
+    IDirect3DSurface9 *pback = NULL;
+    dev->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback);
+    if (pback)
+    {
+        dev->pD3DDev->StretchRect(dev->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
+        pback->Release();
+    }
+    dev->pD3DDev->Present(NULL, &rect, NULL, NULL);
 }
 

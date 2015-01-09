@@ -15,7 +15,6 @@ typedef struct
     int     stride;
 } VDEVGDI;
 
-
 // º¯ÊıÊµÏÖ
 void* vdev_gdi_create(int w, int h, DWORD extra)
 {
