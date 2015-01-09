@@ -75,7 +75,7 @@ void* adev_create(int bufnum, int buflen)
 
 void adev_destroy(void *ctxt)
 {
-    int i;
+    int   i;
     ADEV *dev = (ADEV*)ctxt;
 
     // close vdev rendering event

@@ -2,7 +2,7 @@
 #include "nes.h"
 
 // 内部常量定义
-#define APU_ABUF_NUM   8
+#define APU_ABUF_NUM   6
 #define APU_ABUF_LEN  (735 * 4)
 
 #define FRAME_DIVIDER       (NES_FREQ_PPU / 240)

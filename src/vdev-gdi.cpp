@@ -106,8 +106,8 @@ void* vdev_gdi_create(int bufnum, int w, int h, DWORD extra)
     bmpinfo.bmiHeader.biCompression =  BI_RGB;
 
     int i;
-    dev->hbmps  = (HBITMAP*)malloc(sizeof(HBITMAP) * dev->bufnum);
-    dev->pbufs  = (void**  )malloc(sizeof(void*  ) * dev->bufnum);
+    dev->hbmps = (HBITMAP*)malloc(sizeof(HBITMAP) * dev->bufnum);
+    dev->pbufs = (void**  )malloc(sizeof(void*  ) * dev->bufnum);
     for (i=0; i<dev->bufnum; i++) {
         dev->hbmps[i] = CreateDIBSection(dev->hdcsrc, &bmpinfo, DIB_RGB_COLORS, &(dev->pbufs[i]), NULL, 0);
     }
@@ -119,7 +119,7 @@ void* vdev_gdi_create(int bufnum, int w, int h, DWORD extra)
 
     // create video rendering thread
     dev->bufsem  = CreateSemaphore(NULL, bufnum, bufnum, NULL);
-    dev->hEvent  = CreateEvent (NULL, FALSE, TRUE, "FFNES_VDEV_EVENT");
+    dev->hEvent  = CreateEvent (NULL, FALSE, FALSE, "FFNES_VDEV_EVENT");
     dev->hThread = CreateThread(NULL, 0, VDEVThreadProc, (LPVOID)dev, 0, NULL);
     return dev;
 }

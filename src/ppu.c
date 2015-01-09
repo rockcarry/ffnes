@@ -539,7 +539,7 @@ void ppu_init(PPU *ppu, DWORD extra)
     //-- for power up palette
 
     // create vdev for ppu
-    ppu->vdevctxt = vdev_create(8, NES_WIDTH, NES_HEIGHT, extra);
+    ppu->vdevctxt = vdev_create(6, NES_WIDTH, NES_HEIGHT, extra);
     if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
 
     // init power up palette
@@ -578,7 +578,7 @@ void ppu_reset(PPU *ppu)
     ppu->_2007_lazy = 0;
     ppu->chrom_bkg  = (ppu->regs[0x0000] & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
     ppu->chrom_spr  = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
-    ppu->pclk_frame = NES_HTOTAL * 240;
+    ppu->pclk_frame = NES_HTOTAL * 242;
     ppu->pclk_line  = 0;
     ppu->pclk_fend  = NES_HTOTAL * NES_VTOTAL;
     ppu->oddevenflag= 0;
