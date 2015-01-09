@@ -31,6 +31,9 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
     dev->pD3D = Direct3DCreate9(D3D_SDK_VERSION);
     if (!dev->pD3D) return dev;
 
+    D3DDISPLAYMODE d3ddm = {0};
+    dev->pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3ddm);
+
     D3DPRESENT_PARAMETERS d3dpp = {0};
     d3dpp.BackBufferWidth       = dev->width;
     d3dpp.BackBufferHeight      = dev->height;
@@ -42,7 +45,7 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
     d3dpp.hDeviceWindow         = dev->hwnd;
     d3dpp.Windowed              = TRUE;
     d3dpp.EnableAutoDepthStencil= FALSE;
-    d3dpp.PresentationInterval  = D3DPRESENT_INTERVAL_ONE;
+    d3dpp.PresentationInterval  = d3ddm.RefreshRate < 60 ? D3DPRESENT_INTERVAL_IMMEDIATE : D3DPRESENT_INTERVAL_ONE;
     if (SUCCEEDED(dev->pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, dev->hwnd,
                   D3DCREATE_SOFTWARE_VERTEXPROCESSING|D3DCREATE_MULTITHREADED, &d3dpp, &(dev->pD3DDev))))
     {
