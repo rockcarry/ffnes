@@ -37,7 +37,7 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
     D3DPRESENT_PARAMETERS d3dpp = {0};
     d3dpp.BackBufferWidth       = dev->width;
     d3dpp.BackBufferHeight      = dev->height;
-    d3dpp.BackBufferFormat      = D3DFMT_UNKNOWN;
+    d3dpp.BackBufferFormat      = D3DFMT_X8R8G8B8;
     d3dpp.BackBufferCount       = 1;
     d3dpp.MultiSampleType       = D3DMULTISAMPLE_NONE;
     d3dpp.MultiSampleQuality    = 0;
@@ -47,7 +47,7 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
     d3dpp.EnableAutoDepthStencil= FALSE;
     d3dpp.PresentationInterval  = d3ddm.RefreshRate < 60 ? D3DPRESENT_INTERVAL_IMMEDIATE : D3DPRESENT_INTERVAL_ONE;
     if (SUCCEEDED(dev->pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, dev->hwnd,
-                  D3DCREATE_SOFTWARE_VERTEXPROCESSING|D3DCREATE_MULTITHREADED, &d3dpp, &(dev->pD3DDev))))
+                  D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &(dev->pD3DDev))))
     {
         // clear direct3d device
         dev->pD3DDev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0,0,0), 1.0f, 0);
@@ -75,7 +75,7 @@ void vdev_d3d_buf_request(void *ctxt, void **buf, int *stride)
 
     // lock texture rect
     D3DLOCKED_RECT d3d_rect;
-    dev->pSurface->LockRect(&d3d_rect, NULL, D3DLOCK_DONOTWAIT|D3DLOCK_DISCARD);
+    dev->pSurface->LockRect(&d3d_rect, NULL, D3DLOCK_DISCARD);
 
     if (buf   ) *buf    = d3d_rect.pBits;
     if (stride) *stride = d3d_rect.Pitch / 4;
