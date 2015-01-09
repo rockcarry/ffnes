@@ -11,7 +11,6 @@ typedef struct
     int      buflen;
     int      head;
     int      tail;
-    HANDLE   hVDEVEvent;
 } ADEV;
 
 // 内部函数实现
@@ -23,7 +22,6 @@ static void CALLBACK waveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD dwInstance, DWOR
     case WOM_DONE:
         if (++dev->head == dev->bufnum) dev->head = 0;
         ReleaseSemaphore(dev->bufsem, 1, NULL);
-        SetEvent(dev->hVDEVEvent); // for vdev
         break;
     }
 }
@@ -67,9 +65,6 @@ void* adev_create(int bufnum, int buflen)
         waveOutPrepareHeader(dev->hWaveOut, &(dev->pWaveHdr[i]), sizeof(WAVEHDR));
     }
 
-    // create vdev rendering event
-    dev->hVDEVEvent = CreateEvent(NULL, FALSE, TRUE, "FFNES_VDEV_EVENT");
-
     return dev;
 }
 
@@ -77,9 +72,6 @@ void adev_destroy(void *ctxt)
 {
     int   i;
     ADEV *dev = (ADEV*)ctxt;
-
-    // close vdev rendering event
-    if (dev->hVDEVEvent) CloseHandle(dev->hVDEVEvent);
 
     // unprepare
     for (i=0; i<dev->bufnum; i++) {

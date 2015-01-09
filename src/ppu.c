@@ -539,7 +539,7 @@ void ppu_init(PPU *ppu, DWORD extra)
     //-- for power up palette
 
     // create vdev for ppu
-    ppu->vdevctxt = vdev_create(6, NES_WIDTH, NES_HEIGHT, extra);
+    ppu->vdevctxt = vdev_create(NES_WIDTH, NES_HEIGHT, extra);
     if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
 
     // init power up palette
