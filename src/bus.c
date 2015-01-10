@@ -42,17 +42,13 @@ WORD bus_readw(BUS bus, int addr)
 void bus_writeb(BUS bus, int addr, BYTE byte)
 {
     MEM *mbank = find_mem_bank(bus, addr, &addr);
-    if (mbank) {
-        mem_writeb(mbank, addr, byte);
-    }
+    if (mbank) mem_writeb(mbank, addr, byte);
 }
 
 void bus_writew(BUS bus, int addr, WORD word)
 {
     MEM *mbank = find_mem_bank(bus, addr, &addr);
-    if (mbank) {
-        mem_writew(mbank, addr, word);
-    }
+    if (mbank) mem_writew(mbank, addr, word);
 }
 
 void bus_setmem(BUS bus, int i, int start, int end, MEM *membank)

@@ -1,13 +1,14 @@
 // 包含头文件
 #include <stdio.h>
 #include "cartridge.h"
+#include "log.h"
 
 // 函数实现
 BOOL cartridge_load(CARTRIDGE *pcart, char *file)
 {
-    FILE *fp   = NULL;
-    BOOL  bret = FALSE;
+    FILE *fp = NULL;
 
+    // open nes file
     strcpy(pcart->file, file);
     fp = fopen(file, "rb");
     if (!fp)
@@ -32,19 +33,25 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
     // read trainer if exists
     if (cartridge_has_trainer(pcart)) {
         pcart->buf_trainer = malloc(INES_TRAINER_SIZE);
-        if (!pcart->buf_trainer) goto done;
-        fread(pcart->buf_trainer, INES_TRAINER_SIZE, 1, fp);
+        if (!pcart->buf_trainer) {
+            log_printf("failed to allocate cartridge trainer buffer !\n");
+            exit(0);
+        }
+        else fread(pcart->buf_trainer, INES_TRAINER_SIZE, 1, fp);
     }
 
     // allocate sram if exists
     if (cartridge_has_sram(pcart)) {
-        FILE *fp = NULL;
-        char save[MAX_PATH];
-        strcpy(save, file); strcat(save, ".sav");
-
         pcart->buf_sram = malloc(0x2000);
-        if (pcart->buf_sram)
-        {
+        if (!pcart->buf_sram) {
+            log_printf("failed to allocate cartridge sram buffer !\n");
+            exit(0);
+        }
+        else {
+            FILE *fp = NULL;
+            char save[MAX_PATH];
+            strcpy(save, file  );
+            strcat(save, ".sav");
             fp = fopen(save, "rb");
             if (fp) {
                 fread(pcart->buf_sram, 0x2000, 1, fp);
@@ -52,15 +59,17 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
             }
             else memset(pcart->buf_sram, 0, 0x2000);
         }
-        else goto done;
     }
 
     // read prom data
     if (pcart->prom_count > 0)
     {
         pcart->buf_prom = malloc(pcart->prom_count * 0x4000);
-        if (!pcart->buf_prom) goto done;
-        fread(pcart->buf_prom, pcart->prom_count * 0x4000, 1, fp);
+        if (!pcart->buf_prom) {
+            log_printf("failed to allocate cartridge prom buffer !\n");
+            exit(0);
+        }
+        else fread(pcart->buf_prom, pcart->prom_count * 0x4000, 1, fp);
     }
 
     // read crom data
@@ -73,25 +82,23 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
 
     // allocate buffer for crom/cram
     pcart->buf_crom = malloc(pcart->crom_count * 0x2000);
-    if (!pcart->buf_crom) goto done;
+    if (!pcart->buf_crom) {
+        log_printf("failed to allocate cartridge crom buffer !\n");
+        exit(0);
+    }
 
     // init buffer for crom/cram
     if (pcart->ischrram) memset(pcart->buf_crom, 0, pcart->crom_count * 0x2000);
     else fread(pcart->buf_crom, pcart->crom_count * 0x2000, 1, fp);
 
-    // successed
-    bret = TRUE;
-
-done:
-    fclose(fp); // close fp
-    if (!bret) cartridge_free(pcart);
-    return bret;
+    // close fp
+    fclose(fp);
+    return TRUE;
 }
 
 BOOL cartridge_save(CARTRIDGE *pcart, char *file)
 {
-    FILE *fp   = NULL;
-    BOOL  bret = FALSE;
+    FILE *fp = NULL;
 
     fp = fopen(file, "wb");
     if (!fp) return FALSE;
@@ -101,18 +108,15 @@ BOOL cartridge_save(CARTRIDGE *pcart, char *file)
 
     // write trainer if exists
     if (cartridge_has_trainer(pcart)) {
-        if (!pcart->buf_trainer) goto done;
         fwrite(pcart->buf_trainer, INES_TRAINER_SIZE, 1, fp);
     }
 
-    if (!pcart->buf_prom || !pcart->buf_crom) goto done;
+    // write prom & crom data
     fwrite(pcart->buf_prom, pcart->prom_count * 0x4000, 1, fp);
     fwrite(pcart->buf_crom, pcart->crom_count * 0x2000, 1, fp);
-    bret = TRUE;
 
-done:
     fclose(fp);
-    return bret;
+    return TRUE;
 }
 
 void cartridge_free(CARTRIDGE *pcart)

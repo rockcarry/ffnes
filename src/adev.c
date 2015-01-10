@@ -1,5 +1,6 @@
 // 包含头文件
 #include "adev.h"
+#include "log.h"
 
 // 内部类型定义
 typedef struct
@@ -36,7 +37,10 @@ void* adev_create(int bufnum, int buflen)
 
     // allocate adev context
     dev = malloc(sizeof(ADEV));
-    if (!dev) return NULL;
+    if (!dev) {
+        log_printf("failed to allocate adev context !\n");
+        exit(0);
+    }
 
     dev->bufnum   = bufnum;
     dev->buflen   = buflen;
@@ -44,6 +48,10 @@ void* adev_create(int bufnum, int buflen)
     dev->tail     = 0;
     dev->pWaveHdr = (WAVEHDR*)malloc(bufnum * (sizeof(WAVEHDR) + buflen));
     dev->bufsem   = CreateSemaphore(NULL, bufnum, bufnum, NULL);
+    if (!dev->pWaveHdr || !dev->bufsem) {
+        log_printf("failed to allocate waveout buffer and waveout semaphore !\n");
+        exit(0);
+    }
 
     // init for audio
     wfx.cbSize          = sizeof(wfx);
@@ -78,9 +86,9 @@ void adev_destroy(void *ctxt)
         waveOutUnprepareHeader(dev->hWaveOut, &(dev->pWaveHdr[i]), sizeof(WAVEHDR));
     }
 
-    if (dev->hWaveOut) waveOutClose(dev->hWaveOut);
-    if (dev->pWaveHdr) free(dev->pWaveHdr);
-    if (dev->bufsem  ) CloseHandle(dev->bufsem);
+    waveOutClose(dev->hWaveOut);
+    CloseHandle(dev->bufsem);
+    free(dev->pWaveHdr);
     free(dev);
 }
 

@@ -1,6 +1,7 @@
 // 包含头文件
 extern "C" {
 #include "vdev.h"
+#include "log.h"
 }
 
 typedef struct
@@ -19,7 +20,10 @@ typedef struct
 void* vdev_gdi_create(int w, int h, DWORD extra)
 {
     VDEVGDI *dev = (VDEVGDI*)malloc(sizeof(VDEVGDI));
-    if (!dev) return NULL;
+    if (!dev) {
+        log_printf("failed to allocate gdi vdev context !\n");
+        exit(0);
+    }
 
     // init vdev context
     memset(dev, 0, sizeof(VDEVGDI));
@@ -28,6 +32,10 @@ void* vdev_gdi_create(int w, int h, DWORD extra)
     dev->hwnd   = (HWND)extra;
     dev->hdcdst = GetDC(dev->hwnd);
     dev->hdcsrc = CreateCompatibleDC(dev->hdcdst);
+    if (!dev->hdcdst || !dev->hdcsrc) {
+        log_printf("failed to get dc or create compatible dc !\n");
+        exit(0);
+    }
 
     //++ create dibsection, get bitmap buffer address & stride ++//
     BITMAPINFO bmpinfo;
@@ -40,7 +48,11 @@ void* vdev_gdi_create(int w, int h, DWORD extra)
     bmpinfo.bmiHeader.biCompression =  BI_RGB;
 
     dev->hbmp = CreateDIBSection(dev->hdcsrc, &bmpinfo, DIB_RGB_COLORS, &(dev->pbuf), NULL, 0);
-    if (dev->hbmp) SelectObject(dev->hdcsrc, dev->hbmp);
+    if (!dev->hbmp) {
+        log_printf("failed to create gdi dib section !\n");
+        exit(0);
+    }
+    else SelectObject(dev->hdcsrc, dev->hbmp);
 
     BITMAP bitmap;
     GetObject(dev->hbmp, sizeof(BITMAP), &bitmap);
@@ -53,9 +65,9 @@ void* vdev_gdi_create(int w, int h, DWORD extra)
 void vdev_gdi_destroy(void *ctxt)
 {
     VDEVGDI *dev = (VDEVGDI*)ctxt;
-    if (dev->hdcsrc) DeleteDC (dev->hdcsrc);
-    if (dev->hdcdst) ReleaseDC(dev->hwnd, dev->hdcdst);
-    if (dev->hbmp  ) DeleteObject(dev->hbmp);
+    DeleteDC    (dev->hdcsrc);
+    ReleaseDC   (dev->hwnd, dev->hdcdst);
+    DeleteObject(dev->hbmp);
     free(dev); // free vdev context
 }
 

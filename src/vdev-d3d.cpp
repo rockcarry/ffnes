@@ -2,6 +2,7 @@
 #include <d3d9.h>
 extern "C" {
 #include "vdev.h"
+#include "log.h"
 }
 
 typedef struct
@@ -19,7 +20,10 @@ typedef struct
 void* vdev_d3d_create(int w, int h, DWORD extra)
 {
     VDEVD3D *dev = (VDEVD3D*)malloc(sizeof(VDEVD3D));
-    if (!dev) return dev;
+    if (!dev) {
+        log_printf("failed to allocate d3d vdev context !\n");
+        exit(0);
+    }
 
     // init d3d vdev context
     memset(dev, 0, sizeof(VDEVD3D));
@@ -29,7 +33,10 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
 
     // create d3d
     dev->pD3D = Direct3DCreate9(D3D_SDK_VERSION);
-    if (!dev->pD3D) return dev;
+    if (!dev->pD3D) {
+        log_printf("failed to allocate d3d object !\n");
+        exit(0);
+    }
 
     D3DDISPLAYMODE d3ddm = {0};
     dev->pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3ddm);
@@ -46,15 +53,23 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
     d3dpp.Windowed              = TRUE;
     d3dpp.EnableAutoDepthStencil= FALSE;
     d3dpp.PresentationInterval  = d3ddm.RefreshRate < 60 ? D3DPRESENT_INTERVAL_IMMEDIATE : D3DPRESENT_INTERVAL_ONE;
-    if (SUCCEEDED(dev->pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, dev->hwnd,
-                  D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &(dev->pD3DDev))))
+    if (FAILED(dev->pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, dev->hwnd,
+                            D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &(dev->pD3DDev))))
     {
+        log_printf("failed to create d3d device !\n");
+        exit(0);
+    }
+    else {
         // clear direct3d device
         dev->pD3DDev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0,0,0), 1.0f, 0);
 
         // create surface
-        dev->pD3DDev->CreateOffscreenPlainSurface(dev->width, dev->height, D3DFMT_X8R8G8B8,
-                        D3DPOOL_DEFAULT, &(dev->pSurface), NULL);
+        if (FAILED(dev->pD3DDev->CreateOffscreenPlainSurface(dev->width, dev->height,
+                                    D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &(dev->pSurface), NULL)))
+        {
+            log_printf("failed to create d3d off screen plain surface !\n");
+            exit(0);
+        }
     }
 
     return dev;
@@ -63,9 +78,9 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
 void vdev_d3d_destroy(void *ctxt)
 {
     VDEVD3D *dev = (VDEVD3D*)ctxt;
-    if (dev->pSurface) dev->pSurface->Release();
-    if (dev->pD3DDev ) dev->pD3DDev->Release();
-    if (dev->pD3D    ) dev->pD3D->Release();
+    dev->pSurface->Release();
+    dev->pD3DDev->Release();
+    dev->pD3D->Release();
     free(dev);
 }
 
@@ -127,12 +142,11 @@ void vdev_d3d_buf_post(void *ctxt)
     rect.bottom = y + dh;
 
     IDirect3DSurface9 *pback = NULL;
-    dev->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback);
-    if (pback)
+    if (SUCCEEDED(dev->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback)))
     {
         dev->pD3DDev->StretchRect(dev->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
+        dev->pD3DDev->Present(NULL, &rect, NULL, NULL);
         pback->Release();
     }
-    dev->pD3DDev->Present(NULL, &rect, NULL, NULL);
 }
 
