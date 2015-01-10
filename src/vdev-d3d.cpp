@@ -10,6 +10,9 @@ typedef struct
     int   width;      /* 宽度 */
     int   height;     /* 高度 */
     HWND  hwnd;       /* 窗口句柄 */
+    RECT  rtcur;
+    RECT  rtlast;
+    RECT  rtview;
 
     LPDIRECT3D9        pD3D;
     LPDIRECT3DDEVICE9  pD3DDev;
@@ -54,7 +57,7 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
     d3dpp.EnableAutoDepthStencil= FALSE;
     d3dpp.PresentationInterval  = d3ddm.RefreshRate < 60 ? D3DPRESENT_INTERVAL_IMMEDIATE : D3DPRESENT_INTERVAL_ONE;
     if (FAILED(dev->pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, dev->hwnd,
-                            D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &(dev->pD3DDev))))
+                            D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &dev->pD3DDev)))
     {
         log_printf("failed to create d3d device !\n");
         exit(0);
@@ -65,7 +68,7 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
 
         // create surface
         if (FAILED(dev->pD3DDev->CreateOffscreenPlainSurface(dev->width, dev->height,
-                                    D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &(dev->pSurface), NULL)))
+                                    D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &dev->pSurface, NULL)))
         {
             log_printf("failed to create d3d off screen plain surface !\n");
             exit(0);
@@ -99,53 +102,60 @@ void vdev_d3d_buf_request(void *ctxt, void **buf, int *stride)
 void vdev_d3d_buf_post(void *ctxt)
 {
     VDEVD3D *dev = (VDEVD3D*)ctxt;
-    RECT    rect = {0};
-    int     x    = 0;
-    int     y    = 0;
-    int     sw, sh, dw, dh;
 
     // unlock texture rect
     dev->pSurface->UnlockRect();
 
-    GetClientRect(dev->hwnd, &rect);
-    sw = dw = rect.right;
-    sh = dh = rect.bottom;
-
-    //++ keep picture w/h ratio when stretching ++//
-    if (256 * sh > 240 * sw)
+    GetClientRect(dev->hwnd, &dev->rtcur);
+    if (  dev->rtlast.right  != dev->rtcur.right
+       || dev->rtlast.bottom != dev->rtcur.bottom)
     {
-        dh = dw * 240 / 256;
-        y  = (sh - dh) / 2;
+        memcpy(&dev->rtlast, &dev->rtcur, sizeof(RECT));
+        memcpy(&dev->rtview, &dev->rtcur, sizeof(RECT));
 
-        rect.bottom = y;
-        InvalidateRect(dev->hwnd, &rect, TRUE);
-        rect.top    = sh - y;
-        rect.bottom = sh;
-        InvalidateRect(dev->hwnd, &rect, TRUE);
+        int x  = 0;
+        int y  = 0;
+        int sw, sh, dw, dh;
+
+        sw = dw = dev->rtcur.right;
+        sh = dh = dev->rtcur.bottom;
+
+        //++ keep picture w/h ratio when stretching ++//
+        if (256 * sh > 240 * sw)
+        {
+            dh = dw * 240 / 256;
+            y  = (sh - dh) / 2;
+
+            dev->rtview.bottom = y;
+            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
+            dev->rtview.top    = sh - y;
+            dev->rtview.bottom = sh;
+            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
+        }
+        else
+        {
+            dw = dh * 256 / 240;
+            x  = (sw - dw) / 2;
+
+            dev->rtview.right  = x;
+            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
+            dev->rtview.left   = sw - x;
+            dev->rtview.right  = sw;
+            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
+        }
+        //-- keep picture w/h ratio when stretching --//
+
+        dev->rtview.left   = x;
+        dev->rtview.top    = y;
+        dev->rtview.right  = x + dw;
+        dev->rtview.bottom = y + dh;
     }
-    else
-    {
-        dw = dh * 256 / 240;
-        x  = (sw - dw) / 2;
-
-        rect.right  = x;
-        InvalidateRect(dev->hwnd, &rect, TRUE);
-        rect.left   = sw - x;
-        rect.right  = sw;
-        InvalidateRect(dev->hwnd, &rect, TRUE);
-    }
-    //-- keep picture w/h ratio when stretching --//
-
-    rect.left   = x;
-    rect.top    = y;
-    rect.right  = x + dw;
-    rect.bottom = y + dh;
 
     IDirect3DSurface9 *pback = NULL;
     if (SUCCEEDED(dev->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback)))
     {
         dev->pD3DDev->StretchRect(dev->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
-        dev->pD3DDev->Present(NULL, &rect, NULL, NULL);
+        dev->pD3DDev->Present(NULL, &dev->rtview, NULL, NULL);
         pback->Release();
     }
 }

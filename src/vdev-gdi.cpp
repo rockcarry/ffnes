@@ -14,6 +14,9 @@ typedef struct
     HBITMAP hbmp;
     void   *pbuf;
     int     stride;
+    RECT    rtcur;
+    RECT    rtlast;
+    RECT    rtview;
 } VDEVGDI;
 
 // º¯ÊýÊµÏÖ
@@ -47,7 +50,7 @@ void* vdev_gdi_create(int w, int h, DWORD extra)
     bmpinfo.bmiHeader.biBitCount    =  32;
     bmpinfo.bmiHeader.biCompression =  BI_RGB;
 
-    dev->hbmp = CreateDIBSection(dev->hdcsrc, &bmpinfo, DIB_RGB_COLORS, &(dev->pbuf), NULL, 0);
+    dev->hbmp = CreateDIBSection(dev->hdcsrc, &bmpinfo, DIB_RGB_COLORS, &dev->pbuf, NULL, 0);
     if (!dev->hbmp) {
         log_printf("failed to create gdi dib section !\n");
         exit(0);
@@ -81,44 +84,55 @@ void vdev_gdi_buf_request(void *ctxt, void **buf, int *stride)
 void vdev_gdi_buf_post(void *ctxt)
 {
     VDEVGDI *dev = (VDEVGDI*)ctxt;
-    RECT    rect = {0};
-    int     x    = 0;
-    int     y    = 0;
-    int     sw, sh, dw, dh;
 
-    GetClientRect(dev->hwnd, &rect);
-    sw = dw = rect.right;
-    sh = dh = rect.bottom;
-
-    //++ keep picture w/h ratio when stretching ++//
-    if (256 * sh > 240 * sw)
+    GetClientRect(dev->hwnd, &dev->rtcur);
+    if (  dev->rtlast.right  != dev->rtcur.right
+       || dev->rtlast.bottom != dev->rtcur.bottom)
     {
-        dh = dw * 240 / 256;
-        y  = (sh - dh) / 2;
+        memcpy(&dev->rtlast, &dev->rtcur, sizeof(RECT));
+        memcpy(&dev->rtview, &dev->rtcur, sizeof(RECT));
 
-        rect.bottom = y;
-        InvalidateRect(dev->hwnd, &rect, TRUE);
-        rect.top    = sh - y;
-        rect.bottom = sh;
-        InvalidateRect(dev->hwnd, &rect, TRUE);
-    }
-    else
-    {
-        dw = dh * 256 / 240;
-        x  = (sw - dw) / 2;
+        int x  = 0;
+        int y  = 0;
+        int sw, sh, dw, dh;
 
-        rect.right  = x;
-        InvalidateRect(dev->hwnd, &rect, TRUE);
-        rect.left   = sw - x;
-        rect.right  = sw;
-        InvalidateRect(dev->hwnd, &rect, TRUE);
+        sw = dw = dev->rtcur.right;
+        sh = dh = dev->rtcur.bottom;
+
+        //++ keep picture w/h ratio when stretching ++//
+        if (256 * sh > 240 * sw)
+        {
+            dh = dw * 240 / 256;
+            y  = (sh - dh) / 2;
+
+            dev->rtview.bottom = y;
+            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
+            dev->rtview.top    = sh - y;
+            dev->rtview.bottom = sh;
+            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
+        }
+        else
+        {
+            dw = dh * 256 / 240;
+            x  = (sw - dw) / 2;
+
+            dev->rtview.right  = x;
+            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
+            dev->rtview.left   = sw - x;
+            dev->rtview.right  = sw;
+            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
+        }
+        //-- keep picture w/h ratio when stretching --//
+
+        dev->rtview.left   = x;
+        dev->rtview.top    = y;
+        dev->rtview.right  = dw;
+        dev->rtview.bottom = dh;
     }
-    //-- keep picture w/h ratio when stretching --//
 
     // bitblt picture to window witch stretching
-    StretchBlt(dev->hdcdst, x, y, dw, dh,
-               dev->hdcsrc, 0, 0, dev->width, dev->height,
-               SRCCOPY);
+    StretchBlt(dev->hdcdst, dev->rtview.left, dev->rtview.top, dev->rtview.right, dev->rtview.bottom,
+               dev->hdcsrc, 0, 0, dev->width, dev->height, SRCCOPY);
 
     Sleep(1); // sleep is used to make frame pitch more uniform
 }
