@@ -5,8 +5,8 @@
 #include "stdefine.h"
 
 /* º¯ÊýÉùÃ÷ */
-void log_init  (char *file);
+void log_init  (const char *file);
 void log_done  (void);
-void log_printf(char *format, ...);
+void log_printf(const char *format, ...);
 
 #endif

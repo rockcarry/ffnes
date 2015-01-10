@@ -14,7 +14,7 @@ static FILE *s_log_fp   = NULL;
 static DWORD s_log_mode = LOG_MODE_DISABLE;
 
 /* º¯ÊýÊµÏÖ */
-void log_init(char *file)
+void log_init(const char *file)
 {
     if (!s_log_fp) {
         if (strcmp(file, "DEBUGER") == 0) {
@@ -40,7 +40,7 @@ void log_done(void)
 }
 
 #define MAX_LOG_BUF 1024
-void log_printf(char *format, ...)
+void log_printf(const char *format, ...)
 {
     char buf[MAX_LOG_BUF];
     va_list valist;

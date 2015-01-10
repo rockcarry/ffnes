@@ -32,6 +32,7 @@ OBJS = \
     replay.o \
     adev.o \
     vdev-gdi.o \
+    vdev-d3d.o \
 
 # 所有的可执行目标
 EXES = \
@@ -48,7 +49,7 @@ FFENCODERDLL = ffencoder.dll
 all : $(DLL) $(EXES) $(PTHREADDLL) $(FFENCODERDLL)
 
 $(DLL) : $(OBJS)
-	$(CC) $(CCFLAGS) -o $@ $(OBJS) --share -lwinmm $(PTHREADSW32_DLL) $(FFENCODERLIB_DLL)
+	$(CC) $(CCFLAGS) -o $@ $(OBJS) --share -lwinmm -ld3d9 $(PTHREADSW32_DLL) $(FFENCODERLIB_DLL)
 
 %.o : %.c %.h stdefine.h
 	$(CC) $(CCFLAGS) -o $@ $< -c
