@@ -4,6 +4,9 @@
 // 包含头文件
 #include "stdefine.h"
 
+// 预编译开关
+#define USE_DIRECT3D_RENDERING  TRUE
+
 // 函数声明
 void* vdev_gdi_create     (int w, int h, DWORD extra);
 void  vdev_gdi_destroy    (void *ctxt);
@@ -15,7 +18,7 @@ void  vdev_d3d_destroy    (void *ctxt);
 void  vdev_d3d_buf_request(void *ctxt, void **buf, int *stride);
 void  vdev_d3d_buf_post   (void *ctxt);
 
-#ifdef ENABLE_DIRECT3D
+#if USE_DIRECT3D_RENDERING
 #define vdev_create      vdev_d3d_create
 #define vdev_destroy     vdev_d3d_destroy
 #define vdev_buf_request vdev_d3d_buf_request
