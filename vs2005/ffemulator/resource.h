@@ -6,6 +6,7 @@
 #define IDR_MAINFRAME                   128
 #define IDD_FFNDBDEBUG_DIALOG           129
 #define IDR_MENU1                       130
+#define IDR_MENU2                       131
 #define IDC_BTN_NES_RESET               1000
 #define IDC_BTN_NES_RUN_PAUSE           1001
 #define IDC_BTN_NES_DEBUG_CPU           1002
@@ -37,13 +38,36 @@
 #define ID_DASMLIST_SELECTALL           32773
 #define ID_DASMLIST_COPY                32774
 #define ID_DASMLIST_EDIT                32775
+#define ID_Menu                         32776
+#define ID_Menu32777                    32777
+#define ID_FILE_CLOSE32778              32778
+#define ID_FILE_EXITALT                 32779
+#define ID_CONTROL_RESETHW              32780
+#define ID_CONTROL_RESETSW              32781
+#define ID_CONTROL_SAVEGAME             32782
+#define ID_CONTROL_LOADGAME             32783
+#define ID_HELP_ABOUT                   32784
+#define ID_TOOLS_FFNDBDEBUGTOOLCTRL     32785
+#define ID_TOOLS_FFENCODERVIDEOCOVERTERCTRL 32786
+#define ID_OPTIONS_VIDEOCONFIG          32787
+#define ID_OPTIONS_SOUNDCONFIG          32788
+#define ID_OPTIONS_JOYSTICK             32789
+#define ID_OPEN_ROM                     32790
+#define ID_CLOSE_ROM                    32791
+#define ID_EXIT                         32792
+#define ID_CONTROL_RESET                32793
+#define ID_CONTROL_PAUSEPLAY            32794
+#define ID_OPTIONS_VIDEO                32795
+#define ID_OPTIONS_SOUND                32796
+#define ID_TOOLS_FFNDB                  32797
+#define ID_TOOLS_FFENCODER              32798
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        131
-#define _APS_NEXT_COMMAND_VALUE         32776
+#define _APS_NEXT_RESOURCE_VALUE        132
+#define _APS_NEXT_COMMAND_VALUE         32799
 #define _APS_NEXT_CONTROL_VALUE         1026
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

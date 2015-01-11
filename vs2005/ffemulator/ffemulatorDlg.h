@@ -31,6 +31,8 @@ protected:
     afx_msg void   OnDestroy();
     afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
     afx_msg void   OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
+    afx_msg void   OnOpenRom();
+    afx_msg void   OnExit();
 
 private:
     void LoadNesRom();

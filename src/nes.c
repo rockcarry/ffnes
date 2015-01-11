@@ -32,7 +32,7 @@ static void* nes_thread_proc(void *param)
     while (!nes->thread_exit)
     {
         // for run/pause
-        while (!nes->isrunning) Sleep(20);
+        if (!nes->isrunning) { Sleep(20); continue; }
 
         // for nes reset
         if (nes->request_reset == 1)

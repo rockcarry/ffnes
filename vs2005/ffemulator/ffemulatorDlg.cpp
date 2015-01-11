@@ -50,12 +50,7 @@ BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
         // ctrl+o pressed
         if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'O')
         {
-            //++ if ffndb dialog is opend, close it first ++//
-            CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
-            if (dlg) dlg->PostMessage(WM_CLOSE);
-            //-- if ffndb dialog is opend, close it first --//
-            FreeNesRom();
-            LoadNesRom();
+            OnOpenRom();
             return TRUE;
         }
 
@@ -129,6 +124,8 @@ BEGIN_MESSAGE_MAP(CffemulatorDlg, CDialog)
     ON_WM_DESTROY()
     ON_WM_CTLCOLOR()
     ON_WM_ACTIVATE()
+    ON_COMMAND(ID_OPEN_ROM, &CffemulatorDlg::OnOpenRom)
+    ON_COMMAND(ID_EXIT, &CffemulatorDlg::OnExit)
 END_MESSAGE_MAP()
 
 // CffemulatorDlg message handlers
@@ -153,8 +150,8 @@ BOOL CffemulatorDlg::OnInitDialog()
     y = y > 0 ? y : 0;
     MoveWindow(x, y, w, h, FALSE);
 
-    // load nes
-    LoadNesRom();
+    // init nes
+    nes_init(&m_nes, "", (DWORD)GetSafeHwnd());
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -168,7 +165,7 @@ void CffemulatorDlg::OnDestroy()
     if (dlg) dlg->DestroyWindow();
 
     // free nes
-    FreeNesRom();
+    nes_free(&m_nes);
 }
 
 void CffemulatorDlg::LoadNesRom()
@@ -218,3 +215,17 @@ void CffemulatorDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
     }
 }
 
+void CffemulatorDlg::OnOpenRom()
+{
+    //++ if ffndb dialog is opend, close it first ++//
+    CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
+    if (dlg) dlg->PostMessage(WM_CLOSE);
+    //-- if ffndb dialog is opend, close it first --//
+    FreeNesRom();
+    LoadNesRom();
+}
+
+void CffemulatorDlg::OnExit()
+{
+    OnOK();
+}

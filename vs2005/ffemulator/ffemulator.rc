@@ -75,6 +75,7 @@ IDD_FFEMULATOR_DIALOG DIALOGEX 0, 0, 112, 80
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 EXSTYLE WS_EX_APPWINDOW
 CAPTION "ffemulator"
+MENU IDR_MENU2
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
 END
@@ -168,6 +169,38 @@ BEGIN
         MENUITEM "Select &All          Ctrl+A", ID_DASMLIST_SELECTALL
         MENUITEM "&Copy                Ctrl+C", ID_DASMLIST_COPY
         MENUITEM "&Edit                Ctrl+E", ID_DASMLIST_EDIT
+    END
+END
+
+IDR_MENU2 MENU 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&Open ROM    Ctrl+O",         ID_OPEN_ROM
+        MENUITEM "E&xit        Alt+F4",         ID_EXIT
+    END
+    POPUP "&Control"
+    BEGIN
+        MENUITEM "&Reset         Ctrl+R",       ID_CONTROL_RESET
+        MENUITEM "&Pause/Play    Ctrl+P",       ID_CONTROL_PAUSEPLAY
+        MENUITEM SEPARATOR
+        MENUITEM "&Save game     Ctrl+S",       ID_CONTROL_SAVEGAME
+        MENUITEM "&Load game     Ctrl+L",       ID_CONTROL_LOADGAME
+    END
+    POPUP "&Options"
+    BEGIN
+        MENUITEM "&Video...",                   ID_OPTIONS_VIDEO
+        MENUITEM "&Sound...",                   ID_OPTIONS_SOUND
+        MENUITEM "&Joystick...  Ctrl+J",        ID_OPTIONS_JOYSTICK
+    END
+    POPUP "&Tools"
+    BEGIN
+        MENUITEM "ffndb &debug tool    Ctrl+D", ID_TOOLS_FFNDB
+        MENUITEM "ff&encoder coverter  Ctrl+E", ID_TOOLS_FFENCODER
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About",                      ID_HELP_ABOUT
     END
 END
 
