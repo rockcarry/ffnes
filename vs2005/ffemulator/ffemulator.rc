@@ -75,7 +75,7 @@ IDD_FFEMULATOR_DIALOG DIALOGEX 0, 0, 112, 80
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 EXSTYLE WS_EX_APPWINDOW
 CAPTION "ffemulator"
-MENU IDR_MENU2
+MENU IDR_MENU_EMULATOR_MAIN
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
 END
@@ -112,6 +112,18 @@ BEGIN
     EDITTEXT        IDC_EDT_LIST_CTRL,6,44,62,14,ES_AUTOHSCROLL | NOT WS_VISIBLE | NOT WS_BORDER
     PUSHBUTTON      "step out",IDC_BTN_CPU_STEP_OUT,405,294,29,24,BS_MULTILINE
     PUSHBUTTON      "step over",IDC_BTN_CPU_STEP_OVER,438,294,29,24,BS_MULTILINE
+END
+
+IDD_DIALOG_ABOUT DIALOGEX 0, 0, 225, 102
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About ffnes"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,168,81,50,14
+    LTEXT           "ffnes is a nes emulator written by rockcarry.",IDC_STATIC,22,34,180,8
+    LTEXT           "ffnes v1.0.0",IDC_STATIC,22,15,180,8
+    LTEXT           "email: rockcarry@163.com  qq: 31951258",IDC_STATIC,22,64,180,8
+    LTEXT           "https://github.com/rockcarry/ffnes ",IDC_STATIC,22,49,180,8
 END
 
 
@@ -159,7 +171,7 @@ END
 // Menu
 //
 
-IDR_MENU1 MENU 
+IDR_MENU_FFNDB_POPUP MENU 
 BEGIN
     POPUP "popup"
     BEGIN
@@ -172,11 +184,11 @@ BEGIN
     END
 END
 
-IDR_MENU2 MENU 
+IDR_MENU_EMULATOR_MAIN MENU 
 BEGIN
     POPUP "&File"
     BEGIN
-        MENUITEM "&Open ROM    Ctrl+O",         ID_OPEN_ROM
+        MENUITEM "&Open ROM... Ctrl+O",         ID_OPEN_ROM
         MENUITEM "E&xit        Alt+F4",         ID_EXIT
     END
     POPUP "&Control"
@@ -200,9 +212,28 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About",                      ID_HELP_ABOUT
+        MENUITEM "&About...",                   ID_HELP_ABOUT
     END
 END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_DIALOG_ABOUT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 218
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 95
+    END
+END
+#endif    // APSTUDIO_INVOKED
 
 #endif    // Chinese (P.R.C.) resources
 /////////////////////////////////////////////////////////////////////////////

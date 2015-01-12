@@ -113,6 +113,7 @@ BEGIN_MESSAGE_MAP(CffemulatorDlg, CDialog)
     ON_COMMAND(ID_EXIT, &CffemulatorDlg::OnExit)
     ON_COMMAND(ID_CONTROL_RESET, &CffemulatorDlg::OnControlReset)
     ON_COMMAND(ID_CONTROL_PAUSEPLAY, &CffemulatorDlg::OnControlPauseplay)
+    ON_COMMAND(ID_HELP_ABOUT, &CffemulatorDlg::OnHelpAbout)
 END_MESSAGE_MAP()
 
 // CffemulatorDlg message handlers
@@ -236,4 +237,10 @@ void CffemulatorDlg::OnControlPauseplay()
         nes_setrun (&m_nes, 1);
         nes_outtext(&m_nes, 0, 222, "running", 2000);
     }
+}
+
+void CffemulatorDlg::OnHelpAbout()
+{
+    CDialog dlg(IDD_DIALOG_ABOUT);
+    dlg.DoModal();
 }

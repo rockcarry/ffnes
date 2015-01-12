@@ -520,7 +520,7 @@ void CffndbdebugDlg::OnRclickListDasm(NMHDR *pNMHDR, LRESULT *pResult)
     CPoint point(LOWORD(dwPos), HIWORD(dwPos));
 
     CMenu  menu;
-    menu.LoadMenu(IDR_MENU1);
+    menu.LoadMenu(IDR_MENU_FFNDB_POPUP);
     menu.GetSubMenu(0)->TrackPopupMenu(TPM_LEFTALIGN|TPM_RIGHTBUTTON, point.x, point.y, this);
     *pResult = 0;
 }

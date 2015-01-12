@@ -35,6 +35,7 @@ protected:
     afx_msg void   OnExit();
     afx_msg void   OnControlReset();
     afx_msg void   OnControlPauseplay();
+    afx_msg void   OnHelpAbout();
 
 private:
     void LoadNesRom();
