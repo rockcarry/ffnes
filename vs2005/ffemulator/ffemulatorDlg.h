@@ -28,7 +28,6 @@ protected:
 
 protected:
     // Generated message map functions
-    DECLARE_MESSAGE_MAP()
     afx_msg void   OnDestroy();
     afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
     afx_msg void   OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
@@ -37,6 +36,7 @@ protected:
     afx_msg void   OnControlReset();
     afx_msg void   OnControlPauseplay();
     afx_msg void   OnHelpAbout();
+    DECLARE_MESSAGE_MAP()
 
 private:
     void LoadNesRom();
