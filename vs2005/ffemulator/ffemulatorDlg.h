@@ -23,7 +23,8 @@ protected:
 
 // Implementation
 protected:
-    HICON m_hIcon;
+    HICON  m_hIcon;
+    HACCEL m_hAcc;
 
 protected:
     // Generated message map functions

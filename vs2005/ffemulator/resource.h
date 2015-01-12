@@ -7,7 +7,8 @@
 #define IDD_FFNDBDEBUG_DIALOG           129
 #define IDD_DIALOG_ABOUT                130
 #define IDR_MENU_FFNDB_POPUP            131
-#define IDR_MENU_EMULATOR_MAIN          132
+#define IDR_MENU_FFEMU_MAIN             132
+#define IDR_FFEMU_ACC                   133
 #define IDC_BTN_NES_RESET               1000
 #define IDC_BTN_NES_RUN_PAUSE           1001
 #define IDC_BTN_NES_DEBUG_CPU           1002
@@ -56,7 +57,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        133
+#define _APS_NEXT_RESOURCE_VALUE        134
 #define _APS_NEXT_COMMAND_VALUE         32788
 #define _APS_NEXT_CONTROL_VALUE         1027
 #define _APS_NEXT_SYMED_VALUE           101

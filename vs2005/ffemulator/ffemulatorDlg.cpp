@@ -27,47 +27,10 @@ void CffemulatorDlg::DoDataExchange(CDataExchange* pDX)
 
 BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
 {
+    if (TranslateAccelerator(GetSafeHwnd(), m_hAcc, pMsg)) return TRUE;
+
     if (pMsg->message == WM_KEYDOWN)
     {
-        // ctrl+d pressed
-        if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'D')
-        {
-            CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
-            if (!dlg) {
-                RECT rect = {0};
-                GetWindowRect(&rect);
-                MoveWindow(0, 0, rect.right - rect.left, rect.bottom - rect.top);
-
-                dlg = new CffndbdebugDlg(this, &m_nes);
-                dlg->Create(IDD_FFNDBDEBUG_DIALOG, GetDesktopWindow());
-                dlg->CenterWindow();
-                dlg->ShowWindow(SW_SHOW);
-            }
-            else SwitchToThisWindow(dlg->GetSafeHwnd(), TRUE);
-            return TRUE;
-        }
-
-        // ctrl+o pressed
-        if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'O')
-        {
-            OnOpenRom();
-            return TRUE;
-        }
-
-        // ctrl+r pressed
-        if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'R')
-        {
-            OnControlReset();
-            return TRUE;
-        }
-
-        // ctrl+p pressed
-        if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'P')
-        {
-            OnControlPauseplay();
-            return TRUE;
-        }
-
         switch (pMsg->wParam)
         {
         case 'E': nes_joypad(&m_nes, 0, NES_KEY_UP     , 1); break;
@@ -81,7 +44,6 @@ BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
         case 'B': nes_joypad(&m_nes, 0, NES_KEY_SELECT , 1); break;
         case 'N': nes_joypad(&m_nes, 0, NES_KEY_START  , 1); break;
         }
-        return TRUE;
     }
 
     if (pMsg->message == WM_KEYUP)
@@ -99,7 +61,6 @@ BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
         case 'B': nes_joypad(&m_nes, 0, NES_KEY_SELECT , 0); break;
         case 'N': nes_joypad(&m_nes, 0, NES_KEY_START  , 0); break;
         }
-        return TRUE;
     }
 
     return CDialog::PreTranslateMessage(pMsg);
@@ -122,9 +83,12 @@ BOOL CffemulatorDlg::OnInitDialog()
     CDialog::OnInitDialog();
 
     // Set the icon for this dialog. The framework does this automatically
-    //  when the application's main window is not a dialog
+    // when the application's main window is not a dialog
     SetIcon(m_hIcon, TRUE);      // Set big icon
     SetIcon(m_hIcon, FALSE);     // Set small icon
+
+    // load accelerators
+    m_hAcc = LoadAccelerators(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_FFEMU_ACC)); 
 
     RECT rect = {0};
     int  x, y, w, h;
