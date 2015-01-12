@@ -57,29 +57,14 @@ BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
         // ctrl+r pressed
         if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'R')
         {
-            char file[MAX_PATH] = {0};
-            CFileDialog dlg(FALSE, NULL, NULL, 0, "nes replay file (*.rep)|*.rep||");
-            if (dlg.DoModal() == IDOK)
-            {
-                strcpy(file, dlg.GetPathName());
-                if (!strstr(file, ".rep")) strcat(file, ".rep");
-                nes_replay(&m_nes, file, NES_REPLAY_RECORD);
-                nes_reset (&m_nes);
-            }
+            OnControlReset();
             return TRUE;
         }
 
         // ctrl+p pressed
         if (GetKeyState(VK_CONTROL) < 0 && pMsg->wParam == 'P')
         {
-            char file[MAX_PATH] = {0};
-            CFileDialog dlg(TRUE, NULL, NULL, 0, "nes replay file (*.rep)|*.rep||");
-            if (dlg.DoModal() == IDOK)
-            {
-                strcpy(file, dlg.GetPathName());
-                nes_replay(&m_nes, file, NES_REPLAY_PLAY);
-                nes_reset (&m_nes);
-            }
+            OnControlPauseplay();
             return TRUE;
         }
 
@@ -126,6 +111,8 @@ BEGIN_MESSAGE_MAP(CffemulatorDlg, CDialog)
     ON_WM_ACTIVATE()
     ON_COMMAND(ID_OPEN_ROM, &CffemulatorDlg::OnOpenRom)
     ON_COMMAND(ID_EXIT, &CffemulatorDlg::OnExit)
+    ON_COMMAND(ID_CONTROL_RESET, &CffemulatorDlg::OnControlReset)
+    ON_COMMAND(ID_CONTROL_PAUSEPLAY, &CffemulatorDlg::OnControlPauseplay)
 END_MESSAGE_MAP()
 
 // CffemulatorDlg message handlers
@@ -182,8 +169,8 @@ void CffemulatorDlg::LoadNesRom()
     }
     else SetWindowText("ffemulator");
 
-    nes_init(&m_nes, file, (DWORD)GetSafeHwnd());
-    nes_run (&m_nes);
+    nes_init  (&m_nes, file, (DWORD)GetSafeHwnd());
+    nes_setrun(&m_nes, 1);
 }
 
 void CffemulatorDlg::FreeNesRom()
@@ -228,4 +215,25 @@ void CffemulatorDlg::OnOpenRom()
 void CffemulatorDlg::OnExit()
 {
     OnOK();
+}
+
+void CffemulatorDlg::OnControlReset()
+{
+    nes_setrun(&m_nes, 1);
+    nes_reset (&m_nes);
+    nes_outtext(&m_nes, 0, 222, "reset", 2000);
+}
+
+void CffemulatorDlg::OnControlPauseplay()
+{
+    if (nes_getrun(&m_nes))
+    {
+        nes_setrun (&m_nes, 0);
+        nes_outtext(&m_nes, 0, 222, "paused", -1);
+    }
+    else
+    {
+        nes_setrun (&m_nes, 1);
+        nes_outtext(&m_nes, 0, 222, "running", 2000);
+    }
 }

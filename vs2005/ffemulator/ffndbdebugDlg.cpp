@@ -385,12 +385,12 @@ void CffndbdebugDlg::OnBnClickedBtnNesReset()
 void CffndbdebugDlg::OnBnClickedBtnNesRunPause()
 {
     CWnd *pwnd = GetDlgItem(IDC_BTN_NES_RUN_PAUSE);
-    if (m_pNES->isrunning) {
-        nes_pause(m_pNES);
+    if (nes_getrun(m_pNES)) {
+        nes_setrun(m_pNES, 0);
         pwnd->SetWindowText("run");
     }
     else {
-        nes_run(m_pNES);
+        nes_setrun(m_pNES, 1);
         pwnd->SetWindowText("pause");
     }
 }

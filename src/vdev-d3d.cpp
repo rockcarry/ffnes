@@ -10,13 +10,19 @@ typedef struct
     int   width;      /* 宽度 */
     int   height;     /* 高度 */
     HWND  hwnd;       /* 窗口句柄 */
-    RECT  rtcur;
-    RECT  rtlast;
-    RECT  rtview;
 
     LPDIRECT3D9        pD3D;
     LPDIRECT3DDEVICE9  pD3DDev;
     LPDIRECT3DSURFACE9 pSurface;
+
+    RECT  rtcur;
+    RECT  rtlast;
+    RECT  rtview;
+
+    char  textstr[256];
+    int   textposx;
+    int   textposy;
+    DWORD texttick;
 } VDEVD3D;
 
 // 函数实现
@@ -154,9 +160,31 @@ void vdev_d3d_buf_post(void *ctxt)
     IDirect3DSurface9 *pback = NULL;
     if (SUCCEEDED(dev->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback)))
     {
+        if (dev->texttick > GetTickCount())
+        {
+            HDC hdc = NULL;
+            dev->pSurface->GetDC(&hdc);
+            if (hdc)
+            {
+                SetBkMode   (hdc, TRANSPARENT);
+                SetTextColor(hdc, RGB(255,255,255));
+                TextOut(hdc, dev->textposx, dev->textposy, dev->textstr, (int)strlen(dev->textstr));
+                dev->pSurface->ReleaseDC(hdc);
+            }
+        }
+
         dev->pD3DDev->StretchRect(dev->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
         dev->pD3DDev->Present(NULL, &dev->rtview, NULL, NULL);
         pback->Release();
     }
+}
+
+void vdev_d3d_outtext(void *ctxt, int x, int y, char *text, int time)
+{
+    VDEVD3D *dev = (VDEVD3D*)ctxt;
+    strcpy(dev->textstr, text);
+    dev->textposx = x;
+    dev->textposy = y;
+    dev->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
 }
 

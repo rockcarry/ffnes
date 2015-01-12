@@ -94,13 +94,14 @@ typedef struct tagNES {
 } NES;
 
 // º¯ÊýÉùÃ÷
-BOOL nes_init  (NES *nes, char *file, DWORD extra);
-void nes_free  (NES *nes);
-void nes_reset (NES *nes);
-void nes_run   (NES *nes);
-void nes_pause (NES *nes);
-void nes_replay(NES *nes, char *file, int mode);
-void nes_joypad(NES *nes, int pad, int key, int value);
+BOOL nes_init   (NES *nes, char *file, DWORD extra);
+void nes_free   (NES *nes);
+void nes_reset  (NES *nes);
+void nes_setrun (NES *nes, int run);
+int  nes_getrun (NES *nes);
+void nes_replay (NES *nes, char *file, int mode);
+void nes_joypad (NES *nes, int pad, int key, int value);
+void nes_outtext(NES *nes, int x, int y, char *text, int time); // strlen(text) should less than 256
 
 #endif
 

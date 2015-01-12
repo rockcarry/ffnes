@@ -3,10 +3,11 @@ EXPORTS
 nes_init
 nes_free
 nes_reset
-nes_run
-nes_pause
+nes_setrun
+nes_getrun
 nes_replay
 nes_joypad
+nes_outtext
 
 ndb_set_debug
 ndb_cpu_runto

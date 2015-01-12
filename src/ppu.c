@@ -344,6 +344,67 @@ static int sprite_render(PPU *ppu, int bkcolor)
     return result;
 }
 
+// 函数实现
+void ppu_init(PPU *ppu, DWORD extra)
+{
+    //++ for power up palette
+    static BYTE power_up_pal[32] =
+    {
+        0x09,0x01,0x00,0x01,0x00,0x02,0x02,0x0D,0x08,0x10,0x08,0x24,0x00,0x00,0x04,0x2C,
+        0x09,0x01,0x34,0x03,0x00,0x04,0x00,0x14,0x08,0x3A,0x00,0x02,0x00,0x20,0x2C,0x08,
+    };
+    //-- for power up palette
+
+    // create vdev for ppu
+    ppu->vdevctxt = vdev_create(NES_WIDTH, NES_HEIGHT, extra);
+    if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
+
+    // init power up palette
+    memcpy(ppu->palette, power_up_pal, 32);
+
+    // init clear ppu regs
+    memset(ppu->regs, 0, 8);
+
+    //++ for ppu open bus ++//
+    memset(ppu->open_bust, 0, 8);
+    ppu->open_busv = 0;
+    //-- for ppu open bus --//
+
+    // reset ppu
+    ppu_reset(ppu);
+}
+
+void ppu_free(PPU *ppu)
+{
+    vdev_destroy(ppu->vdevctxt);
+}
+
+void ppu_reset(PPU *ppu)
+{
+    NES *nes = container_of(ppu, NES, ppu);
+
+    ppu->regs[0]    = 0;
+    ppu->regs[1]    = 0;
+    ppu->regs[5]    = 0;
+    ppu->pinvbl     = 1;
+    ppu->toggle     = 0;
+    ppu->finex      = 0;
+    ppu->vaddr      = 0;
+    ppu->temp0      = 0;
+    ppu->temp1      = 0;
+    ppu->_2007_lazy = 0;
+    ppu->chrom_bkg  = (ppu->regs[0x0000] & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
+    ppu->chrom_spr  = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
+    ppu->pclk_frame = NES_HTOTAL * 242;
+    ppu->pclk_line  = 0;
+    ppu->pclk_fend  = NES_HTOTAL * NES_VTOTAL;
+    ppu->oddevenflag= 0;
+    ppu->scanline   = 0;
+
+    // set default palette color
+    ppu_set_vdev_pal(ppu, 0);
+}
+
 void ppu_run_pclk(PPU *ppu)
 {
     //++ update vblank pin status
@@ -527,65 +588,12 @@ void ppu_run_pclk(PPU *ppu)
     }
 }
 
-// 函数实现
-void ppu_init(PPU *ppu, DWORD extra)
+void ppu_pause(PPU *ppu)
 {
-    //++ for power up palette
-    static BYTE power_up_pal[32] =
-    {
-        0x09,0x01,0x00,0x01,0x00,0x02,0x02,0x0D,0x08,0x10,0x08,0x24,0x00,0x00,0x04,0x2C,
-        0x09,0x01,0x34,0x03,0x00,0x04,0x00,0x14,0x08,0x3A,0x00,0x02,0x00,0x20,0x2C,0x08,
-    };
-    //-- for power up palette
-
-    // create vdev for ppu
-    ppu->vdevctxt = vdev_create(NES_WIDTH, NES_HEIGHT, extra);
-    if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
-
-    // init power up palette
-    memcpy(ppu->palette, power_up_pal, 32);
-
-    // init clear ppu regs
-    memset(ppu->regs, 0, 8);
-
-    //++ for ppu open bus ++//
-    memset(ppu->open_bust, 0, 8);
-    ppu->open_busv = 0;
-    //-- for ppu open bus --//
-
-    // reset ppu
-    ppu_reset(ppu);
-}
-
-void ppu_free(PPU *ppu)
-{
-    vdev_destroy(ppu->vdevctxt);
-}
-
-void ppu_reset(PPU *ppu)
-{
-    NES *nes = container_of(ppu, NES, ppu);
-
-    ppu->regs[0]    = 0;
-    ppu->regs[1]    = 0;
-    ppu->regs[5]    = 0;
-    ppu->pinvbl     = 1;
-    ppu->toggle     = 0;
-    ppu->finex      = 0;
-    ppu->vaddr      = 0;
-    ppu->temp0      = 0;
-    ppu->temp1      = 0;
-    ppu->_2007_lazy = 0;
-    ppu->chrom_bkg  = (ppu->regs[0x0000] & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
-    ppu->chrom_spr  = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
-    ppu->pclk_frame = NES_HTOTAL * 242;
-    ppu->pclk_line  = 0;
-    ppu->pclk_fend  = NES_HTOTAL * NES_VTOTAL;
-    ppu->oddevenflag= 0;
-    ppu->scanline   = 0;
-
-    // set default palette color
-    ppu_set_vdev_pal(ppu, 0);
+    // lock video device, obtain draw buffer address & stride
+    vdev_buf_request(ppu->vdevctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
+    // unlock video device
+    vdev_buf_post(ppu->vdevctxt);
 }
 
 BYTE NES_PPU_REG_RCB(MEM *pm, int addr)

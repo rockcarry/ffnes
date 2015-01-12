@@ -32,7 +32,12 @@ static void* nes_thread_proc(void *param)
     while (!nes->thread_exit)
     {
         // for run/pause
-        if (!nes->isrunning) { Sleep(20); continue; }
+        if (!nes->isrunning)
+        {
+            // call ppu_pause to keep rendering video on screen
+            ppu_pause(&(nes->ppu));
+            continue;
+        }
 
         // for nes reset
         if (nes->request_reset == 1)
@@ -235,8 +240,8 @@ void nes_reset(NES *nes)
     nes->request_reset = 1; // request reset
 }
 
-void nes_run  (NES *nes) { nes->isrunning = 1; }
-void nes_pause(NES *nes) { nes->isrunning = 0; }
+void nes_setrun(NES *nes, int run) { nes->isrunning = run; }
+int  nes_getrun(NES *nes)          { return nes->isrunning;}
 
 void nes_replay(NES *nes, char *file, int mode)
 {
@@ -247,5 +252,10 @@ void nes_replay(NES *nes, char *file, int mode)
 void nes_joypad(NES *nes, int pad, int key, int value)
 {
     joypad_setkey(&(nes->pad), pad, key, value);
+}
+
+void nes_outtext(NES *nes, int x, int y, char *text, int time)
+{
+    vdev_outtext(nes->ppu.vdevctxt, x, y, text, time);
 }
 

@@ -33,6 +33,8 @@ protected:
     afx_msg void   OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
     afx_msg void   OnOpenRom();
     afx_msg void   OnExit();
+    afx_msg void   OnControlReset();
+    afx_msg void   OnControlPauseplay();
 
 private:
     void LoadNesRom();

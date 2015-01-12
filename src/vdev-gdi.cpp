@@ -14,9 +14,15 @@ typedef struct
     HBITMAP hbmp;
     void   *pbuf;
     int     stride;
+
     RECT    rtcur;
     RECT    rtlast;
     RECT    rtview;
+
+    char    textstr[256];
+    int     textposx;
+    int     textposy;
+    DWORD   texttick;
 } VDEVGDI;
 
 // º¯ÊýÊµÏÖ
@@ -130,9 +136,25 @@ void vdev_gdi_buf_post(void *ctxt)
         dev->rtview.bottom = dh;
     }
 
+    if (dev->texttick > GetTickCount())
+    {
+        SetBkMode   (dev->hdcsrc, TRANSPARENT);
+        SetTextColor(dev->hdcsrc, RGB(255,255,255));
+        TextOut(dev->hdcsrc, dev->textposx, dev->textposy, dev->textstr, (int)strlen(dev->textstr));
+    }
+
     // bitblt picture to window witch stretching
     StretchBlt(dev->hdcdst, dev->rtview.left, dev->rtview.top, dev->rtview.right, dev->rtview.bottom,
                dev->hdcsrc, 0, 0, dev->width, dev->height, SRCCOPY);
 
     Sleep(1); // sleep is used to make frame pitch more uniform
+}
+
+void vdev_gdi_outtext(void *ctxt, int x, int y, char *text, int time)
+{
+    VDEVGDI *dev = (VDEVGDI*)ctxt;
+    strcpy(dev->textstr, text);
+    dev->textposx = x;
+    dev->textposy = y;
+    dev->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
 }

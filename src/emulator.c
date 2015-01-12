@@ -124,8 +124,8 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPreInst, LPSTR lpCmdLine, int 
 
     // init nes
     SetWindowLong(hwnd, GWL_USERDATA, (LONG)&nes);
-    nes_init(&nes, file, (DWORD)hwnd);
-    nes_run (&nes);
+    nes_init  (&nes, file, (DWORD)hwnd);
+    nes_setrun(&nes, 1);
 
     // 进入消息循环
     while (GetMessage(&msg, NULL, 0, 0))
