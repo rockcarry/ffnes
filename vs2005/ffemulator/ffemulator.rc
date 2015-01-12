@@ -189,27 +189,39 @@ IDR_MENU_FFEMU_MAIN MENU
 BEGIN
     POPUP "&File"
     BEGIN
-        MENUITEM "&Open ROM...      Ctrl+O",    ID_OPEN_ROM
-        MENUITEM "E&xit             Alt+F4",    ID_EXIT
+        MENUITEM "&Open ROM...      Ctrl+O",    ID_FILE_OPEN_ROM
         MENUITEM SEPARATOR
-        MENUITEM "&Load game...     Ctrl+L",    ID_CONTROL_LOADGAME
-        MENUITEM "&Save game...     Ctrl+S",    ID_CONTROL_SAVEGAME
+        MENUITEM "&Load game...     Ctrl+L",    ID_FILE_LOAD_GAME
+        MENUITEM "&Save game...     Ctrl+S",    ID_FILE_SAVE_GAME
+        MENUITEM SEPARATOR
+        MENUITEM "Load Replay...   Ctrl+U",     ID_FILE_LOAD_REPLAY
+        MENUITEM "Save Replay...   Ctrl+I",     ID_FILE_SAVE_REPLAY
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit             Alt+F4",    ID_EXIT
     END
     POPUP "&Control"
     BEGIN
         MENUITEM "&Reset            Ctrl+R",    ID_CONTROL_RESET
         MENUITEM "&Pause/Play       Ctrl+P",    ID_CONTROL_PAUSEPLAY
+        MENUITEM SEPARATOR
+        MENUITEM "&Fullscreen       Alt+Enter", ID_CONTROL_FULLSCREEN
+        MENUITEM "Window x&1 size   Ctrl+1",    ID_CONTROL_WINDOWX1SIZE, CHECKED
+        MENUITEM "Window x&2 size   Ctrl+2",    ID_CONTROL_WINDOWX2SIZE
+        MENUITEM "Window x&3 size   Ctrl+3",    ID_CONTROL_WINDOWX3SIZE
+        MENUITEM "Window x&4 size   Ctrl+4",    ID_CONTROL_WINDOWX4SIZE
+        MENUITEM "&Hide menu        Ctrl+H",    ID_CONTROL_HIDE_MENU
     END
     POPUP "&Options"
     BEGIN
-        MENUITEM "&Video...",                   ID_OPTIONS_VIDEO
-        MENUITEM "&Sound...",                   ID_OPTIONS_SOUND
+        MENUITEM "&Video...         Ctrl+V",    ID_OPTIONS_VIDEO
+        MENUITEM "&Sound...         Ctrl+N",    ID_OPTIONS_SOUND
         MENUITEM "&Joystick...      Ctrl+J",    ID_OPTIONS_JOYSTICK
+        MENUITEM "&Misc...          Ctrl+M",    ID_OPTIONS_MISC
     END
     POPUP "&Tools"
     BEGIN
-        MENUITEM "ffndb &debug tool    Ctrl+D", ID_TOOLS_FFNDB
-        MENUITEM "ff&encoder coverter  Ctrl+E", ID_TOOLS_FFENCODER
+        MENUITEM "ffndb &debug tool...   Ctrl+D", ID_TOOLS_FFNDB
+        MENUITEM "ff&encoder coverter... Ctrl+E", ID_TOOLS_FFENCODER
     END
     POPUP "&Help"
     BEGIN
@@ -244,7 +256,7 @@ END
 
 IDR_FFEMU_ACC ACCELERATORS 
 BEGIN
-    "O",            ID_OPEN_ROM,            VIRTKEY, CONTROL, NOINVERT
+    "O",            ID_FILE_OPEN_ROM,       VIRTKEY, CONTROL, NOINVERT
     "R",            ID_CONTROL_RESET,       VIRTKEY, CONTROL, NOINVERT
     "P",            ID_CONTROL_PAUSEPLAY,   VIRTKEY, CONTROL, NOINVERT
 END

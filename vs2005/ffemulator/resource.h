@@ -40,26 +40,35 @@
 #define ID_DASMLIST_SELECTALL           32773
 #define ID_DASMLIST_COPY                32774
 #define ID_DASMLIST_EDIT                32775
-#define ID_OPEN_ROM                     32776
-#define ID_EXIT                         32777
-#define ID_CONTROL_RESET                32778
-#define ID_CONTROL_PAUSEPLAY            32779
-#define ID_CONTROL_SAVEGAME             32780
-#define ID_CONTROL_LOADGAME             32781
-#define ID_OPTIONS_VIDEO                32782
-#define ID_OPTIONS_SOUND                32783
-#define ID_OPTIONS_JOYSTICK             32784
-#define ID_TOOLS_FFNDB                  32785
-#define ID_TOOLS_FFENCODER              32786
-#define ID_HELP_ABOUT                   32787
+#define ID_FILE_OPEN_ROM                32790
+#define ID_FILE_LOAD_GAME               32791
+#define ID_FILE_SAVE_GAME               32792
+#define ID_FILE_LOAD_REPLAY             32793
+#define ID_FILE_SAVE_REPLAY             32794
+#define ID_EXIT                         32795
+#define ID_CONTROL_RESET                32796
+#define ID_CONTROL_PAUSEPLAY            32797
+#define ID_CONTROL_FULLSCREEN           32798
+#define ID_CONTROL_WINDOWX1SIZE         32799
+#define ID_CONTROL_WINDOWX2SIZE         32800
+#define ID_CONTROL_WINDOWX3SIZE         32801
+#define ID_CONTROL_WINDOWX4SIZE         32802
+#define ID_CONTROL_HIDE_MENU            32803
+#define ID_OPTIONS_VIDEO                32804
+#define ID_OPTIONS_SOUND                32805
+#define ID_OPTIONS_JOYSTICK             32806
+#define ID_OPTIONS_MISC                 32807
+#define ID_TOOLS_FFNDB                  32808
+#define ID_TOOLS_FFENCODER              32809
+#define ID_HELP_ABOUT                   32810
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        134
+#define _APS_NEXT_COMMAND_VALUE         32811
 #define _APS_NEXT_CONTROL_VALUE         1026
 #define _APS_NEXT_SYMED_VALUE           101
-#define _APS_NEXT_COMMAND_VALUE         32788
 #endif
 #endif
