@@ -229,8 +229,8 @@ void CffemulatorDlg::OnControlPauseplay()
 {
     if (nes_getrun(&m_nes))
     {
+        nes_outtext(&m_nes, 0, 222, "paused", -1); Sleep(16);
         nes_setrun (&m_nes, 0);
-        nes_outtext(&m_nes, 0, 222, "paused", -1);
     }
     else
     {
