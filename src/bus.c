@@ -5,19 +5,19 @@
 static MEM* find_mem_bank(BUS bus, int baddr, int *maddr)
 {
     do {
-        if (baddr >= bus->start && baddr <= bus->end)
+        if (baddr >= bus->start /*&& baddr <= bus->end*/)
         {
             switch (bus->type)
             {
-            case BUS_MAP_MIRROR:
-                baddr &= bus->mirmask;
-                break;
             case BUS_MAP_MEMORY:
                 *maddr = baddr - bus->start;
                 return bus->membank;
+            case BUS_MAP_MIRROR:
+                baddr &= bus->mirmask;
+                break;
             }
         }
-    } while (bus++->membank);
+    } while ((++bus)->membank);
     return NULL;
 }
 
