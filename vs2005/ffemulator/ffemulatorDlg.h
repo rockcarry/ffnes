@@ -36,6 +36,7 @@ protected:
     afx_msg void   OnControlReset();
     afx_msg void   OnControlPauseplay();
     afx_msg void   OnHelpAbout();
+    afx_msg void   OnToolsFfndb();
     DECLARE_MESSAGE_MAP()
 
 private:

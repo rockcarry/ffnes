@@ -256,9 +256,10 @@ END
 
 IDR_FFEMU_ACC ACCELERATORS 
 BEGIN
-    "O",            ID_FILE_OPEN_ROM,       VIRTKEY, CONTROL, NOINVERT
-    "R",            ID_CONTROL_RESET,       VIRTKEY, CONTROL, NOINVERT
     "P",            ID_CONTROL_PAUSEPLAY,   VIRTKEY, CONTROL, NOINVERT
+    "R",            ID_CONTROL_RESET,       VIRTKEY, CONTROL, NOINVERT
+    "O",            ID_FILE_OPEN_ROM,       VIRTKEY, CONTROL, NOINVERT
+    "D",            ID_TOOLS_FFNDB,         VIRTKEY, CONTROL, NOINVERT
 END
 
 #endif    // Chinese (P.R.C.) resources

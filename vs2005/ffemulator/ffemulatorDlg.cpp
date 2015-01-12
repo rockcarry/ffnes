@@ -74,6 +74,7 @@ BEGIN_MESSAGE_MAP(CffemulatorDlg, CDialog)
     ON_COMMAND(ID_EXIT, &CffemulatorDlg::OnExit)
     ON_COMMAND(ID_CONTROL_RESET, &CffemulatorDlg::OnControlReset)
     ON_COMMAND(ID_CONTROL_PAUSEPLAY, &CffemulatorDlg::OnControlPauseplay)
+    ON_COMMAND(ID_TOOLS_FFNDB, &CffemulatorDlg::OnToolsFfndb)
     ON_COMMAND(ID_HELP_ABOUT, &CffemulatorDlg::OnHelpAbout)
 END_MESSAGE_MAP()
 
@@ -203,8 +204,26 @@ void CffemulatorDlg::OnControlPauseplay()
     }
 }
 
+void CffemulatorDlg::OnToolsFfndb()
+{
+    CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
+    if (!dlg) {
+        RECT rect = {0};
+        GetWindowRect(&rect);
+        MoveWindow(0, 0, rect.right - rect.left, rect.bottom - rect.top);
+
+        dlg = new CffndbdebugDlg(this, &m_nes);
+        dlg->Create(IDD_FFNDBDEBUG_DIALOG, GetDesktopWindow());
+        dlg->CenterWindow();
+        dlg->ShowWindow(SW_SHOW);
+    }
+    else SwitchToThisWindow(dlg->GetSafeHwnd(), TRUE);
+}
+
 void CffemulatorDlg::OnHelpAbout()
 {
     CDialog dlg(IDD_DIALOG_ABOUT);
     dlg.DoModal();
 }
+
+
