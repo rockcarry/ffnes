@@ -23,6 +23,7 @@ typedef struct
     int   textposx;
     int   textposy;
     DWORD texttick;
+    int   priority;
 } VDEVD3D;
 
 // º¯ÊýÊµÏÖ
@@ -172,6 +173,7 @@ void vdev_d3d_buf_post(void *ctxt)
                 dev->pSurface->ReleaseDC(hdc);
             }
         }
+        else dev->priority = 0;
 
         dev->pD3DDev->StretchRect(dev->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
         dev->pD3DDev->Present(NULL, &dev->rtview, NULL, NULL);
@@ -179,12 +181,16 @@ void vdev_d3d_buf_post(void *ctxt)
     }
 }
 
-void vdev_d3d_textout(void *ctxt, int x, int y, char *text, int time)
+void vdev_d3d_textout(void *ctxt, int x, int y, char *text, int time, int priority)
 {
     VDEVD3D *dev = (VDEVD3D*)ctxt;
-    strncpy(dev->textstr, text, 256);
-    dev->textposx = x;
-    dev->textposy = y;
-    dev->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
+    if (priority > dev->priority)
+    {
+        strncpy(dev->textstr, text, 256);
+        dev->textposx = x;
+        dev->textposy = y;
+        dev->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
+        dev->priority = priority;
+    }
 }
 

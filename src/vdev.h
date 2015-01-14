@@ -12,13 +12,13 @@ void* vdev_gdi_create     (int w, int h, DWORD extra);
 void  vdev_gdi_destroy    (void *ctxt);
 void  vdev_gdi_buf_request(void *ctxt, void **buf, int *stride);
 void  vdev_gdi_buf_post   (void *ctxt);
-void  vdev_gdi_textout    (void *ctxt, int x, int y, char *text, int time);
+void  vdev_gdi_textout    (void *ctxt, int x, int y, char *text, int time, int priority);
 
 void* vdev_d3d_create     (int w, int h, DWORD extra);
 void  vdev_d3d_destroy    (void *ctxt);
 void  vdev_d3d_buf_request(void *ctxt, void **buf, int *stride);
 void  vdev_d3d_buf_post   (void *ctxt);
-void  vdev_d3d_textout    (void *ctxt, int x, int y, char *text, int time);
+void  vdev_d3d_textout    (void *ctxt, int x, int y, char *text, int time, int priority);
 
 #if USE_DIRECT3D_RENDERING
 #define vdev_create      vdev_d3d_create

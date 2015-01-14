@@ -540,7 +540,7 @@ BYTE NES_APU_REG_RCB(MEM *pm, int addr)
 
     case 0x0016:
     case 0x0017:
-        return NES_PAD_REG_RCB(pm, addr);
+        return replay_run(&(nes->replay), NES_PAD_REG_RCB(pm, addr));
 
     default:
         return pm->data[addr];

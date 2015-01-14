@@ -79,6 +79,9 @@ BEGIN_MESSAGE_MAP(CffemulatorDlg, CDialog)
     ON_COMMAND(ID_FILE_SAVE_GAME, &CffemulatorDlg::OnFileSaveGame)
     ON_COMMAND(ID_FILE_SAVE_GAME_AS, &CffemulatorDlg::OnFileSaveGameAs)
     ON_COMMAND(ID_FILE_LOAD_GAME, &CffemulatorDlg::OnFileLoadGame)
+    ON_COMMAND(ID_FILE_SAVE_REPLAY, &CffemulatorDlg::OnFileSaveReplay)
+    ON_COMMAND(ID_FILE_SAVE_REPLAY_AS, &CffemulatorDlg::OnFileSaveReplayAs)
+    ON_COMMAND(ID_FILE_LOAD_REPLAY, &CffemulatorDlg::OnFileLoadReplay)
 END_MESSAGE_MAP()
 
 // CffemulatorDlg message handlers
@@ -124,32 +127,6 @@ void CffemulatorDlg::OnDestroy()
     nes_free(&m_nes);
 }
 
-void CffemulatorDlg::LoadNesRom()
-{
-    // pause nes thread if running
-    int running = nes_getrun(&m_nes);
-    if (running) nes_setrun(&m_nes, 0);
-
-    CFileDialog dlg(TRUE, NULL, NULL, 0, "nes rom file (*.nes)|*.nes||");
-    if (dlg.DoModal() == IDOK)
-    {
-        char file[MAX_PATH] = {0};
-        SetWindowText(CString("ffemulator - ") + dlg.GetFileName());
-        strncpy(file, dlg.GetPathName(), MAX_PATH);
-
-        // free & clear nes context first
-        nes_free(&m_nes);
-        memset(&m_nes, 0, sizeof(NES));
-
-        // init nes & run
-        nes_init  (&m_nes, file, (DWORD)GetSafeHwnd());
-        nes_setrun(&m_nes, 1);
-    }
-
-    // resume running
-    if (running) nes_setrun(&m_nes, 1);
-}
-
 HBRUSH CffemulatorDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
     HBRUSH hbr = CDialog::OnCtlColor(pDC, pWnd, nCtlColor);
@@ -176,59 +153,37 @@ void CffemulatorDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
 void CffemulatorDlg::OnOpenRom()
 {
     //++ if ffndb dialog is opend, close it first ++//
-    CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
-    if (dlg) dlg->PostMessage(WM_CLOSE);
+    CDialog *pdlg = (CDialog*)FindWindow(NULL, "ffndb");
+    if (pdlg) pdlg->PostMessage(WM_CLOSE);
     //-- if ffndb dialog is opend, close it first --//
 
-    LoadNesRom();
+    // pause nes thread if running
+    int running = nes_getrun(&m_nes);
+    if (running) nes_setrun(&m_nes, 0);
+
+    CFileDialog dlg(TRUE, NULL, NULL, 0, "nes rom file (*.nes)|*.nes||");
+    if (dlg.DoModal() == IDOK)
+    {
+        char file[MAX_PATH] = {0};
+        SetWindowText(CString("ffemulator - ") + dlg.GetFileName());
+        strncpy(file, dlg.GetPathName(), MAX_PATH);
+
+        // free & clear nes context first
+        nes_free(&m_nes);
+        memset(&m_nes, 0, sizeof(NES));
+
+        // init nes & run
+        nes_init  (&m_nes, file, (DWORD)GetSafeHwnd());
+        nes_setrun(&m_nes, 1);
+    }
+
+    // resume running
+    if (running) nes_setrun(&m_nes, 1);
 }
 
 void CffemulatorDlg::OnExit()
 {
     OnOK();
-}
-
-void CffemulatorDlg::OnControlReset()
-{
-    nes_setrun(&m_nes, 1);
-    nes_reset (&m_nes);
-    nes_textout(&m_nes, 0, 222, "reset", 2000);
-}
-
-void CffemulatorDlg::OnControlPauseplay()
-{
-    if (nes_getrun(&m_nes))
-    {
-        nes_textout(&m_nes, 0, 222, "paused", -1); Sleep(16);
-        nes_setrun (&m_nes, 0);
-    }
-    else
-    {
-        nes_setrun (&m_nes, 1);
-        nes_textout(&m_nes, 0, 222, "running", 2000);
-    }
-}
-
-void CffemulatorDlg::OnToolsFfndb()
-{
-    CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
-    if (!dlg) {
-        RECT rect = {0};
-        GetWindowRect(&rect);
-        MoveWindow(0, 0, rect.right - rect.left, rect.bottom - rect.top);
-
-        dlg = new CffndbdebugDlg(this, &m_nes);
-        dlg->Create(IDD_FFNDBDEBUG_DIALOG, GetDesktopWindow());
-        dlg->CenterWindow();
-        dlg->ShowWindow(SW_SHOW);
-    }
-    else SwitchToThisWindow(dlg->GetSafeHwnd(), TRUE);
-}
-
-void CffemulatorDlg::OnHelpAbout()
-{
-    CDialog dlg(IDD_DIALOG_ABOUT);
-    dlg.DoModal();
 }
 
 void CffemulatorDlg::OnFileSaveGame()
@@ -288,4 +243,94 @@ void CffemulatorDlg::OnFileLoadGame()
     if (running) nes_setrun(&m_nes, 1);
 }
 
+void CffemulatorDlg::OnFileSaveReplay()
+{
+    if (m_strReplayFile.Compare("") == 0)
+    {
+        // pause nes thread if running
+        int running = nes_getrun(&m_nes);
+        if (running) nes_setrun(&m_nes, 0);
+
+        CFileDialog dlg(FALSE, ".rep", NULL, 0, "nes replay file (*.rep)|*.rep||");
+        if (dlg.DoModal() == IDOK) m_strReplayFile = dlg.GetPathName();
+
+        // resume running
+        if (running) nes_setrun(&m_nes, 1);
+    }
+
+    char file[MAX_PATH] = {0};
+    strncpy(file, m_strReplayFile, MAX_PATH);
+    nes_save_replay(&m_nes, file);
+}
+
+void CffemulatorDlg::OnFileSaveReplayAs()
+{
+    // pause nes thread if running
+    int running = nes_getrun(&m_nes);
+    if (running) nes_setrun(&m_nes, 0);
+
+    CFileDialog dlg(FALSE, ".rep", NULL, 0, "nes replay file (*.rep)|*.rep||");
+    if (dlg.DoModal() == IDOK)
+    {
+        char file[MAX_PATH] = {0};
+        m_strReplayFile = dlg.GetPathName();
+        strncpy(file, m_strReplayFile, MAX_PATH);
+        nes_save_replay(&m_nes, file);
+    }
+
+    // resume running
+    if (running) nes_setrun(&m_nes, 1);
+}
+
+void CffemulatorDlg::OnFileLoadReplay()
+{
+    // pause nes thread if running
+    int running = nes_getrun(&m_nes);
+    if (running) nes_setrun(&m_nes, 0);
+
+    CFileDialog dlg(TRUE, ".rep", NULL, 0, "nes replay file (*.rep)|*.rep||");
+    if (dlg.DoModal() == IDOK)
+    {
+        char file[MAX_PATH] = {0};
+        strncpy(file, dlg.GetPathName(), MAX_PATH);
+        nes_load_replay(&m_nes, file); // load
+    }
+
+    // resume running
+    if (running) nes_setrun(&m_nes, 1);
+}
+
+void CffemulatorDlg::OnControlReset()
+{
+    nes_setrun(&m_nes, 1);
+    nes_reset (&m_nes);
+}
+
+void CffemulatorDlg::OnControlPauseplay()
+{
+    if (nes_getrun(&m_nes)) nes_setrun(&m_nes, 0);
+    else                    nes_setrun(&m_nes, 1);
+}
+
+void CffemulatorDlg::OnToolsFfndb()
+{
+    CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
+    if (!dlg) {
+        RECT rect = {0};
+        GetWindowRect(&rect);
+        MoveWindow(0, 0, rect.right - rect.left, rect.bottom - rect.top);
+
+        dlg = new CffndbdebugDlg(this, &m_nes);
+        dlg->Create(IDD_FFNDBDEBUG_DIALOG, GetDesktopWindow());
+        dlg->CenterWindow();
+        dlg->ShowWindow(SW_SHOW);
+    }
+    else SwitchToThisWindow(dlg->GetSafeHwnd(), TRUE);
+}
+
+void CffemulatorDlg::OnHelpAbout()
+{
+    CDialog dlg(IDD_DIALOG_ABOUT);
+    dlg.DoModal();
+}
 

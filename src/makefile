@@ -29,6 +29,7 @@ OBJS = \
     lzw.o \
     cartridge.o \
     joypad.o \
+    replay.o \
     save.o \
     adev.o \
     vdev-gdi.o \

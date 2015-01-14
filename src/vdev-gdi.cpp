@@ -23,6 +23,7 @@ typedef struct
     int     textposx;
     int     textposy;
     DWORD   texttick;
+    int     priority;
 } VDEVGDI;
 
 // º¯ÊýÊµÏÖ
@@ -142,6 +143,7 @@ void vdev_gdi_buf_post(void *ctxt)
         SetTextColor(dev->hdcsrc, RGB(255,255,255));
         TextOut(dev->hdcsrc, dev->textposx, dev->textposy, dev->textstr, (int)strlen(dev->textstr));
     }
+    else dev->priority = 0;
 
     // bitblt picture to window witch stretching
     StretchBlt(dev->hdcdst, dev->rtview.left, dev->rtview.top, dev->rtview.right, dev->rtview.bottom,
@@ -150,11 +152,15 @@ void vdev_gdi_buf_post(void *ctxt)
     Sleep(1); // sleep is used to make frame pitch more uniform
 }
 
-void vdev_gdi_textout(void *ctxt, int x, int y, char *text, int time)
+void vdev_gdi_textout(void *ctxt, int x, int y, char *text, int time, int priority)
 {
     VDEVGDI *dev = (VDEVGDI*)ctxt;
-    strncpy(dev->textstr, text, 256);
-    dev->textposx = x;
-    dev->textposy = y;
-    dev->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
+    if (priority > dev->priority)
+    {
+        strncpy(dev->textstr, text, 256);
+        dev->textposx = x;
+        dev->textposy = y;
+        dev->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
+        dev->priority = priority;
+    }
 }

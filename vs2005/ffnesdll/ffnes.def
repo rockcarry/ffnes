@@ -9,6 +9,8 @@ nes_joypad
 nes_textout
 nes_save_game
 nes_load_game
+nes_save_replay
+nes_load_replay
 
 ndb_set_debug
 ndb_cpu_runto

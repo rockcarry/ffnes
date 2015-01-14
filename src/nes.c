@@ -18,6 +18,9 @@ static void nes_do_reset(NES* nes)
     // reset joypad
     joypad_reset(&(nes->pad));
 
+    // reset replay
+    replay_reset(&(nes->replay));
+
     // restart ndb
     ndb_set_debug(&(nes->ndb), NDB_DEBUG_MODE_RESTART);
 }
@@ -185,6 +188,9 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     joypad_setkey(&(nes->pad), 0, NES_PAD_CONNECT, 1);
     joypad_setkey(&(nes->pad), 1, NES_PAD_CONNECT, 1);
 
+    // init replay
+    replay_init(&(nes->replay));
+
     // create nes event & thread
     pthread_create(&(nes->thread_id), NULL, nes_thread_proc, nes);
 
@@ -199,6 +205,9 @@ void nes_free(NES *nes)
     // destroy nes thread
     nes->thread_exit = TRUE;
     pthread_join(nes->thread_id, NULL);
+
+    // free replay
+    replay_free(&(nes->replay));
 
     // free joypad
     joypad_setkey(&(nes->pad), 0, NES_PAD_CONNECT, 0);
@@ -223,18 +232,38 @@ void nes_reset(NES *nes)
     // disable ndb debugging will make cpu keep running
     ndb_set_debug(&(nes->ndb), NDB_DEBUG_MODE_DISABLE);
     nes->request_reset = 1; // request reset
+    nes_textout(nes, 0, 222, "reset", 2000, 1);
 }
 
 void nes_setrun(NES *nes, int run)
 {
     nes->isrunning = run;
     nes->ispaused  = 0;
-    if (!run) while (!nes->ispaused) Sleep(16);
+    if (run) nes_textout(nes, 0, 222, "running", 2000, 1);
+    else
+    {
+        while (!nes->ispaused) Sleep(16);
+        nes_textout(nes, 0, 222, "paused", -1, 1);
+    }
 }
 
-int  nes_getrun(NES *nes)                                      { return nes->isrunning; }
-void nes_joypad(NES *nes, int pad, int key, int value)         { joypad_setkey(&(nes->pad), pad, key, value);       }
-void nes_textout(NES *nes, int x, int y, char *text, int time) { vdev_textout(nes->ppu.vdevctxt, x, y, text, time); }
-void nes_save_game(NES *nes, char *file)                       { saver_save_game(nes, file); }
-void nes_load_game(NES *nes, char *file)                       { saver_load_game(nes, file); }
+int nes_getrun(NES *nes)
+{
+    return nes->isrunning;
+}
+
+void nes_joypad(NES *nes, int pad, int key, int value)
+{
+    joypad_setkey(&(nes->pad), pad, key, value);
+}
+
+void nes_textout(NES *nes, int x, int y, char *text, int time, int priority)
+{
+    vdev_textout(nes->ppu.vdevctxt, x, y, text, time, priority);
+}
+
+void nes_save_game(NES *nes, char *file)   { saver_save_game(nes, file); }
+void nes_load_game(NES *nes, char *file)   { saver_load_game(nes, file); }
+void nes_save_replay(NES *nes, char *file) { replay_save(&(nes->replay), file); }
+void nes_load_replay(NES *nes, char *file) { replay_load(&(nes->replay), file); }
 
