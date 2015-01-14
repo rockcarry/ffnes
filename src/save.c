@@ -97,8 +97,8 @@ void saver_save_game(NES *nes, char *file)
 void saver_load_game(NES *nes, char *file)
 {
     NES_SAVE_FILE save;
-    FILE         *fp  = NULL;
-    NES           buf = {0};
+    FILE         *fp;
+    NES           buf;
     int           start, end, i;
     int           oldapupclk, newapupclk;
     int           oldppupclk, newppupclk;

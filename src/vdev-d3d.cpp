@@ -184,7 +184,7 @@ void vdev_d3d_buf_post(void *ctxt)
 void vdev_d3d_textout(void *ctxt, int x, int y, char *text, int time, int priority)
 {
     VDEVD3D *dev = (VDEVD3D*)ctxt;
-    if (priority > dev->priority)
+    if (priority >= dev->priority)
     {
         strncpy(dev->textstr, text, 256);
         dev->textposx = x;

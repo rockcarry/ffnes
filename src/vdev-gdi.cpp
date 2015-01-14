@@ -155,7 +155,7 @@ void vdev_gdi_buf_post(void *ctxt)
 void vdev_gdi_textout(void *ctxt, int x, int y, char *text, int time, int priority)
 {
     VDEVGDI *dev = (VDEVGDI*)ctxt;
-    if (priority > dev->priority)
+    if (priority >= dev->priority)
     {
         strncpy(dev->textstr, text, 256);
         dev->textposx = x;
