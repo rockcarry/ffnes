@@ -37,12 +37,15 @@ protected:
     afx_msg void   OnControlPauseplay();
     afx_msg void   OnHelpAbout();
     afx_msg void   OnToolsFfndb();
+    afx_msg void   OnFileSaveGame();
+    afx_msg void   OnFileSaveGameAs();
+    afx_msg void   OnFileLoadGame();
     DECLARE_MESSAGE_MAP()
 
 private:
     void LoadNesRom();
-    void FreeNesRom();
 
 private:
-    NES m_nes; // nes object
+    NES     m_nes; // nes object
+    CString m_strGameSaveFile;
 };

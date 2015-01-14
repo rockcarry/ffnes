@@ -13,7 +13,6 @@
 #include "ndb.h"
 #include "cartridge.h"
 #include "joypad.h"
-#include "replay.h"
 
 // 常量定义
 // clock defines
@@ -59,7 +58,6 @@ typedef struct tagNES {
     MEM cram;    // cpu ram
     MEM ppuregs; // ppu regs
     MEM apuregs; // apu regs
-    MEM padregs; // pad regs
     MEM erom;    // expansion rom
     MEM sram;    // sram
     MEM prom0;   // PRG-ROM 0
@@ -72,9 +70,6 @@ typedef struct tagNES {
     MEM vram[4]; // vram0 1KB * 4 vram, in ppu/cart
     MEM palette; // color palette in ppu
 
-    BYTE buf_erom   [NES_EROM_SIZE]; // erom buffer on cbus
-    BYTE buf_vram[4][NES_VRAM_SIZE]; // vram buffer on pbus
-
     // for reset nes
     int request_reset;
 
@@ -82,26 +77,28 @@ typedef struct tagNES {
     pthread_t thread_id;
     BOOL      thread_exit;
     BOOL      isrunning;
-
-    // for replay
-    REPLAY replay;
+    BOOL      ispaused;
 
     // ndb object
     struct tagNDB ndb;
 
-    // for ffencoder
-    void *encoder;
+    BYTE buf_erom   [NES_EROM_SIZE]; // erom buffer on cbus
+    BYTE buf_vram[4][NES_VRAM_SIZE]; // vram buffer on pbus
 } NES;
 
 // 函数声明
 BOOL nes_init   (NES *nes, char *file, DWORD extra);
 void nes_free   (NES *nes);
 void nes_reset  (NES *nes);
+
 void nes_setrun (NES *nes, int run);
 int  nes_getrun (NES *nes);
-void nes_replay (NES *nes, char *file, int mode);
 void nes_joypad (NES *nes, int pad, int key, int value);
-void nes_outtext(NES *nes, int x, int y, char *text, int time); // strlen(text) should less than 256
+void nes_textout(NES *nes, int x, int y, char *text, int time);
+
+// for nes save
+void nes_save_game(NES *nes, char *file);
+void nes_load_game(NES *nes, char *file);
 
 #endif
 

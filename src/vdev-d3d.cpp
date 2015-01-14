@@ -179,10 +179,10 @@ void vdev_d3d_buf_post(void *ctxt)
     }
 }
 
-void vdev_d3d_outtext(void *ctxt, int x, int y, char *text, int time)
+void vdev_d3d_textout(void *ctxt, int x, int y, char *text, int time)
 {
     VDEVD3D *dev = (VDEVD3D*)ctxt;
-    strcpy(dev->textstr, text);
+    strncpy(dev->textstr, text, 256);
     dev->textposx = x;
     dev->textposy = y;
     dev->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;

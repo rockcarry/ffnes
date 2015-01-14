@@ -391,6 +391,9 @@ void ppu_reset(PPU *ppu)
 {
     NES *nes = container_of(ppu, NES, ppu);
 
+    // if ppu is in rendering, we need post vdev buffer first
+    if (ppu->pclk_frame <= NES_HTOTAL * 241 + 1) vdev_buf_post(ppu->vdevctxt);
+
     ppu->regs[0]    = 0;
     ppu->regs[1]    = 0;
     ppu->regs[5]    = 0;

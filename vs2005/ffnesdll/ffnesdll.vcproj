@@ -235,7 +235,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\replay.c"
+				RelativePath="..\..\src\save.c"
 				>
 			</File>
 			<File
@@ -305,7 +305,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\replay.h"
+				RelativePath="..\..\src\save.h"
 				>
 			</File>
 			<File

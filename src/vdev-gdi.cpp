@@ -150,10 +150,10 @@ void vdev_gdi_buf_post(void *ctxt)
     Sleep(1); // sleep is used to make frame pitch more uniform
 }
 
-void vdev_gdi_outtext(void *ctxt, int x, int y, char *text, int time)
+void vdev_gdi_textout(void *ctxt, int x, int y, char *text, int time)
 {
     VDEVGDI *dev = (VDEVGDI*)ctxt;
-    strcpy(dev->textstr, text);
+    strncpy(dev->textstr, text, 256);
     dev->textposx = x;
     dev->textposy = y;
     dev->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;

@@ -417,6 +417,9 @@ void apu_free(APU *apu)
 
 void apu_reset(APU *apu)
 {
+    // if apu is in rendering, we need post adev buffer first
+    if (apu->pclk_frame > 0) adev_buf_post(apu->adevctxt, apu->audiobuf);
+
     // after reset, $4015 should be cleared
     apu->regs[0x0015] = 0;
 
@@ -537,7 +540,7 @@ BYTE NES_APU_REG_RCB(MEM *pm, int addr)
 
     case 0x0016:
     case 0x0017:
-        return replay_run(&(nes->replay), NES_PAD_REG_RCB(pm, addr));
+        return NES_PAD_REG_RCB(pm, addr);
 
     default:
         return pm->data[addr];

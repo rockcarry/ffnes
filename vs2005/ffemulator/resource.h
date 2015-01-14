@@ -43,31 +43,32 @@
 #define ID_FILE_OPEN_ROM                32790
 #define ID_FILE_LOAD_GAME               32791
 #define ID_FILE_SAVE_GAME               32792
-#define ID_FILE_LOAD_REPLAY             32793
-#define ID_FILE_SAVE_REPLAY             32794
-#define ID_EXIT                         32795
-#define ID_CONTROL_RESET                32796
-#define ID_CONTROL_PAUSEPLAY            32797
-#define ID_CONTROL_FULLSCREEN           32798
-#define ID_CONTROL_WINDOWX1SIZE         32799
-#define ID_CONTROL_WINDOWX2SIZE         32800
-#define ID_CONTROL_WINDOWX3SIZE         32801
-#define ID_CONTROL_WINDOWX4SIZE         32802
-#define ID_CONTROL_HIDE_MENU            32803
-#define ID_OPTIONS_VIDEO                32804
-#define ID_OPTIONS_SOUND                32805
-#define ID_OPTIONS_JOYSTICK             32806
-#define ID_OPTIONS_MISC                 32807
-#define ID_TOOLS_FFNDB                  32808
-#define ID_TOOLS_FFENCODER              32809
-#define ID_HELP_ABOUT                   32810
+#define ID_FILE_SAVE_GAME_AS            32793
+#define ID_FILE_LOAD_REPLAY             32794
+#define ID_FILE_SAVE_REPLAY             32795
+#define ID_EXIT                         32796
+#define ID_CONTROL_RESET                32797
+#define ID_CONTROL_PAUSEPLAY            32798
+#define ID_CONTROL_FULLSCREEN           32799
+#define ID_CONTROL_WINDOWX1SIZE         32800
+#define ID_CONTROL_WINDOWX2SIZE         32801
+#define ID_CONTROL_WINDOWX3SIZE         32802
+#define ID_CONTROL_WINDOWX4SIZE         32803
+#define ID_CONTROL_HIDE_MENU            32804
+#define ID_OPTIONS_VIDEO                32805
+#define ID_OPTIONS_SOUND                32806
+#define ID_OPTIONS_JOYSTICK             32807
+#define ID_OPTIONS_MISC                 32808
+#define ID_TOOLS_FFNDB                  32809
+#define ID_TOOLS_FFENCODER              32810
+#define ID_HELP_ABOUT                   32811
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        134
-#define _APS_NEXT_COMMAND_VALUE         32811
+#define _APS_NEXT_COMMAND_VALUE         32812
 #define _APS_NEXT_CONTROL_VALUE         1026
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

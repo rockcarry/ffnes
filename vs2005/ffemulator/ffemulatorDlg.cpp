@@ -76,6 +76,9 @@ BEGIN_MESSAGE_MAP(CffemulatorDlg, CDialog)
     ON_COMMAND(ID_CONTROL_PAUSEPLAY, &CffemulatorDlg::OnControlPauseplay)
     ON_COMMAND(ID_TOOLS_FFNDB, &CffemulatorDlg::OnToolsFfndb)
     ON_COMMAND(ID_HELP_ABOUT, &CffemulatorDlg::OnHelpAbout)
+    ON_COMMAND(ID_FILE_SAVE_GAME, &CffemulatorDlg::OnFileSaveGame)
+    ON_COMMAND(ID_FILE_SAVE_GAME_AS, &CffemulatorDlg::OnFileSaveGameAs)
+    ON_COMMAND(ID_FILE_LOAD_GAME, &CffemulatorDlg::OnFileLoadGame)
 END_MESSAGE_MAP()
 
 // CffemulatorDlg message handlers
@@ -123,26 +126,28 @@ void CffemulatorDlg::OnDestroy()
 
 void CffemulatorDlg::LoadNesRom()
 {
-    // clear nes context first
-    memset(&m_nes, 0, sizeof(NES));
+    // pause nes thread if running
+    int running = nes_getrun(&m_nes);
+    if (running) nes_setrun(&m_nes, 0);
 
-    char file[MAX_PATH] = {0};
     CFileDialog dlg(TRUE, NULL, NULL, 0, "nes rom file (*.nes)|*.nes||");
     if (dlg.DoModal() == IDOK)
     {
+        char file[MAX_PATH] = {0};
         SetWindowText(CString("ffemulator - ") + dlg.GetFileName());
-        strcpy(file, dlg.GetPathName());
+        strncpy(file, dlg.GetPathName(), MAX_PATH);
+
+        // free & clear nes context first
+        nes_free(&m_nes);
+        memset(&m_nes, 0, sizeof(NES));
+
+        // init nes & run
+        nes_init  (&m_nes, file, (DWORD)GetSafeHwnd());
+        nes_setrun(&m_nes, 1);
     }
-    else SetWindowText("ffemulator");
 
-    nes_init  (&m_nes, file, (DWORD)GetSafeHwnd());
-    nes_setrun(&m_nes, 1);
-}
-
-void CffemulatorDlg::FreeNesRom()
-{
-    // free nes
-    nes_free(&m_nes);
+    // resume running
+    if (running) nes_setrun(&m_nes, 1);
 }
 
 HBRUSH CffemulatorDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
@@ -174,7 +179,7 @@ void CffemulatorDlg::OnOpenRom()
     CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
     if (dlg) dlg->PostMessage(WM_CLOSE);
     //-- if ffndb dialog is opend, close it first --//
-    FreeNesRom();
+
     LoadNesRom();
 }
 
@@ -187,20 +192,20 @@ void CffemulatorDlg::OnControlReset()
 {
     nes_setrun(&m_nes, 1);
     nes_reset (&m_nes);
-    nes_outtext(&m_nes, 0, 222, "reset", 2000);
+    nes_textout(&m_nes, 0, 222, "reset", 2000);
 }
 
 void CffemulatorDlg::OnControlPauseplay()
 {
     if (nes_getrun(&m_nes))
     {
-        nes_outtext(&m_nes, 0, 222, "paused", -1); Sleep(16);
+        nes_textout(&m_nes, 0, 222, "paused", -1); Sleep(16);
         nes_setrun (&m_nes, 0);
     }
     else
     {
         nes_setrun (&m_nes, 1);
-        nes_outtext(&m_nes, 0, 222, "running", 2000);
+        nes_textout(&m_nes, 0, 222, "running", 2000);
     }
 }
 
@@ -224,6 +229,63 @@ void CffemulatorDlg::OnHelpAbout()
 {
     CDialog dlg(IDD_DIALOG_ABOUT);
     dlg.DoModal();
+}
+
+void CffemulatorDlg::OnFileSaveGame()
+{
+    if (m_strGameSaveFile.Compare("") == 0)
+    {
+        // pause nes thread if running
+        int running = nes_getrun(&m_nes);
+        if (running) nes_setrun(&m_nes, 0);
+
+        CFileDialog dlg(FALSE, ".sav", NULL, 0, "nes save file (*.sav)|*.sav||");
+        if (dlg.DoModal() == IDOK) m_strGameSaveFile = dlg.GetPathName();
+
+        // resume running
+        if (running) nes_setrun(&m_nes, 1);
+    }
+
+    char file[MAX_PATH] = {0};
+    strncpy(file, m_strGameSaveFile, MAX_PATH);
+    nes_save_game(&m_nes, file);
+}
+
+void CffemulatorDlg::OnFileSaveGameAs()
+{
+    // pause nes thread if running
+    int running = nes_getrun(&m_nes);
+    if (running) nes_setrun(&m_nes, 0);
+
+    CFileDialog dlg(FALSE, ".sav", NULL, 0, "nes save file (*.sav)|*.sav||");
+    if (dlg.DoModal() == IDOK)
+    {
+        char file[MAX_PATH] = {0};
+        m_strGameSaveFile = dlg.GetPathName();
+        strncpy(file, m_strGameSaveFile, MAX_PATH);
+        nes_save_game(&m_nes, file);
+    }
+
+    // resume running
+    if (running) nes_setrun(&m_nes, 1);
+}
+
+void CffemulatorDlg::OnFileLoadGame()
+{
+    // pause nes thread if running
+    int running = nes_getrun(&m_nes);
+    if (running) nes_setrun(&m_nes, 0);
+
+    CFileDialog dlg(TRUE, ".sav", NULL, 0, "nes save file (*.sav)|*.sav||");
+    if (dlg.DoModal() == IDOK)
+    {
+        char file[MAX_PATH] = {0};
+        strncpy(file, dlg.GetPathName(), MAX_PATH);
+        nes_load_game(&m_nes, file); // load
+    }
+
+    // resume running
+    if (running) nes_setrun(&m_nes, 1);
 }
 
 

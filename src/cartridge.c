@@ -3,13 +3,27 @@
 #include "cartridge.h"
 #include "log.h"
 
+// 内部函数实现
+static void modify_file_ext(char *dst, char *src)
+{
+    size_t len = strlen(src);
+    if (len > 4 && stricmp(src+len-4, ".nes") == 0) len -= 4;
+    if (len > MAX_PATH                            ) len -= 4;
+
+    strncpy(dst, src, MAX_PATH);
+    dst[len++] = '.';
+    dst[len++] = 's';
+    dst[len++] = 'r';
+    dst[len++] = 'm';
+}
+
 // 函数实现
 BOOL cartridge_load(CARTRIDGE *pcart, char *file)
 {
     FILE *fp = NULL;
 
     // open nes file
-    strcpy(pcart->file, file);
+    strncpy(pcart->file, file, MAX_PATH);
     fp = fopen(file, "rb");
     if (!fp)
     {
@@ -21,9 +35,9 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
         pcart->prom_count   = 1;
         pcart->crom_count   = 1;
         pcart->buf_prom     = malloc(0x4000);
-        pcart->buf_crom     = malloc(0x2000);
+        pcart->buf_crxm     = malloc(0x2000);
         if (pcart->buf_prom) memset(pcart->buf_prom, 0xea, 0x4000);
-        if (pcart->buf_crom) memset(pcart->buf_crom, 0x00, 0x2000);
+        if (pcart->buf_crxm) memset(pcart->buf_crxm, 0x00, 0x2000);
         return FALSE;
     }
 
@@ -49,10 +63,9 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
         }
         else {
             FILE *fp = NULL;
-            char save[MAX_PATH];
-            strcpy(save, file  );
-            strcat(save, ".sav");
-            fp = fopen(save, "rb");
+            char sram[MAX_PATH];
+            modify_file_ext(sram, file);
+            fp = fopen(sram, "rb");
             if (fp) {
                 fread(pcart->buf_sram, 0x2000, 1, fp);
                 fclose(fp);
@@ -81,15 +94,15 @@ BOOL cartridge_load(CARTRIDGE *pcart, char *file)
     }
 
     // allocate buffer for crom/cram
-    pcart->buf_crom = malloc(pcart->crom_count * 0x2000);
-    if (!pcart->buf_crom) {
+    pcart->buf_crxm = malloc(pcart->crom_count * 0x2000);
+    if (!pcart->buf_crxm) {
         log_printf("failed to allocate cartridge crom buffer !\n");
         exit(0);
     }
 
     // init buffer for crom/cram
-    if (pcart->ischrram) memset(pcart->buf_crom, 0, pcart->crom_count * 0x2000);
-    else fread(pcart->buf_crom, pcart->crom_count * 0x2000, 1, fp);
+    if (pcart->ischrram) memset(pcart->buf_crxm, 0, pcart->crom_count * 0x2000);
+    else fread(pcart->buf_crxm, pcart->crom_count * 0x2000, 1, fp);
 
     // close fp
     fclose(fp);
@@ -113,7 +126,7 @@ BOOL cartridge_save(CARTRIDGE *pcart, char *file)
 
     // write prom & crom data
     fwrite(pcart->buf_prom, pcart->prom_count * 0x4000, 1, fp);
-    fwrite(pcart->buf_crom, pcart->crom_count * 0x2000, 1, fp);
+    fwrite(pcart->buf_crxm, pcart->crom_count * 0x2000, 1, fp);
 
     fclose(fp);
     return TRUE;
@@ -123,9 +136,9 @@ void cartridge_free(CARTRIDGE *pcart)
 {
     if (cartridge_has_sram(pcart)) {
         FILE *fp = NULL;
-        char save[MAX_PATH];
-        strcpy(save, pcart->file); strcat(save, ".sav");
-        fp = fopen(save, "wb");
+        char sram[MAX_PATH];
+        modify_file_ext(sram, pcart->file);
+        fp = fopen(sram, "wb");
         if (fp) {
             fwrite(pcart->buf_sram, 0x2000, 1, fp);
             fclose(fp);
@@ -135,7 +148,7 @@ void cartridge_free(CARTRIDGE *pcart)
     if (pcart->buf_trainer) free(pcart->buf_trainer);
     if (pcart->buf_sram   ) free(pcart->buf_sram   );
     if (pcart->buf_prom   ) free(pcart->buf_prom   );
-    if (pcart->buf_crom   ) free(pcart->buf_crom   );
+    if (pcart->buf_crxm   ) free(pcart->buf_crxm   );
 }
 
 BOOL cartridge_has_sram(CARTRIDGE *pcart)
