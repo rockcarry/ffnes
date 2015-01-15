@@ -152,6 +152,9 @@ void saver_load_game(NES *nes, char *file)
     running = nes_getrun(nes);
     if (running) nes_setrun(nes, 0);
 
+    // replay free
+    replay_free(&(nes->replay));
+
     // get ppu & apu old/new pclk
     oldapupclk = nes->apu.pclk_frame;
     newapupclk = buf. apu.pclk_frame;
@@ -172,6 +175,9 @@ void saver_load_game(NES *nes, char *file)
     saver_restore_apu(&(nes->apu), oldapupclk, newapupclk);
     saver_restore_ppu(&(nes->ppu), oldppupclk, newppupclk);
     saver_restore_mmc(&(nes->mmc));
+
+    // replay init
+    replay_init(&(nes->replay));
 
     // resume running
     if (running) nes_setrun(nes, 1);
