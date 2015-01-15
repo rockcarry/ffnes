@@ -5,8 +5,9 @@
 #include "nes.h"
 
 // º¯ÊıÉùÃ÷
-void saver_save_game(NES  *nes , char *file);
-void saver_load_game(NES  *nes , char *file);
+void saver_save_game  (NES *nes, char *file);
+void saver_load_game  (NES *nes, char *file);
+void saver_load_replay(NES *nes, char *file);
 
 #endif
 

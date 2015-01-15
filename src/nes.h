@@ -101,11 +101,8 @@ void nes_joypad (NES *nes, int pad, int key, int value);
 void nes_textout(NES *nes, int x, int y, char *text, int time, int priority);
 
 // for nes save
-void nes_save_game(NES *nes, char *file);
-void nes_load_game(NES *nes, char *file);
-
-// for nes replay
-void nes_save_replay(NES *nes, char *file);
+void nes_save_game  (NES *nes, char *file);
+void nes_load_game  (NES *nes, char *file);
 void nes_load_replay(NES *nes, char *file);
 
 #endif

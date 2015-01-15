@@ -262,8 +262,7 @@ void nes_textout(NES *nes, int x, int y, char *text, int time, int priority)
     vdev_textout(nes->ppu.vdevctxt, x, y, text, time, priority);
 }
 
-void nes_save_game(NES *nes, char *file)   { saver_save_game(nes, file); }
-void nes_load_game(NES *nes, char *file)   { saver_load_game(nes, file); }
-void nes_save_replay(NES *nes, char *file) { replay_save(&(nes->replay), file); }
-void nes_load_replay(NES *nes, char *file) { replay_load(&(nes->replay), file); }
+void nes_save_game  (NES *nes, char *file) { saver_save_game  (nes, file); }
+void nes_load_game  (NES *nes, char *file) { saver_load_game  (nes, file); }
+void nes_load_replay(NES *nes, char *file) { saver_load_replay(nes, file); }
 

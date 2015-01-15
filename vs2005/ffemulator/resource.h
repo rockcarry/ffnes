@@ -45,8 +45,6 @@
 #define ID_FILE_SAVE_GAME               32792
 #define ID_FILE_SAVE_GAME_AS            32793
 #define ID_FILE_LOAD_REPLAY             32794
-#define ID_FILE_SAVE_REPLAY             32795
-#define ID_FILE_SAVE_REPLAY_AS          32796
 #define ID_EXIT                         32797
 #define ID_CONTROL_RESET                32798
 #define ID_CONTROL_PAUSEPLAY            32799

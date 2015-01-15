@@ -40,13 +40,10 @@ protected:
     afx_msg void   OnFileSaveGame();
     afx_msg void   OnFileSaveGameAs();
     afx_msg void   OnFileLoadGame();
-    afx_msg void   OnFileSaveReplay();
-    afx_msg void   OnFileSaveReplayAs();
     afx_msg void   OnFileLoadReplay();
     DECLARE_MESSAGE_MAP()
 
 private:
     NES     m_nes; // nes object
     CString m_strGameSaveFile;
-    CString m_strReplayFile;
 };

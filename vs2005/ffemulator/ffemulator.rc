@@ -194,10 +194,7 @@ BEGIN
         MENUITEM "&Save Game         Ctrl+S",   ID_FILE_SAVE_GAME
         MENUITEM "Save Game &As...   Ctrl+Alt+S", ID_FILE_SAVE_GAME_AS
         MENUITEM "&Load Game...      Ctrl+L",   ID_FILE_LOAD_GAME
-        MENUITEM SEPARATOR
-        MENUITEM "Save Replay...    Ctrl+U",    ID_FILE_SAVE_REPLAY
-        MENUITEM "Save Replay As... Ctrl+Alt+U", ID_FILE_SAVE_REPLAY_AS
-        MENUITEM "Load Replay...    Ctrl+I",    ID_FILE_LOAD_REPLAY
+        MENUITEM "Load &Replay...    Ctrl+E",   ID_FILE_LOAD_REPLAY
         MENUITEM SEPARATOR
         MENUITEM "E&xit              Alt+F4",   ID_EXIT
     END
@@ -258,15 +255,13 @@ END
 
 IDR_FFEMU_ACC ACCELERATORS 
 BEGIN
+    "P",            ID_CONTROL_PAUSEPLAY,   VIRTKEY, CONTROL, NOINVERT
+    "R",            ID_CONTROL_RESET,       VIRTKEY, CONTROL, NOINVERT
+    "L",            ID_FILE_LOAD_GAME,      VIRTKEY, CONTROL, NOINVERT
+    "E",            ID_FILE_LOAD_REPLAY,    VIRTKEY, CONTROL, NOINVERT
     "O",            ID_FILE_OPEN_ROM,       VIRTKEY, CONTROL, NOINVERT
     "S",            ID_FILE_SAVE_GAME,      VIRTKEY, CONTROL, NOINVERT
     "S",            ID_FILE_SAVE_GAME_AS,   VIRTKEY, CONTROL, ALT, NOINVERT
-    "L",            ID_FILE_LOAD_GAME,      VIRTKEY, CONTROL, NOINVERT
-    "U",            ID_FILE_SAVE_REPLAY,    VIRTKEY, CONTROL, NOINVERT
-    "U",            ID_FILE_SAVE_REPLAY_AS, VIRTKEY, CONTROL, ALT, NOINVERT
-    "I",            ID_FILE_LOAD_REPLAY,    VIRTKEY, CONTROL, NOINVERT
-    "P",            ID_CONTROL_PAUSEPLAY,   VIRTKEY, CONTROL, NOINVERT
-    "R",            ID_CONTROL_RESET,       VIRTKEY, CONTROL, NOINVERT
     "D",            ID_TOOLS_FFNDB,         VIRTKEY, CONTROL, NOINVERT
 END
 

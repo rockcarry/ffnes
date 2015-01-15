@@ -1,39 +1,37 @@
 // 包含头文件
 #include "replay.h"
 #include "nes.h"
-#include "lzw.h"
 
 // 函数实现
 void replay_init(REPLAY *rep)
 {
     // init replay mode
-    strncpy(rep->file, "lastreplay.rpl", MAX_PATH);
-    rep->mode  = NES_REPLAY_RECORD;
-    rep->lzwfp = lzw_fopen(rep->file, "wb");
+    rep->mode = NES_REPLAY_RECORD;
+    rep->fp   = fopen("lastreplay.tmp", "wb+");
 }
 
 void replay_free(REPLAY *rep)
 {
-    if (rep->lzwfp)
+    if (rep->fp)
     {
-        lzw_fclose(rep->lzwfp);
-        rep->lzwfp = NULL;
+        fclose(rep->fp);
+        rep->fp = NULL;
     }
-    unlink("lastreplay.rpl");
+    unlink("lastreplay.tmp");
 }
 
 void replay_reset(REPLAY *rep)
 {
-    // close old lzwfp
-    if (rep->lzwfp) lzw_fclose(rep->lzwfp);
+    // close old fp
+    if (rep->fp) fclose(rep->fp);
 
     switch (rep->mode)
     {
     case NES_REPLAY_RECORD:
-        rep->lzwfp = lzw_fopen(rep->file, "wb");
+        rep->fp = fopen("lastreplay.tmp", "wb+");
         break;
     case NES_REPLAY_PLAY:
-        rep->lzwfp = lzw_fopen(rep->file, "rb");
+        rep->fp = fopen("lastreplay.tmp", "rb");
         break;
     }
 }
@@ -44,72 +42,14 @@ BYTE replay_run(REPLAY *rep, BYTE data)
     switch (rep->mode)
     {
     case NES_REPLAY_RECORD:
-        lzw_fputc(data, rep->lzwfp);
+        fputc(data, rep->fp);
         break;
 
     case NES_REPLAY_PLAY:
-        value = lzw_fgetc(rep->lzwfp);
+        value = fgetc(rep->fp);
         data  = (value == EOF) ? 0 : value;
         break;
     }
     return data;
-}
-
-void replay_save(REPLAY *rep, char *file)
-{
-    NES  *nes = container_of(rep, NES, replay);
-    void *fpsrc, *fpdst;
-    int   running;
-    int   value;
-
-    if (  rep->mode != NES_REPLAY_RECORD
-       || strcmp(rep->file, file) == 0)
-    {
-        return;
-    }
-
-    // pause nes thread if running
-    running = nes_getrun(nes);
-    if (running) nes_setrun(nes, 0);
-
-    // close old lzwfp
-    lzw_fclose(rep->lzwfp);
-
-    // open file
-    fpsrc = lzw_fopen(rep->file, "rb");
-    fpdst = lzw_fopen(file     , "wb");
-
-    // copy file
-    while (fpsrc && fpdst)
-    {
-        value = lzw_fgetc(fpsrc);
-        if (value == EOF) break;
-        else lzw_fputc(value, fpdst);
-    }
-
-    // close file
-    lzw_fclose(fpsrc);
-
-    // for new lzwfp
-    strncpy(rep->file, file, MAX_PATH);
-    rep->lzwfp = fpdst;
-
-    // resume running
-    if (running) nes_setrun(nes, 1);
-}
-
-void replay_load(REPLAY *rep, char *file)
-{
-    NES *nes = container_of(rep, NES, replay);
-
-    // open relay file and play
-    rep->mode = NES_REPLAY_PLAY;
-    strncpy(rep->file, file, MAX_PATH);
-
-    // reset nes
-    nes_reset(nes);
-
-    // show text
-    nes_textout(nes, 0, 222, "replay", -1, 2);
 }
 
