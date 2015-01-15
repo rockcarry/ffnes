@@ -41,6 +41,9 @@ typedef struct
     int        curcodesize;
     int        prefixcode;
     int        oldcode;
+
+    // for lzw_fseek & lzw_ftell
+    long       fpos;
 } LZW;
 
 // 内部函数实现
@@ -308,7 +311,11 @@ int lzw_fgetc(void *stream)
     }
 
     if (lzw->str_buf_pos <= 0) return EOF;
-    else return lzw->lzw_str_buf[--lzw->str_buf_pos];
+    else
+    {
+        lzw->fpos++; // file read/write pos
+        return lzw->lzw_str_buf[--lzw->str_buf_pos];
+    }
 }
 
 int lzw_fputc(int c, void *stream)
@@ -358,8 +365,75 @@ int lzw_fputc(int c, void *stream)
         lzw->prefixcode = find;
     }
 
+    // file read/write pos
+    lzw->fpos++;
     return 0;
 }
 
+size_t lzw_fread(void *buffer, size_t size, size_t count, void *stream)
+{
+    BYTE  *dst   = (BYTE*)buffer;
+    size_t total = size * count;
+    while (total--)
+    {
+        *dst = lzw_fgetc(stream);
+        if (*dst++ == EOF)
+        {
+            total++;
+            break;
+        }
+    }
+    return (size * count - total);
+}
+
+size_t lzw_fwrite(void *buffer, size_t size, size_t count, void *stream)
+{
+    BYTE  *dst   = (BYTE*)buffer;
+    size_t total = size * count;
+    while (total--)
+    {
+        if (EOF == lzw_fputc(*dst++, stream))
+        {
+            total++;
+            break;
+        }
+    }
+    return (size * count - total);
+}
+
+int lzw_fseek(void *stream, long offset, int origin)
+{
+    LZW *lzw  = (LZW*)stream;
+    int  skip = 0;
+
+    // don't support seek for lzw encode mode
+    if (lzw->mode == LZW_MODE_ENCODE) return EOF;
+
+    // don't support seek if origin is SEEK_END
+    if (origin == SEEK_END) return EOF;
+
+    switch (origin)
+    {
+    case SEEK_SET: offset = offset; break;
+    case SEEK_CUR: offset = lzw->fpos + offset; break;
+    }
+
+    // already at the offset, return directly
+    if (offset == lzw->fpos) return offset;
+
+    // seek lzw file
+    skip = offset - lzw->fpos;
+    if (skip < 0)
+    {
+        resetlzwcodec(lzw);
+        lzw->str_buf_pos = 0;
+        lzw->fpos        = 0;
+        fseek(lzw->fp, 0, SEEK_SET);
+        skip = offset;
+    }
+    while (skip--) lzw_fgetc(stream);
+}
+
+long lzw_ftell(void *stream) { return ((LZW*)stream)->fpos; }
 
 

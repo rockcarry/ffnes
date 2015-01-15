@@ -3,6 +3,7 @@
 #include "save.h"
 #include "adev.h"
 #include "vdev.h"
+#include "lzw.h"
 
 // 内部类型定义
 typedef struct
@@ -65,12 +66,12 @@ void saver_restore_mmc(MMC *mmc)
 void saver_save_game(NES *nes, char *file)
 {
     NES_SAVE_FILE save;
-    FILE    *fp = NULL;
+    void    *fp = NULL;
     int      running;
     int      value;
 
     // open file
-    fp = fopen(file, "wb");
+    fp = lzw_fopen(file, "wb");
     if (!fp) return;
 
     // pause nes thread if running
@@ -86,10 +87,10 @@ void saver_save_game(NES *nes, char *file)
     save.rply_size = ftell(nes->replay.fp);
     save.rply_size = (save.rply_size == -1) ? 0 : save.rply_size;
 
-    if (save.head_size) fwrite(&save             , sizeof(save)  , 1, fp);
-    if (save.neso_size) fwrite(nes               , sizeof(NES)   , 1, fp);
-    if (save.sram_size) fwrite(nes->cart.buf_sram, save.sram_size, 1, fp);
-    if (save.cram_size) fwrite(nes->cart.buf_crxm, save.cram_size, 1, fp);
+    if (save.head_size) lzw_fwrite(&save             , sizeof(save)  , 1, fp);
+    if (save.neso_size) lzw_fwrite(nes               , sizeof(NES)   , 1, fp);
+    if (save.sram_size) lzw_fwrite(nes->cart.buf_sram, save.sram_size, 1, fp);
+    if (save.cram_size) lzw_fwrite(nes->cart.buf_crxm, save.cram_size, 1, fp);
 
     // copy replay data
     if (save.rply_size)
@@ -99,7 +100,7 @@ void saver_save_game(NES *nes, char *file)
         {
             value = fgetc(nes->replay.fp);
             if (value == EOF) break;
-            else fputc(value, fp);
+            else lzw_fputc(value, fp);
         }
     }
 
@@ -107,13 +108,13 @@ void saver_save_game(NES *nes, char *file)
     if (running) nes_setrun(nes, 1);
 
     // close file
-    fclose(fp);
+    lzw_fclose(fp);
 }
 
 void saver_load_game(NES *nes, char *file)
 {
     NES_SAVE_FILE save;
-    FILE         *fp;
+    void         *fp;
     NES           buf;
     int           start, end, i;
     int           oldapupclk, newapupclk;
@@ -137,7 +138,7 @@ void saver_load_game(NES *nes, char *file)
     };
 
     // open save file
-    fp = fopen(file, "rb");
+    fp = lzw_fopen(file, "rb");
     if (!fp) return;
 
     // pause nes thread if running
@@ -145,24 +146,24 @@ void saver_load_game(NES *nes, char *file)
     if (running) nes_setrun(nes, 0);
 
     // read .sav file header
-    fread(&save, sizeof(save), 1, fp);
+    lzw_fread(&save, sizeof(save), 1, fp);
 
     if (save.neso_size)
     {
-        fseek(fp, save.head_size, SEEK_SET);
-        fread(&buf, sizeof(buf), 1, fp);
+        lzw_fseek(fp, save.head_size, SEEK_SET);
+        lzw_fread(&buf, sizeof(buf), 1, fp);
     }
 
     if (save.sram_size && cartridge_has_sram(&(nes->cart)))
     {
-        fseek(fp, save.head_size + save.neso_size, SEEK_SET);
-        fread(nes->cart.buf_sram, 0x2000, 1, fp);
+        lzw_fseek(fp, save.head_size + save.neso_size, SEEK_SET);
+        lzw_fread(nes->cart.buf_sram, 0x2000, 1, fp);
     }
 
     if (save.cram_size && nes->cart.ischrram)
     {
-        fseek(fp, save.head_size + save.neso_size + save.sram_size, SEEK_SET);
-        fread(nes->cart.buf_crxm, nes->cart.crom_count * 0x2000, 1, fp);
+        lzw_fseek(fp, save.head_size + save.neso_size + save.sram_size, SEEK_SET);
+        lzw_fread(nes->cart.buf_crxm, nes->cart.crom_count * 0x2000, 1, fp);
     }
 
     // reset replay to record mode
@@ -170,8 +171,8 @@ void saver_load_game(NES *nes, char *file)
     replay_reset(&(nes->replay));
 
     // copy replay data from .sav file to lastreplay.tmp
-    fseek(fp, save.head_size + save.neso_size + save.sram_size + save.cram_size, SEEK_SET);
-    while (save.rply_size--) fputc(fgetc(fp), nes->replay.fp);
+    lzw_fseek(fp, save.head_size + save.neso_size + save.sram_size + save.cram_size, SEEK_SET);
+    while (save.rply_size--) fputc(lzw_fgetc(fp), nes->replay.fp);
 
     // get ppu & apu old/new pclk
     oldapupclk = nes->apu.pclk_frame;
@@ -201,17 +202,17 @@ void saver_load_game(NES *nes, char *file)
     if (running) nes_setrun(nes, 1);
 
     // close save file
-    fclose(fp);
+    lzw_fclose(fp);
 }
 
 void saver_load_replay(NES *nes, char *file)
 {
     NES_SAVE_FILE save;
-    FILE         *fp;
+    void         *fp;
     int           running;
 
     // open save file
-    fp = fopen(file, "rb");
+    fp = lzw_fopen(file, "rb");
     if (!fp) return;
 
     // pause nes thread if running
@@ -219,15 +220,15 @@ void saver_load_replay(NES *nes, char *file)
     if (running) nes_setrun(nes, 0);
 
     // read .sav file header
-    fread(&save, sizeof(save), 1, fp);
+    lzw_fread(&save, sizeof(save), 1, fp);
 
     // reset replay to record mode
     nes->replay.mode = NES_REPLAY_RECORD;
     replay_reset(&(nes->replay));
 
     // copy replay data from .sav file to lastreplay.tmp
-    fseek(fp, save.head_size + save.neso_size + save.sram_size + save.cram_size, SEEK_SET);
-    while (save.rply_size--) fputc(fgetc(fp), nes->replay.fp);
+    lzw_fseek(fp, save.head_size + save.neso_size + save.sram_size + save.cram_size, SEEK_SET);
+    while (save.rply_size--) fputc(lzw_fgetc(fp), nes->replay.fp);
 
     // reset replay to play mode
     nes->replay.mode = NES_REPLAY_PLAY;
@@ -243,7 +244,7 @@ void saver_load_replay(NES *nes, char *file)
     if (running) nes_setrun(nes, 1);
 
     // close save file
-    fclose(fp);
+    lzw_fclose(fp);
 }
 
 

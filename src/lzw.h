@@ -6,9 +6,13 @@
 #include "stdefine.h"
 
 // º¯ÊýÉùÃ÷
-void* lzw_fopen (const char *filename, const char *mode);
-int   lzw_fclose(void *stream);
-int   lzw_fgetc (void *stream);
-int   lzw_fputc (int c, void *stream);
+void*  lzw_fopen (const char *filename, const char *mode);
+int    lzw_fclose(void *stream);
+int    lzw_fgetc (void *stream);
+int    lzw_fputc (int c, void *stream);
+size_t lzw_fread (void *buffer, size_t size, size_t count, void *stream);
+size_t lzw_fwrite(void *buffer, size_t size, size_t count, void *stream);
+int    lzw_fseek (void *stream, long offset, int origin);
+long   lzw_ftell (void *stream);
 
 #endif
