@@ -432,6 +432,8 @@ int lzw_fseek(void *stream, long offset, int origin)
         skip = offset;
     }
     while (skip--) lzw_fgetc(stream);
+
+    return 0;
 }
 
 long lzw_ftell(void *stream) { return ((LZW*)stream)->fpos; }

@@ -32,6 +32,9 @@ void replay_reset(REPLAY *rep)
         break;
     case NES_REPLAY_PLAY:
         rep->fp = fopen("lastreplay.tmp", "rb");
+        fseek(rep->fp, 0, SEEK_END);
+        rep->total = ftell(rep->fp);
+        fseek(rep->fp, 0, SEEK_SET);
         break;
     }
 }
@@ -51,5 +54,15 @@ BYTE replay_run(REPLAY *rep, BYTE data)
         break;
     }
     return data;
+}
+
+int replay_progress(REPLAY *rep)
+{
+    // if record mode
+    if (rep->mode == NES_REPLAY_RECORD) return 1;
+
+    // if play mode
+    rep->curpos = ftell(rep->fp);
+    return (rep->curpos < rep->total);
 }
 

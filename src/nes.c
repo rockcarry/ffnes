@@ -35,11 +35,20 @@ static void* nes_thread_proc(void *param)
         // for run/pause
         if (!nes->isrunning)
         {
-            // call ppu_pause to keep rendering video on screen
+            // ppu_pause keeps rendering video
             ppu_pause(&(nes->ppu));
             nes->ispaused = 1;
             continue;
         }
+
+        //++ for replay playing ++//
+        if (!replay_progress(&(nes->replay)) && nes->request_reset == 0)
+        {
+            // ppu_pause keeps rendering video
+            ppu_pause(&(nes->ppu));
+            continue;
+        }
+        //-- for replay playing --//
 
         // for nes reset
         if (nes->request_reset == 1)

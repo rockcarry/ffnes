@@ -16,13 +16,16 @@ enum
 typedef struct {
     int   mode;
     FILE *fp;
+    long  total;
+    long  curpos;
 } REPLAY;
 
 // º¯ÊýÉùÃ÷
-void replay_init (REPLAY *rep);
-void replay_free (REPLAY *rep);
-void replay_reset(REPLAY *rep);
-BYTE replay_run  (REPLAY *rep, BYTE data);
+void replay_init    (REPLAY *rep);
+void replay_free    (REPLAY *rep);
+void replay_reset   (REPLAY *rep);
+BYTE replay_run     (REPLAY *rep, BYTE data);
+int  replay_progress(REPLAY *rep);
 
 #endif
 

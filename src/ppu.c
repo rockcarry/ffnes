@@ -542,6 +542,16 @@ void ppu_run_pclk(PPU *ppu)
     // scanline 241 - 260 vblank
     else if (ppu->pclk_frame == NES_HTOTAL * 241 + 1) // scanline 241, tick 1
     {
+        {//++ for replay progress bar ++//
+            NES *nes = container_of(ppu, NES, ppu);
+            if (nes->replay.mode == NES_REPLAY_PLAY)
+            {
+                int i = 256 * nes->replay.curpos / nes->replay.total;
+                ppu->draw_buffer -= ppu->draw_stride;
+                while (i--) ppu->draw_buffer[i] = RGB(255, 128, 255);
+            }
+        }//-- for replay progress bar --//
+
         // unlock video device
         vdev_buf_post(ppu->vdevctxt);
 
