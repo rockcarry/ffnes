@@ -194,7 +194,7 @@ BEGIN
         MENUITEM "&Save Game         Ctrl+S",   ID_FILE_SAVE_GAME
         MENUITEM "Save Game &As...   Ctrl+Alt+S", ID_FILE_SAVE_GAME_AS
         MENUITEM "&Load Game...      Ctrl+L",   ID_FILE_LOAD_GAME
-        MENUITEM "Load &Replay...    Ctrl+E",   ID_FILE_LOAD_REPLAY
+        MENUITEM "&Watch Replay...   Ctrl+W",   ID_FILE_LOAD_REPLAY
         MENUITEM SEPARATOR
         MENUITEM "E&xit              Alt+F4",   ID_EXIT
     END
@@ -258,7 +258,7 @@ BEGIN
     "P",            ID_CONTROL_PAUSEPLAY,   VIRTKEY, CONTROL, NOINVERT
     "R",            ID_CONTROL_RESET,       VIRTKEY, CONTROL, NOINVERT
     "L",            ID_FILE_LOAD_GAME,      VIRTKEY, CONTROL, NOINVERT
-    "E",            ID_FILE_LOAD_REPLAY,    VIRTKEY, CONTROL, NOINVERT
+    "W",            ID_FILE_LOAD_REPLAY,    VIRTKEY, CONTROL, NOINVERT
     "O",            ID_FILE_OPEN_ROM,       VIRTKEY, CONTROL, NOINVERT
     "S",            ID_FILE_SAVE_GAME,      VIRTKEY, CONTROL, NOINVERT
     "S",            ID_FILE_SAVE_GAME_AS,   VIRTKEY, CONTROL, ALT, NOINVERT
