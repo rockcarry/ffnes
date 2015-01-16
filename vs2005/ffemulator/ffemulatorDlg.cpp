@@ -341,25 +341,34 @@ void CffemulatorDlg::OnControlFullscreen()
 void CffemulatorDlg::OnControlWindowx1size()
 {
     SetWindowClientSize(NES_WIDTH, NES_HEIGHT);
-    GetMenu()->GetSubMenu(1)->CheckMenuItem(3, MF_BYPOSITION|MF_CHECKED  );
-    GetMenu()->GetSubMenu(1)->CheckMenuItem(4, MF_BYPOSITION|MF_UNCHECKED);
-    GetMenu()->GetSubMenu(1)->CheckMenuItem(5, MF_BYPOSITION|MF_UNCHECKED);
+    if (GetMenu())
+    {
+        GetMenu()->GetSubMenu(1)->CheckMenuItem(3, MF_BYPOSITION|MF_CHECKED  );
+        GetMenu()->GetSubMenu(1)->CheckMenuItem(4, MF_BYPOSITION|MF_UNCHECKED);
+        GetMenu()->GetSubMenu(1)->CheckMenuItem(5, MF_BYPOSITION|MF_UNCHECKED);
+    }
 }
 
 void CffemulatorDlg::OnControlWindowx2size()
 {
     SetWindowClientSize(NES_WIDTH*2, NES_HEIGHT*2);
-    GetMenu()->GetSubMenu(1)->CheckMenuItem(3, MF_BYPOSITION|MF_UNCHECKED);
-    GetMenu()->GetSubMenu(1)->CheckMenuItem(4, MF_BYPOSITION|MF_CHECKED  );
-    GetMenu()->GetSubMenu(1)->CheckMenuItem(5, MF_BYPOSITION|MF_UNCHECKED);
+    if (GetMenu())
+    {
+        GetMenu()->GetSubMenu(1)->CheckMenuItem(3, MF_BYPOSITION|MF_UNCHECKED);
+        GetMenu()->GetSubMenu(1)->CheckMenuItem(4, MF_BYPOSITION|MF_CHECKED  );
+        GetMenu()->GetSubMenu(1)->CheckMenuItem(5, MF_BYPOSITION|MF_UNCHECKED);
+    }
 }
 
 void CffemulatorDlg::OnControlWindowx3size()
 {
     SetWindowClientSize(NES_WIDTH*3, NES_HEIGHT*3);
-    GetMenu()->GetSubMenu(1)->CheckMenuItem(3, MF_BYPOSITION|MF_UNCHECKED);
-    GetMenu()->GetSubMenu(1)->CheckMenuItem(4, MF_BYPOSITION|MF_UNCHECKED);
-    GetMenu()->GetSubMenu(1)->CheckMenuItem(5, MF_BYPOSITION|MF_CHECKED  );
+    if (GetMenu())
+    {
+        GetMenu()->GetSubMenu(1)->CheckMenuItem(3, MF_BYPOSITION|MF_UNCHECKED);
+        GetMenu()->GetSubMenu(1)->CheckMenuItem(4, MF_BYPOSITION|MF_UNCHECKED);
+        GetMenu()->GetSubMenu(1)->CheckMenuItem(5, MF_BYPOSITION|MF_CHECKED  );
+    }
 }
 
 void CffemulatorDlg::OnToolsFfndb()
