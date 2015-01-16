@@ -18,6 +18,7 @@ typedef struct
     RECT    rtcur;
     RECT    rtlast;
     RECT    rtview;
+    int     full;
 
     char    textstr[256];
     int     textposx;
@@ -164,3 +165,8 @@ void vdev_gdi_textout(void *ctxt, int x, int y, char *text, int time, int priori
         dev->priority = priority;
     }
 }
+
+// gdi vdev can't support fullscreen mode
+int  vdev_gdi_getfullsceen(void *ctxt)           { return ((VDEVGDI*)ctxt)->full; }
+void vdev_gdi_setfullsceen(void *ctxt, int full) { ((VDEVGDI*)ctxt)->full = full; }
+

@@ -105,6 +105,10 @@ void nes_save_game  (NES *nes, char *file);
 void nes_load_game  (NES *nes, char *file);
 void nes_load_replay(NES *nes, char *file);
 
+// fullscreen
+int  nes_getfullscreen(NES *nes);
+void nes_setfullscreen(NES *nes, int mode);
+
 #endif
 
 

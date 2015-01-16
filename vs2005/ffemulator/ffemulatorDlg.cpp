@@ -33,9 +33,12 @@ BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
     {
         if (pMsg->wParam == VK_MENU)
         {
-            if (GetMenu()) SetMenu(NULL   );
-            else           SetMenu(&m_menu);
-            DrawMenuBar();
+            if (!nes_getfullscreen(&m_nes))
+            {
+                if (GetMenu()) SetMenu(NULL   );
+                else           SetMenu(&m_menu);
+                DrawMenuBar();
+            }
         }
     }
 
@@ -84,6 +87,7 @@ BEGIN_MESSAGE_MAP(CffemulatorDlg, CDialog)
     ON_COMMAND(ID_EXIT, &CffemulatorDlg::OnExit)
     ON_COMMAND(ID_CONTROL_RESET, &CffemulatorDlg::OnControlReset)
     ON_COMMAND(ID_CONTROL_PAUSEPLAY, &CffemulatorDlg::OnControlPauseplay)
+    ON_COMMAND(ID_CONTROL_FULLSCREEN, &CffemulatorDlg::OnControlFullscreen)
     ON_COMMAND(ID_TOOLS_FFNDB, &CffemulatorDlg::OnToolsFfndb)
     ON_COMMAND(ID_HELP_ABOUT, &CffemulatorDlg::OnHelpAbout)
     ON_COMMAND(ID_FILE_SAVE_GAME, &CffemulatorDlg::OnFileSaveGame)
@@ -154,6 +158,11 @@ void CffemulatorDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
     {
     case WA_ACTIVE:
     case WA_CLICKACTIVE:
+        if (nes_getfullscreen(&m_nes))
+        {
+            nes_setfullscreen(&m_nes, 0);
+            nes_setfullscreen(&m_nes, 1);
+        }
         SetFocus();
         break;
     }
@@ -302,6 +311,20 @@ void CffemulatorDlg::OnControlPauseplay()
 {
     if (nes_getrun(&m_nes)) nes_setrun(&m_nes, 0);
     else                    nes_setrun(&m_nes, 1);
+}
+
+void CffemulatorDlg::OnControlFullscreen()
+{
+    if (nes_getfullscreen(&m_nes))
+    {
+        nes_setfullscreen(&m_nes, 0);
+        SetMenu(&m_menu); DrawMenuBar();
+    }
+    else
+    {
+        nes_setfullscreen(&m_nes, 1);
+        SetMenu(NULL); DrawMenuBar();
+    }
 }
 
 void CffemulatorDlg::OnToolsFfndb()

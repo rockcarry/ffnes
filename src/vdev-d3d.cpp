@@ -14,6 +14,9 @@ typedef struct
     LPDIRECT3D9        pD3D;
     LPDIRECT3DDEVICE9  pD3DDev;
     LPDIRECT3DSURFACE9 pSurface;
+    D3DPRESENT_PARAMETERS d3dpp;
+    int        d3d_mode_changed;
+    RECT       save_window_rect;
 
     RECT  rtcur;
     RECT  rtlast;
@@ -51,20 +54,20 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
     D3DDISPLAYMODE d3ddm = {0};
     dev->pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3ddm);
 
-    D3DPRESENT_PARAMETERS d3dpp = {0};
-    d3dpp.BackBufferWidth       = dev->width;
-    d3dpp.BackBufferHeight      = dev->height;
-    d3dpp.BackBufferFormat      = D3DFMT_X8R8G8B8;
-    d3dpp.BackBufferCount       = 1;
-    d3dpp.MultiSampleType       = D3DMULTISAMPLE_NONE;
-    d3dpp.MultiSampleQuality    = 0;
-    d3dpp.SwapEffect            = D3DSWAPEFFECT_DISCARD;
-    d3dpp.hDeviceWindow         = dev->hwnd;
-    d3dpp.Windowed              = TRUE;
-    d3dpp.EnableAutoDepthStencil= FALSE;
-    d3dpp.PresentationInterval  = d3ddm.RefreshRate < 60 ? D3DPRESENT_INTERVAL_IMMEDIATE : D3DPRESENT_INTERVAL_ONE;
+    dev->d3dpp.BackBufferWidth       = dev->width;
+    dev->d3dpp.BackBufferHeight      = dev->height;
+    dev->d3dpp.BackBufferFormat      = D3DFMT_X8R8G8B8;
+    dev->d3dpp.BackBufferCount       = 1;
+    dev->d3dpp.MultiSampleType       = D3DMULTISAMPLE_NONE;
+    dev->d3dpp.MultiSampleQuality    = 0;
+    dev->d3dpp.SwapEffect            = D3DSWAPEFFECT_COPY;
+    dev->d3dpp.hDeviceWindow         = dev->hwnd;
+    dev->d3dpp.Windowed              = TRUE;
+    dev->d3dpp.EnableAutoDepthStencil= FALSE;
+    dev->d3dpp.PresentationInterval  = d3ddm.RefreshRate < 60 ? D3DPRESENT_INTERVAL_IMMEDIATE : D3DPRESENT_INTERVAL_ONE;
+
     if (FAILED(dev->pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, dev->hwnd,
-                            D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &dev->pD3DDev)))
+                            D3DCREATE_SOFTWARE_VERTEXPROCESSING, &dev->d3dpp, &dev->pD3DDev)))
     {
         log_printf("failed to create d3d device !\n");
         exit(0);
@@ -179,6 +182,55 @@ void vdev_d3d_buf_post(void *ctxt)
         dev->pD3DDev->Present(NULL, &dev->rtview, NULL, NULL);
         pback->Release();
     }
+
+    if (dev->d3d_mode_changed)
+    {
+        dev->pSurface->Release();
+        dev->pD3DDev->Release();
+
+        if (dev->d3dpp.Windowed)
+        {
+            dev->d3dpp.Windowed         = TRUE;
+            dev->d3dpp.BackBufferWidth  = dev->width;
+            dev->d3dpp.BackBufferHeight = dev->height;
+            SetWindowLong(dev->hwnd, GWL_EXSTYLE, 0);
+            SetWindowLong(dev->hwnd, GWL_STYLE  , WS_OVERLAPPEDWINDOW|WS_VISIBLE);
+            MoveWindow(dev->hwnd, dev->save_window_rect.left, dev->save_window_rect.top,
+                dev->save_window_rect.right - dev->save_window_rect.left,
+                dev->save_window_rect.bottom - dev->save_window_rect.top, FALSE);
+        }
+        else
+        {
+            dev->d3dpp.Windowed         = FALSE;
+            dev->d3dpp.BackBufferWidth  = 640;
+            dev->d3dpp.BackBufferHeight = 480;
+            SetWindowLong(dev->hwnd, GWL_EXSTYLE, WS_EX_TOPMOST);
+            SetWindowLong(dev->hwnd, GWL_STYLE  , WS_POPUP|WS_VISIBLE);
+            GetWindowRect(dev->hwnd, &dev->save_window_rect);
+            MoveWindow   (dev->hwnd, 0, 0, 640, 480, FALSE);
+        }
+
+        if (FAILED(dev->pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, dev->hwnd,
+            D3DCREATE_SOFTWARE_VERTEXPROCESSING, &dev->d3dpp, &dev->pD3DDev)))
+        {
+            log_printf("failed to create d3d device !\n");
+            exit(0);
+        }
+        else {
+            // clear direct3d device
+            dev->pD3DDev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0,0,0), 1.0f, 0);
+
+            // create surface
+            if (FAILED(dev->pD3DDev->CreateOffscreenPlainSurface(dev->width, dev->height,
+                D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &dev->pSurface, NULL)))
+            {
+                log_printf("failed to create d3d off screen plain surface !\n");
+                exit(0);
+            }
+        }
+
+        dev->d3d_mode_changed = 0;
+    }
 }
 
 void vdev_d3d_textout(void *ctxt, int x, int y, char *text, int time, int priority)
@@ -192,5 +244,18 @@ void vdev_d3d_textout(void *ctxt, int x, int y, char *text, int time, int priori
         dev->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
         dev->priority = priority;
     }
+}
+
+int vdev_d3d_getfullsceen(void *ctxt)
+{
+    return !((VDEVD3D*)ctxt)->d3dpp.Windowed;
+}
+
+void vdev_d3d_setfullsceen(void *ctxt, int full)
+{
+    VDEVD3D *dev = (VDEVD3D*)ctxt;
+    if (dev->d3dpp.Windowed == !full) return;
+    dev->d3dpp.Windowed   = !full;
+    dev->d3d_mode_changed = 1;
 }
 

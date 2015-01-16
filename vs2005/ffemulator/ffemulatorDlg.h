@@ -37,6 +37,7 @@ protected:
     afx_msg void   OnExit();
     afx_msg void   OnControlReset();
     afx_msg void   OnControlPauseplay();
+    afx_msg void   OnControlFullscreen();
     afx_msg void   OnHelpAbout();
     afx_msg void   OnToolsFfndb();
     afx_msg void   OnFileSaveGame();

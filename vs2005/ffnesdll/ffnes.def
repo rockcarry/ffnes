@@ -10,6 +10,8 @@ nes_textout
 nes_save_game
 nes_load_game
 nes_load_replay
+nes_getfullscreen
+nes_setfullscreen
 
 ndb_set_debug
 ndb_cpu_runto
