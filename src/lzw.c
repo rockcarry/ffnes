@@ -374,10 +374,11 @@ size_t lzw_fread(void *buffer, size_t size, size_t count, void *stream)
 {
     BYTE  *dst   = (BYTE*)buffer;
     size_t total = size * count;
+    int    value;
     while (total--)
     {
-        *dst = lzw_fgetc(stream);
-        if (*dst++ == EOF)
+        value = *dst++ = lzw_fgetc(stream);
+        if (value == EOF)
         {
             total++;
             break;
