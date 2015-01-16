@@ -15,8 +15,11 @@ typedef struct
     LPDIRECT3DDEVICE9  pD3DDev;
     LPDIRECT3DSURFACE9 pSurface;
     D3DPRESENT_PARAMETERS d3dpp;
+
     int        d3d_mode_changed;
     RECT       save_window_rect;
+    int        full_width;
+    int        full_height;
 
     RECT  rtcur;
     RECT  rtlast;
@@ -51,9 +54,25 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
         exit(0);
     }
 
-    D3DDISPLAYMODE d3ddm = {0};
-    dev->pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3ddm);
+    D3DDISPLAYMODE d3dmode = {0};
+    int            nummode = 0;
+    int            curdistance = 0x7fffffff;
+    int            mindistance = 0x7fffffff;
+    nummode = dev->pD3D->GetAdapterModeCount(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8);
+    while (nummode--)
+    {
+        dev->pD3D->EnumAdapterModes(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8, nummode, &d3dmode);
+        curdistance = (640 - d3dmode.Width ) * (640 - d3dmode.Width )
+            + (480 - d3dmode.Height) * (480 - d3dmode.Height);
+        if (curdistance < mindistance)
+        {
+            dev->full_width  = d3dmode.Width;
+            dev->full_height = d3dmode.Height;
+            mindistance = curdistance;
+        }
+    }
 
+    dev->pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3dmode);
     dev->d3dpp.BackBufferWidth       = dev->width;
     dev->d3dpp.BackBufferHeight      = dev->height;
     dev->d3dpp.BackBufferFormat      = D3DFMT_X8R8G8B8;
@@ -64,7 +83,7 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
     dev->d3dpp.hDeviceWindow         = dev->hwnd;
     dev->d3dpp.Windowed              = TRUE;
     dev->d3dpp.EnableAutoDepthStencil= FALSE;
-    dev->d3dpp.PresentationInterval  = d3ddm.RefreshRate < 60 ? D3DPRESENT_INTERVAL_IMMEDIATE : D3DPRESENT_INTERVAL_ONE;
+    dev->d3dpp.PresentationInterval  = d3dmode.RefreshRate < 60 ? D3DPRESENT_INTERVAL_IMMEDIATE : D3DPRESENT_INTERVAL_ONE;
 
     if (FAILED(dev->pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, dev->hwnd,
                             D3DCREATE_SOFTWARE_VERTEXPROCESSING, &dev->d3dpp, &dev->pD3DDev)))
@@ -202,12 +221,12 @@ void vdev_d3d_buf_post(void *ctxt)
         else
         {
             dev->d3dpp.Windowed         = FALSE;
-            dev->d3dpp.BackBufferWidth  = 640;
-            dev->d3dpp.BackBufferHeight = 480;
+            dev->d3dpp.BackBufferWidth  = dev->full_width;
+            dev->d3dpp.BackBufferHeight = dev->full_height;
             SetWindowLong(dev->hwnd, GWL_EXSTYLE, WS_EX_TOPMOST);
             SetWindowLong(dev->hwnd, GWL_STYLE  , WS_POPUP|WS_VISIBLE);
             GetWindowRect(dev->hwnd, &dev->save_window_rect);
-            MoveWindow   (dev->hwnd, 0, 0, 640, 480, TRUE);
+            MoveWindow   (dev->hwnd, 0, 0, dev->full_width, dev->full_height, TRUE);
         }
 
         if (FAILED(dev->pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, dev->hwnd,
