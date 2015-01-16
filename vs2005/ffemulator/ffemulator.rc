@@ -206,7 +206,6 @@ BEGIN
         MENUITEM "Window x&1 size   Ctrl+1",    ID_CONTROL_WINDOWX1SIZE, CHECKED
         MENUITEM "Window x&2 size   Ctrl+2",    ID_CONTROL_WINDOWX2SIZE
         MENUITEM "Window x&3 size   Ctrl+3",    ID_CONTROL_WINDOWX3SIZE
-        MENUITEM "Window x&4 size   Ctrl+4",    ID_CONTROL_WINDOWX4SIZE
     END
     POPUP "&Options"
     BEGIN
@@ -262,6 +261,9 @@ BEGIN
     "S",            ID_FILE_SAVE_GAME,      VIRTKEY, CONTROL, NOINVERT
     "S",            ID_FILE_SAVE_GAME_AS,   VIRTKEY, CONTROL, ALT, NOINVERT
     "D",            ID_TOOLS_FFNDB,         VIRTKEY, CONTROL, NOINVERT
+    "1",            ID_CONTROL_WINDOWX1SIZE, VIRTKEY, CONTROL, NOINVERT
+    "2",            ID_CONTROL_WINDOWX2SIZE, VIRTKEY, CONTROL, NOINVERT
+    "3",            ID_CONTROL_WINDOWX3SIZE, VIRTKEY, CONTROL, NOINVERT
 END
 
 #endif    // Chinese (P.R.C.) resources

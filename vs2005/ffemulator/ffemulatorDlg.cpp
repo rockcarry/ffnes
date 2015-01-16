@@ -88,6 +88,9 @@ BEGIN_MESSAGE_MAP(CffemulatorDlg, CDialog)
     ON_COMMAND(ID_CONTROL_RESET, &CffemulatorDlg::OnControlReset)
     ON_COMMAND(ID_CONTROL_PAUSEPLAY, &CffemulatorDlg::OnControlPauseplay)
     ON_COMMAND(ID_CONTROL_FULLSCREEN, &CffemulatorDlg::OnControlFullscreen)
+    ON_COMMAND(ID_CONTROL_WINDOWX1SIZE, &CffemulatorDlg::OnControlWindowx1size)
+    ON_COMMAND(ID_CONTROL_WINDOWX2SIZE, &CffemulatorDlg::OnControlWindowx2size)
+    ON_COMMAND(ID_CONTROL_WINDOWX3SIZE, &CffemulatorDlg::OnControlWindowx3size)
     ON_COMMAND(ID_TOOLS_FFNDB, &CffemulatorDlg::OnToolsFfndb)
     ON_COMMAND(ID_HELP_ABOUT, &CffemulatorDlg::OnHelpAbout)
     ON_COMMAND(ID_FILE_SAVE_GAME, &CffemulatorDlg::OnFileSaveGame)
@@ -110,17 +113,8 @@ BOOL CffemulatorDlg::OnInitDialog()
     m_hAcc = LoadAccelerators(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_FFEMU_ACC)); 
     m_menu.LoadMenu(IDR_MENU_FFEMU_MAIN);
 
-    RECT rect = {0};
-    int  x, y, w, h;
-    MoveWindow(0, 0, NES_WIDTH, NES_HEIGHT, FALSE);
-    GetClientRect(&rect);
-    w = NES_WIDTH  + (NES_WIDTH  - rect.right );
-    h = NES_HEIGHT + (NES_HEIGHT - rect.bottom);
-    x = (SCREEN_WIDTH  - w) / 2;
-    y = (SCREEN_HEIGHT - h) / 2;
-    x = x > 0 ? x : 0;
-    y = y > 0 ? y : 0;
-    MoveWindow(x, y, w, h, FALSE);
+    // set window size
+    SetWindowClientSize(NES_WIDTH, NES_HEIGHT);
 
     // init nes
     nes_init(&m_nes, "", (DWORD)GetSafeHwnd());
@@ -166,6 +160,23 @@ void CffemulatorDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
         SetFocus();
         break;
     }
+}
+
+void CffemulatorDlg::SetWindowClientSize(int w, int h)
+{
+    RECT rect = {0};
+    int  x, y;
+
+    GetWindowRect(&rect);
+    MoveWindow(rect.left, rect.top, w, h, TRUE);
+    GetClientRect(&rect);
+    w = w + (w - rect.right );
+    h = h + (h - rect.bottom);
+    x = (SCREEN_WIDTH  - w) / 2;
+    y = (SCREEN_HEIGHT - h) / 2;
+    x = x > 0 ? x : 0;
+    y = y > 0 ? y : 0;
+    MoveWindow(x, y, w, h, TRUE);
 }
 
 void CffemulatorDlg::OnOpenRom()
@@ -327,6 +338,30 @@ void CffemulatorDlg::OnControlFullscreen()
     }
 }
 
+void CffemulatorDlg::OnControlWindowx1size()
+{
+    SetWindowClientSize(NES_WIDTH, NES_HEIGHT);
+    GetMenu()->GetSubMenu(1)->CheckMenuItem(3, MF_BYPOSITION|MF_CHECKED  );
+    GetMenu()->GetSubMenu(1)->CheckMenuItem(4, MF_BYPOSITION|MF_UNCHECKED);
+    GetMenu()->GetSubMenu(1)->CheckMenuItem(5, MF_BYPOSITION|MF_UNCHECKED);
+}
+
+void CffemulatorDlg::OnControlWindowx2size()
+{
+    SetWindowClientSize(NES_WIDTH*2, NES_HEIGHT*2);
+    GetMenu()->GetSubMenu(1)->CheckMenuItem(3, MF_BYPOSITION|MF_UNCHECKED);
+    GetMenu()->GetSubMenu(1)->CheckMenuItem(4, MF_BYPOSITION|MF_CHECKED  );
+    GetMenu()->GetSubMenu(1)->CheckMenuItem(5, MF_BYPOSITION|MF_UNCHECKED);
+}
+
+void CffemulatorDlg::OnControlWindowx3size()
+{
+    SetWindowClientSize(NES_WIDTH*3, NES_HEIGHT*3);
+    GetMenu()->GetSubMenu(1)->CheckMenuItem(3, MF_BYPOSITION|MF_UNCHECKED);
+    GetMenu()->GetSubMenu(1)->CheckMenuItem(4, MF_BYPOSITION|MF_UNCHECKED);
+    GetMenu()->GetSubMenu(1)->CheckMenuItem(5, MF_BYPOSITION|MF_CHECKED  );
+}
+
 void CffemulatorDlg::OnToolsFfndb()
 {
     CDialog *dlg = (CDialog*)FindWindow(NULL, "ffndb");
@@ -351,4 +386,5 @@ void CffemulatorDlg::OnHelpAbout()
     CDialog dlg(IDD_DIALOG_ABOUT);
     dlg.DoModal();
 }
+
 

@@ -52,7 +52,6 @@
 #define ID_CONTROL_WINDOWX1SIZE         32801
 #define ID_CONTROL_WINDOWX2SIZE         32802
 #define ID_CONTROL_WINDOWX3SIZE         32803
-#define ID_CONTROL_WINDOWX4SIZE         32804
 #define ID_OPTIONS_VIDEO                32806
 #define ID_OPTIONS_SOUND                32807
 #define ID_OPTIONS_JOYSTICK             32808

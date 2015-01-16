@@ -38,6 +38,9 @@ protected:
     afx_msg void   OnControlReset();
     afx_msg void   OnControlPauseplay();
     afx_msg void   OnControlFullscreen();
+    afx_msg void   OnControlWindowx1size();
+    afx_msg void   OnControlWindowx2size();
+    afx_msg void   OnControlWindowx3size();
     afx_msg void   OnHelpAbout();
     afx_msg void   OnToolsFfndb();
     afx_msg void   OnFileSaveGame();
@@ -45,6 +48,9 @@ protected:
     afx_msg void   OnFileLoadGame();
     afx_msg void   OnFileLoadReplay();
     DECLARE_MESSAGE_MAP()
+
+private:
+    void SetWindowClientSize(int w, int h);
 
 private:
     NES     m_nes; // nes object

@@ -197,7 +197,7 @@ void vdev_d3d_buf_post(void *ctxt)
             SetWindowLong(dev->hwnd, GWL_STYLE  , WS_OVERLAPPEDWINDOW|WS_VISIBLE);
             MoveWindow(dev->hwnd, dev->save_window_rect.left, dev->save_window_rect.top,
                 dev->save_window_rect.right - dev->save_window_rect.left,
-                dev->save_window_rect.bottom - dev->save_window_rect.top, FALSE);
+                dev->save_window_rect.bottom - dev->save_window_rect.top, TRUE);
         }
         else
         {
@@ -207,7 +207,7 @@ void vdev_d3d_buf_post(void *ctxt)
             SetWindowLong(dev->hwnd, GWL_EXSTYLE, WS_EX_TOPMOST);
             SetWindowLong(dev->hwnd, GWL_STYLE  , WS_POPUP|WS_VISIBLE);
             GetWindowRect(dev->hwnd, &dev->save_window_rect);
-            MoveWindow   (dev->hwnd, 0, 0, 640, 480, FALSE);
+            MoveWindow   (dev->hwnd, 0, 0, 640, 480, TRUE);
         }
 
         if (FAILED(dev->pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, dev->hwnd,
