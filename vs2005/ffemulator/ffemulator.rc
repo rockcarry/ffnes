@@ -208,7 +208,6 @@ BEGIN
         MENUITEM "Window x&2 size   Ctrl+2",    ID_CONTROL_WINDOWX2SIZE
         MENUITEM "Window x&3 size   Ctrl+3",    ID_CONTROL_WINDOWX3SIZE
         MENUITEM "Window x&4 size   Ctrl+4",    ID_CONTROL_WINDOWX4SIZE
-        MENUITEM "&Hide menu        Ctrl+H",    ID_CONTROL_HIDE_MENU
     END
     POPUP "&Options"
     BEGIN

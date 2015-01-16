@@ -25,6 +25,7 @@ protected:
 protected:
     HICON  m_hIcon;
     HACCEL m_hAcc;
+    CMenu  m_menu;
 
 protected:
     // Generated message map functions
@@ -32,6 +33,7 @@ protected:
     afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
     afx_msg void   OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
     afx_msg void   OnOpenRom();
+    afx_msg void   OnOK();
     afx_msg void   OnExit();
     afx_msg void   OnControlReset();
     afx_msg void   OnControlPauseplay();

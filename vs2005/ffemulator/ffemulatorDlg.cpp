@@ -29,6 +29,16 @@ BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
 {
     if (TranslateAccelerator(GetSafeHwnd(), m_hAcc, pMsg)) return TRUE;
 
+    if (pMsg->message == WM_SYSKEYUP)
+    {
+        if (pMsg->wParam == VK_MENU)
+        {
+            if (GetMenu()) SetMenu(NULL   );
+            else           SetMenu(&m_menu);
+            DrawMenuBar();
+        }
+    }
+
     if (pMsg->message == WM_KEYDOWN)
     {
         switch (pMsg->wParam)
@@ -94,6 +104,7 @@ BOOL CffemulatorDlg::OnInitDialog()
 
     // load accelerators
     m_hAcc = LoadAccelerators(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_FFEMU_ACC)); 
+    m_menu.LoadMenu(IDR_MENU_FFEMU_MAIN);
 
     RECT rect = {0};
     int  x, y, w, h;
@@ -173,15 +184,16 @@ void CffemulatorDlg::OnOpenRom()
         // init nes & run
         nes_init  (&m_nes, file, (DWORD)GetSafeHwnd());
         nes_setrun(&m_nes, 1);
+
+        m_strGameSaveFile = "";
+
+        // enable save and saveas menu item
+        GetMenu()->GetSubMenu(0)->EnableMenuItem(2, MF_BYPOSITION|MF_ENABLED);
+        GetMenu()->GetSubMenu(0)->EnableMenuItem(3, MF_BYPOSITION|MF_ENABLED);
     }
 
     // resume running
     if (running) nes_setrun(&m_nes, 1);
-}
-
-void CffemulatorDlg::OnExit()
-{
-    OnOK();
 }
 
 void CffemulatorDlg::OnFileSaveGame()
@@ -199,11 +211,14 @@ void CffemulatorDlg::OnFileSaveGame()
         if (running) nes_setrun(&m_nes, 1);
     }
 
-    char file[MAX_PATH] = {0};
-    strncpy(file, m_strGameSaveFile, MAX_PATH);
-    BeginWaitCursor();
-    nes_save_game(&m_nes, file);
-    EndWaitCursor();
+    if (m_strGameSaveFile.Compare("") != 0)
+    {
+        char file[MAX_PATH] = {0};
+        strncpy(file, m_strGameSaveFile, MAX_PATH);
+        BeginWaitCursor();
+        nes_save_game(&m_nes, file);
+        EndWaitCursor();
+    }
 }
 
 void CffemulatorDlg::OnFileSaveGameAs()
@@ -241,6 +256,12 @@ void CffemulatorDlg::OnFileLoadGame()
         BeginWaitCursor();
         nes_load_game(&m_nes, file);
         EndWaitCursor();
+
+        m_strGameSaveFile = dlg.GetPathName();
+
+        // enable save and saveas menu item
+        GetMenu()->GetSubMenu(0)->EnableMenuItem(2, MF_BYPOSITION|MF_ENABLED);
+        GetMenu()->GetSubMenu(0)->EnableMenuItem(3, MF_BYPOSITION|MF_ENABLED);
     }
 
     // resume running
@@ -261,6 +282,10 @@ void CffemulatorDlg::OnFileLoadReplay()
         BeginWaitCursor();
         nes_load_replay(&m_nes, file);
         EndWaitCursor();
+
+        // disable save and saveas menu item
+        GetMenu()->GetSubMenu(0)->EnableMenuItem(2, MF_BYPOSITION|MF_DISABLED|MF_GRAYED);
+        GetMenu()->GetSubMenu(0)->EnableMenuItem(3, MF_BYPOSITION|MF_DISABLED|MF_GRAYED);
     }
 
     // resume running
@@ -294,6 +319,9 @@ void CffemulatorDlg::OnToolsFfndb()
     }
     else SwitchToThisWindow(dlg->GetSafeHwnd(), TRUE);
 }
+
+void CffemulatorDlg::OnOK()   {}
+void CffemulatorDlg::OnExit() { OnCancel(); }
 
 void CffemulatorDlg::OnHelpAbout()
 {
