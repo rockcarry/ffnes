@@ -347,9 +347,6 @@ static int sprite_render(PPU *ppu, int bkcolor)
 // º¯ÊýÊµÏÖ
 void ppu_init(PPU *ppu, DWORD extra)
 {
-    void *vdevbuf = NULL;
-    int   stride  = 0;
-
     //++ for power up palette
     static BYTE power_up_pal[32] =
     {

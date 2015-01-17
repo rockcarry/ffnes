@@ -163,15 +163,13 @@ void CffemulatorDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
 void CffemulatorDlg::SetWindowClientSize(int w, int h)
 {
     RECT rect = {0};
-    int  x, y;
-
     GetWindowRect(&rect);
     MoveWindow(rect.left, rect.top, w, h, TRUE);
     GetClientRect(&rect);
     w = w + (w - rect.right );
     h = h + (h - rect.bottom);
-    x = (SCREEN_WIDTH  - w) / 2;
-    y = (SCREEN_HEIGHT - h) / 2;
+    int x = (SCREEN_WIDTH  - w) / 2;
+    int y = (SCREEN_HEIGHT - h) / 2;
     x = x > 0 ? x : 0;
     y = y > 0 ? y : 0;
     MoveWindow(x, y, w, h, TRUE);
