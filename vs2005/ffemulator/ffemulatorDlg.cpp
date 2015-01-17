@@ -37,7 +37,6 @@ BOOL CffemulatorDlg::PreTranslateMessage(MSG* pMsg)
             {
                 if (GetMenu()) SetMenu(NULL   );
                 else           SetMenu(&m_menu);
-                DrawMenuBar();
             }
         }
     }
@@ -150,13 +149,12 @@ void CffemulatorDlg::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
     // TODO: Add your message handler code here
     switch (nState)
     {
+    case WA_INACTIVE:
+        if (nes_getfullscreen(&m_nes)) nes_setfullscreen(&m_nes, 0);
+        break;
+
     case WA_ACTIVE:
     case WA_CLICKACTIVE:
-        if (nes_getfullscreen(&m_nes))
-        {
-            nes_setfullscreen(&m_nes, 0);
-            nes_setfullscreen(&m_nes, 1);
-        }
         SetFocus();
         break;
     }
@@ -340,6 +338,7 @@ void CffemulatorDlg::OnControlFullscreen()
 
 void CffemulatorDlg::OnControlWindowx1size()
 {
+    if (nes_getfullscreen(&m_nes)) return;
     SetWindowClientSize(NES_WIDTH, NES_HEIGHT);
     if (GetMenu())
     {
@@ -351,6 +350,7 @@ void CffemulatorDlg::OnControlWindowx1size()
 
 void CffemulatorDlg::OnControlWindowx2size()
 {
+    if (nes_getfullscreen(&m_nes)) return;
     SetWindowClientSize(NES_WIDTH*2, NES_HEIGHT*2);
     if (GetMenu())
     {
@@ -362,6 +362,7 @@ void CffemulatorDlg::OnControlWindowx2size()
 
 void CffemulatorDlg::OnControlWindowx3size()
 {
+    if (nes_getfullscreen(&m_nes)) return;
     SetWindowClientSize(NES_WIDTH*3, NES_HEIGHT*3);
     if (GetMenu())
     {

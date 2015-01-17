@@ -102,6 +102,13 @@ void* vdev_d3d_create(int w, int h, DWORD extra)
             log_printf("failed to create d3d off screen plain surface !\n");
             exit(0);
         }
+        else
+        {
+            D3DLOCKED_RECT d3d_rect;
+            dev->pSurface->LockRect(&d3d_rect, NULL, D3DLOCK_DISCARD);
+            memset(d3d_rect.pBits, 0, d3d_rect.Pitch * dev->height);
+            dev->pSurface->UnlockRect();
+        }
     }
 
     return dev;
@@ -212,9 +219,8 @@ void vdev_d3d_buf_post(void *ctxt)
             dev->d3dpp.Windowed         = TRUE;
             dev->d3dpp.BackBufferWidth  = dev->width;
             dev->d3dpp.BackBufferHeight = dev->height;
-            SetWindowLong(dev->hwnd, GWL_EXSTYLE, 0);
-            SetWindowLong(dev->hwnd, GWL_STYLE  , WS_OVERLAPPEDWINDOW|WS_VISIBLE);
-            MoveWindow(dev->hwnd, dev->save_window_rect.left, dev->save_window_rect.top,
+            SetWindowLong(dev->hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW|WS_VISIBLE);
+            MoveWindow   (dev->hwnd, dev->save_window_rect.left, dev->save_window_rect.top,
                 dev->save_window_rect.right - dev->save_window_rect.left,
                 dev->save_window_rect.bottom - dev->save_window_rect.top, TRUE);
         }
@@ -223,8 +229,7 @@ void vdev_d3d_buf_post(void *ctxt)
             dev->d3dpp.Windowed         = FALSE;
             dev->d3dpp.BackBufferWidth  = dev->full_width;
             dev->d3dpp.BackBufferHeight = dev->full_height;
-            SetWindowLong(dev->hwnd, GWL_EXSTYLE, WS_EX_TOPMOST);
-            SetWindowLong(dev->hwnd, GWL_STYLE  , WS_POPUP|WS_VISIBLE);
+            SetWindowLong(dev->hwnd, GWL_STYLE, WS_POPUP|WS_VISIBLE);
             GetWindowRect(dev->hwnd, &dev->save_window_rect);
             MoveWindow   (dev->hwnd, 0, 0, dev->full_width, dev->full_height, TRUE);
         }
@@ -245,6 +250,13 @@ void vdev_d3d_buf_post(void *ctxt)
             {
                 log_printf("failed to create d3d off screen plain surface !\n");
                 exit(0);
+            }
+            else
+            {
+                D3DLOCKED_RECT d3d_rect;
+                dev->pSurface->LockRect(&d3d_rect, NULL, D3DLOCK_DISCARD);
+                memset(d3d_rect.pBits, 0, d3d_rect.Pitch * dev->height);
+                dev->pSurface->UnlockRect();
             }
         }
 

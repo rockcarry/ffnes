@@ -250,7 +250,7 @@ void nes_setrun(NES *nes, int run)
     else     { nes_textout(nes, 0, 222, "paused" , -1  , 1); Sleep(16); }
     nes->isrunning = run;
     nes->ispaused  = 0;
-    if (!run) while (!nes->ispaused) Sleep(16);
+    if (!run) while (!nes->ispaused) Sleep(1);
 }
 
 int nes_getrun(NES *nes)

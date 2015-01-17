@@ -362,11 +362,6 @@ void ppu_init(PPU *ppu, DWORD extra)
     ppu->vdevctxt = vdev_create(NES_WIDTH, NES_HEIGHT, extra);
     if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
 
-    // clear vdev
-    vdev_buf_request(ppu->vdevctxt, &vdevbuf, &stride);
-    memset(vdevbuf, 0, stride * 4 * NES_HEIGHT);
-    vdev_buf_post(ppu->vdevctxt);
-
     // init power up palette
     memcpy(ppu->palette, power_up_pal, 32);
 
