@@ -32,30 +32,30 @@ static void* nes_thread_proc(void *param)
 
     while (!nes->thread_exit)
     {
-        // for run/pause
+        //++ for run/pause ++//
         if (!nes->isrunning)
         {
-            // ppu_pause keeps rendering video
-            ppu_pause(&(nes->ppu));
             nes->ispaused = 1;
+            vdev_render(nes->ppu.vdevctxt);
             continue;
         }
+        //-- for run/pause --//
 
         //++ for replay playing ++//
         if (!replay_progress(&(nes->replay)) && nes->request_reset == 0)
         {
-            // ppu_pause keeps rendering video
-            ppu_pause(&(nes->ppu));
+            vdev_render(nes->ppu.vdevctxt);
             continue;
         }
         //-- for replay playing --//
 
-        // for nes reset
+        //++ for nes reset ++//
         if (nes->request_reset == 1)
         {
             nes->request_reset = 0;
             nes_do_reset(nes);
         }
+        //-- for nes reset --//
 
         //++ run cpu & apu & ppu
         totalpclk = NES_HTOTAL * NES_VTOTAL;

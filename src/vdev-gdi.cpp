@@ -89,7 +89,9 @@ void vdev_gdi_buf_request(void *ctxt, void **buf, int *stride)
     if (stride) *stride = dev->stride;
 }
 
-void vdev_gdi_buf_post(void *ctxt)
+void vdev_gdi_buf_post(void *ctxt) {}
+
+void vdev_gdi_render(void *ctxt)
 {
     VDEVGDI *dev = (VDEVGDI*)ctxt;
 

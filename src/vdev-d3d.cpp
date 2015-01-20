@@ -166,10 +166,13 @@ void vdev_d3d_buf_request(void *ctxt, void **buf, int *stride)
 
 void vdev_d3d_buf_post(void *ctxt)
 {
-    VDEVD3D *dev = (VDEVD3D*)ctxt;
-
     // unlock texture rect
-    dev->pSurface->UnlockRect();
+    ((VDEVD3D*)ctxt)->pSurface->UnlockRect();
+}
+
+void vdev_d3d_render(void *ctxt)
+{
+    VDEVD3D *dev = (VDEVD3D*)ctxt;
 
     GetClientRect(dev->hwnd, &dev->rtcur);
     if (  dev->rtlast.right  != dev->rtcur.right
@@ -216,26 +219,30 @@ void vdev_d3d_buf_post(void *ctxt)
         dev->rtview.bottom = y + dh;
     }
 
+    if (dev->texttick > GetTickCount())
+    {
+        HDC hdc = NULL;
+        dev->pSurface->GetDC(&hdc);
+        if (hdc)
+        {
+            SetBkMode   (hdc, TRANSPARENT);
+            SetTextColor(hdc, RGB(255,255,255));
+            TextOut(hdc, dev->textposx, dev->textposy, dev->textstr, (int)strlen(dev->textstr));
+            dev->pSurface->ReleaseDC(hdc);
+        }
+    }
+    else dev->priority = 0;
+
     IDirect3DSurface9 *pback = NULL;
     if (SUCCEEDED(dev->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback)))
     {
-        if (dev->texttick > GetTickCount())
-        {
-            HDC hdc = NULL;
-            dev->pSurface->GetDC(&hdc);
-            if (hdc)
-            {
-                SetBkMode   (hdc, TRANSPARENT);
-                SetTextColor(hdc, RGB(255,255,255));
-                TextOut(hdc, dev->textposx, dev->textposy, dev->textstr, (int)strlen(dev->textstr));
-                dev->pSurface->ReleaseDC(hdc);
-            }
-        }
-        else dev->priority = 0;
-
         dev->pD3DDev->StretchRect(dev->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
-        dev->pD3DDev->Present(NULL, &dev->rtview, NULL, NULL);
         pback->Release();
+
+        if (SUCCEEDED(dev->pD3DDev->Present(NULL, &dev->rtview, NULL, NULL)))
+        {
+            Sleep(1);
+        }
     }
 
     if (dev->d3d_mode_changed)

@@ -383,9 +383,6 @@ void ppu_reset(PPU *ppu)
 {
     NES *nes = container_of(ppu, NES, ppu);
 
-    // if ppu is in rendering, we need post vdev buffer first
-    if (ppu->pclk_frame <= NES_HTOTAL * 241 + 1) vdev_buf_post(ppu->vdevctxt);
-
     ppu->regs[0]    = 0;
     ppu->regs[1]    = 0;
     ppu->regs[5]    = 0;
@@ -544,8 +541,9 @@ void ppu_run_pclk(PPU *ppu)
             }
         }//-- for replay progress bar --//
 
-        // unlock video device
+        // unlock & render video device
         vdev_buf_post(ppu->vdevctxt);
+        vdev_render  (ppu->vdevctxt);
 
         // set vblank bit of reg $2002
         ppu->vblklast = ppu->regs[0x0002] & (1 << 7);
@@ -599,14 +597,6 @@ void ppu_run_pclk(PPU *ppu)
         ppu->pclk_line = 0;
         ppu->scanline++;
     }
-}
-
-void ppu_pause(PPU *ppu)
-{
-    // lock video device, obtain draw buffer address & stride
-    vdev_buf_request(ppu->vdevctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
-    // unlock video device
-    vdev_buf_post(ppu->vdevctxt);
 }
 
 BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
