@@ -398,10 +398,13 @@ static void apu_render_dmc_channel(DMC_CHANNEL *dch, BYTE *regs, int flew)
 }
 
 // º¯ÊýÊµÏÖ
-void apu_init(APU *apu, DWORD extra)
+void apu_init(APU *apu, DWORD extra, ADEV *pdev)
 {
+    // init adev for apu
+    apu->adev = pdev ? pdev : & DEV_WAVEOUT;
+
     // create adev & request buffer
-    apu->adevctxt = adev_create(APU_ABUF_NUM, APU_ABUF_LEN);
+    apu->actxt = apu->adev->create(APU_ABUF_NUM, APU_ABUF_LEN);
 
     // on power-up, the shift register is loaded with the value 1
     apu->nch.nshift_register = 1;
@@ -412,13 +415,13 @@ void apu_init(APU *apu, DWORD extra)
 
 void apu_free(APU *apu)
 {
-    adev_destroy(apu->adevctxt);
+    apu->adev->destroy(apu->actxt);
 }
 
 void apu_reset(APU *apu)
 {
     // if apu is in rendering, we need post adev buffer first
-    if (apu->pclk_frame > 0) adev_buf_post(apu->adevctxt, apu->audiobuf);
+    if (apu->pclk_frame > 0) apu->adev->bufpost(apu->actxt, apu->audiobuf);
 
     // after reset, $4015 should be cleared
     apu->regs[0x0015] = 0;
@@ -444,7 +447,7 @@ void apu_run_pclk(APU *apu)
 
     if (apu->pclk_frame == 0) {
         // request audio buffer
-        adev_buf_request(apu->adevctxt, &(apu->audiobuf));
+        apu->adev->bufrequest(apu->actxt, &(apu->audiobuf));
 
         // reset mixer sequencer
         apu->mixer_divider = MIXER_DIVIDER;
@@ -508,7 +511,7 @@ void apu_run_pclk(APU *apu)
     //-- render audio data on audio buffer --//
 
     if (++apu->pclk_frame == NES_HTOTAL * NES_VTOTAL) {
-        adev_buf_post(apu->adevctxt,  (apu->audiobuf));
+        apu->adev->bufpost(apu->actxt, (apu->audiobuf));
         apu->pclk_frame = 0;
     }
 }

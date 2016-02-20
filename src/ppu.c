@@ -1,6 +1,5 @@
 // 包含头文件
 #include "nes.h"
-#include "vdev.h"
 #include "log.h"
 
 // 预编译开关
@@ -345,7 +344,7 @@ static int sprite_render(PPU *ppu, int bkcolor)
 }
 
 // 函数实现
-void ppu_init(PPU *ppu, DWORD extra)
+void ppu_init(PPU *ppu, DWORD extra, VDEV *pdev)
 {
     //++ for power up palette
     static BYTE power_up_pal[32] =
@@ -355,9 +354,12 @@ void ppu_init(PPU *ppu, DWORD extra)
     };
     //-- for power up palette
 
+    // init vdev for ppu
+    ppu->vdev = pdev ? pdev : &DEV_D3D;
+
     // create vdev for ppu
-    ppu->vdevctxt = vdev_create(NES_WIDTH, NES_HEIGHT, extra);
-    if (!ppu->vdevctxt) log_printf("ppu_init:: failed to create vdev !\n");
+    ppu->vctxt = ppu->vdev->create(NES_WIDTH, NES_HEIGHT, extra);
+    if (!ppu->vctxt) log_printf("ppu_init:: failed to create vdev !\n");
 
     // init power up palette
     memcpy(ppu->palette, power_up_pal, 32);
@@ -376,7 +378,7 @@ void ppu_init(PPU *ppu, DWORD extra)
 
 void ppu_free(PPU *ppu)
 {
-    vdev_destroy(ppu->vdevctxt);
+    ppu->vdev->destroy(ppu->vctxt);
 }
 
 void ppu_reset(PPU *ppu)
@@ -435,8 +437,8 @@ void ppu_run_pclk(PPU *ppu)
             ppu->finex = ppu->temp1;
         }
 
-        // lock video device, obtain draw buffer address & stride
-        vdev_buf_request(ppu->vdevctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
+        // request vdev buffer, obtain address & stride
+        ppu->vdev->bufrequest(ppu->vctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
     }
 
     // scanline 0 - 239 visible scanlines
@@ -541,9 +543,8 @@ void ppu_run_pclk(PPU *ppu)
             }
         }//-- for replay progress bar --//
 
-        // unlock & render video device
-        vdev_buf_post(ppu->vdevctxt);
-        vdev_render  (ppu->vdevctxt);
+        // post vdev buffer
+        ppu->vdev->bufpost(ppu->vctxt);
 
         // set vblank bit of reg $2002
         ppu->vblklast = ppu->regs[0x0002] & (1 << 7);

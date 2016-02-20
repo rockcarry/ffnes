@@ -10,10 +10,14 @@ typedef struct {
     DWORD  buflen;
 } AUDIOBUF;
 
-// 函数声明
-void* adev_create (int bufnum, int buflen);
-void  adev_destroy(void *ctxt);
-void  adev_buf_request(void *ctxt, AUDIOBUF **ppab);
-void  adev_buf_post   (void *ctxt, AUDIOBUF  * pab);
+typedef struct {
+    void* (*create    )(int bufnum, int buflen);
+    void  (*destroy   )(void *ctxt);
+    void  (*bufrequest)(void *ctxt, AUDIOBUF **ppab);
+    void  (*bufpost   )(void *ctxt, AUDIOBUF  * pab);
+} ADEV;
+
+// 全局变量声明
+extern ADEV DEV_WAVEOUT;
 
 #endif

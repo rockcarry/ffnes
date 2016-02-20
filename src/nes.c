@@ -36,7 +36,8 @@ static void* nes_thread_proc(void *param)
         if (!nes->isrunning)
         {
             nes->ispaused = 1;
-            vdev_render(nes->ppu.vdevctxt);
+            nes->ppu.vdev->bufrequest(nes->ppu.vctxt, NULL, NULL);
+            nes->ppu.vdev->bufpost   (nes->ppu.vctxt);
             continue;
         }
         //-- for run/pause --//
@@ -44,7 +45,8 @@ static void* nes_thread_proc(void *param)
         //++ for replay playing ++//
         if (!replay_progress(&(nes->replay)) && nes->request_reset == 0)
         {
-            vdev_render(nes->ppu.vdevctxt);
+            nes->ppu.vdev->bufrequest(nes->ppu.vctxt, NULL, NULL);
+            nes->ppu.vdev->bufpost   (nes->ppu.vctxt);
             continue;
         }
         //-- for replay playing --//
@@ -188,8 +190,8 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
 
     // now it's time to init cpu & ppu & apu
     cpu_init(&(nes->cpu), nes->cbus );
-    ppu_init(&(nes->ppu), nes->extra);
-    apu_init(&(nes->apu), nes->extra);
+    ppu_init(&(nes->ppu), nes->extra, NULL);
+    apu_init(&(nes->apu), nes->extra, NULL);
     ndb_init(&(nes->ndb), nes       );
 
     // init joypad
@@ -265,12 +267,12 @@ void nes_joypad(NES *nes, int pad, int key, int value)
 
 void nes_textout(NES *nes, int x, int y, char *text, int time, int priority)
 {
-    vdev_textout(nes->ppu.vdevctxt, x, y, text, time, priority);
+    nes->ppu.vdev->textout(nes->ppu.vctxt, x, y, text, time, priority);
 }
 
 void nes_save_game  (NES *nes, char *file) { saver_save_game  (nes, file); }
 void nes_load_game  (NES *nes, char *file) { saver_load_game  (nes, file); }
 void nes_load_replay(NES *nes, char *file) { saver_load_replay(nes, file); }
-int  nes_getfullscreen(NES *nes)           { return vdev_getfullsceen(nes->ppu.vdevctxt); }
-void nes_setfullscreen(NES *nes, int mode) { vdev_setfullsceen(nes->ppu.vdevctxt, mode);  }
+int  nes_getfullscreen(NES *nes)           { return nes->ppu.vdev->getfullscreen(nes->ppu.vctxt); }
+void nes_setfullscreen(NES *nes, int mode) { nes->ppu.vdev->setfullscreen(nes->ppu.vctxt, mode);  }
 

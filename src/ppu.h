@@ -4,6 +4,7 @@
 // 包含头文件
 #include "stdefine.h"
 #include "mem.h"
+#include "vdev.h"
 
 // 类型定义
 typedef struct {
@@ -12,7 +13,8 @@ typedef struct {
     BYTE  palette[32 ]; // palette
 
 // private:
-    void *vdevctxt;
+    VDEV *vdev;
+    void *vctxt;
     int   pinvbl;
     int   toggle;
     int   finex;
@@ -57,7 +59,7 @@ typedef struct {
 extern BYTE DEF_PPU_PAL[];
 
 // 函数声明
-void ppu_init    (PPU *ppu, DWORD extra);
+void ppu_init    (PPU *ppu, DWORD extra, VDEV *pdev);
 void ppu_free    (PPU *ppu);
 void ppu_reset   (PPU *ppu);
 void ppu_run_pclk(PPU *ppu);

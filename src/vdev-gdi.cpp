@@ -25,25 +25,25 @@ typedef struct
     int     textposy;
     DWORD   texttick;
     int     priority;
-} VDEVGDI;
+} VDEV_CONTEXT;
 
-// 函数实现
-void* vdev_gdi_create(int w, int h, DWORD extra)
+// 接口函数实现
+static void* vdev_gdi_create(int w, int h, DWORD extra)
 {
-    VDEVGDI *dev = (VDEVGDI*)malloc(sizeof(VDEVGDI));
-    if (!dev) {
+    VDEV_CONTEXT *ctxt = (VDEV_CONTEXT*)malloc(sizeof(VDEV_CONTEXT));
+    if (!ctxt) {
         log_printf("failed to allocate gdi vdev context !\n");
         exit(0);
     }
 
     // init vdev context
-    memset(dev, 0, sizeof(VDEVGDI));
-    dev->width  = w;
-    dev->height = h;
-    dev->hwnd   = (HWND)extra;
-    dev->hdcdst = GetDC(dev->hwnd);
-    dev->hdcsrc = CreateCompatibleDC(dev->hdcdst);
-    if (!dev->hdcdst || !dev->hdcsrc) {
+    memset(ctxt, 0, sizeof(VDEV_CONTEXT));
+    ctxt->width  = w;
+    ctxt->height = h;
+    ctxt->hwnd   = (HWND)extra;
+    ctxt->hdcdst = GetDC(ctxt->hwnd);
+    ctxt->hdcsrc = CreateCompatibleDC(ctxt->hdcdst);
+    if (!ctxt->hdcdst || !ctxt->hdcsrc) {
         log_printf("failed to get dc or create compatible dc !\n");
         exit(0);
     }
@@ -58,56 +58,54 @@ void* vdev_gdi_create(int w, int h, DWORD extra)
     bmpinfo.bmiHeader.biBitCount    =  32;
     bmpinfo.bmiHeader.biCompression =  BI_RGB;
 
-    dev->hbmp = CreateDIBSection(dev->hdcsrc, &bmpinfo, DIB_RGB_COLORS, &dev->pbuf, NULL, 0);
-    if (!dev->hbmp) {
+    ctxt->hbmp = CreateDIBSection(ctxt->hdcsrc, &bmpinfo, DIB_RGB_COLORS, &ctxt->pbuf, NULL, 0);
+    if (!ctxt->hbmp) {
         log_printf("failed to create gdi dib section !\n");
         exit(0);
     }
-    else SelectObject(dev->hdcsrc, dev->hbmp);
+    else SelectObject(ctxt->hdcsrc, ctxt->hbmp);
 
     BITMAP bitmap;
-    GetObject(dev->hbmp, sizeof(BITMAP), &bitmap);
-    dev->stride = bitmap.bmWidthBytes * 8 / 32;
+    GetObject(ctxt->hbmp, sizeof(BITMAP), &bitmap);
+    ctxt->stride = bitmap.bmWidthBytes * 8 / 32;
     //-- create dibsection, get bitmap buffer address & stride --//
 
-    return dev;
+    return ctxt;
 }
 
-void vdev_gdi_destroy(void *ctxt)
+static void vdev_gdi_destroy(void *ctxt)
 {
-    VDEVGDI *dev = (VDEVGDI*)ctxt;
-    DeleteDC    (dev->hdcsrc);
-    ReleaseDC   (dev->hwnd, dev->hdcdst);
-    DeleteObject(dev->hbmp);
-    free(dev); // free vdev context
+    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
+    DeleteDC    (context->hdcsrc);
+    ReleaseDC   (context->hwnd, context->hdcdst);
+    DeleteObject(context->hbmp);
+    free(context); // free vdev context
 }
 
-void vdev_gdi_buf_request(void *ctxt, void **buf, int *stride)
+static void vdev_gdi_bufrequest(void *ctxt, void **buf, int *stride)
 {
-    VDEVGDI *dev = (VDEVGDI*)ctxt;
-    if (buf   ) *buf    = dev->pbuf;
-    if (stride) *stride = dev->stride;
+    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
+    if (buf   ) *buf    = context->pbuf;
+    if (stride) *stride = context->stride;
 }
 
-void vdev_gdi_buf_post(void *ctxt) {}
-
-void vdev_gdi_render(void *ctxt)
+static void vdev_gdi_bufpost(void *ctxt)
 {
-    VDEVGDI *dev = (VDEVGDI*)ctxt;
+    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
 
-    GetClientRect(dev->hwnd, &dev->rtcur);
-    if (  dev->rtlast.right  != dev->rtcur.right
-       || dev->rtlast.bottom != dev->rtcur.bottom)
+    GetClientRect(context->hwnd, &context->rtcur);
+    if (  context->rtlast.right  != context->rtcur.right
+       || context->rtlast.bottom != context->rtcur.bottom)
     {
-        memcpy(&dev->rtlast, &dev->rtcur, sizeof(RECT));
-        memcpy(&dev->rtview, &dev->rtcur, sizeof(RECT));
+        memcpy(&context->rtlast, &context->rtcur, sizeof(RECT));
+        memcpy(&context->rtview, &context->rtcur, sizeof(RECT));
 
         int x  = 0;
         int y  = 0;
         int sw, sh, dw, dh;
 
-        sw = dw = dev->rtcur.right;
-        sh = dh = dev->rtcur.bottom;
+        sw = dw = context->rtcur.right;
+        sh = dh = context->rtcur.bottom;
 
         //++ keep picture w/h ratio when stretching ++//
         if (256 * sh > 240 * sw)
@@ -115,60 +113,72 @@ void vdev_gdi_render(void *ctxt)
             dh = dw * 240 / 256;
             y  = (sh - dh) / 2;
 
-            dev->rtview.bottom = y;
-            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
-            dev->rtview.top    = sh - y;
-            dev->rtview.bottom = sh;
-            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
+            context->rtview.bottom = y;
+            InvalidateRect(context->hwnd, &context->rtview, TRUE);
+            context->rtview.top    = sh - y;
+            context->rtview.bottom = sh;
+            InvalidateRect(context->hwnd, &context->rtview, TRUE);
         }
         else
         {
             dw = dh * 256 / 240;
             x  = (sw - dw) / 2;
 
-            dev->rtview.right  = x;
-            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
-            dev->rtview.left   = sw - x;
-            dev->rtview.right  = sw;
-            InvalidateRect(dev->hwnd, &dev->rtview, TRUE);
+            context->rtview.right = x;
+            InvalidateRect(context->hwnd, &context->rtview, TRUE);
+            context->rtview.left  = sw - x;
+            context->rtview.right = sw;
+            InvalidateRect(context->hwnd, &context->rtview, TRUE);
         }
         //-- keep picture w/h ratio when stretching --//
 
-        dev->rtview.left   = x;
-        dev->rtview.top    = y;
-        dev->rtview.right  = dw;
-        dev->rtview.bottom = dh;
+        context->rtview.left   = x;
+        context->rtview.top    = y;
+        context->rtview.right  = dw;
+        context->rtview.bottom = dh;
     }
 
-    if (dev->texttick > GetTickCount())
+    if (context->texttick > GetTickCount())
     {
-        SetBkMode   (dev->hdcsrc, TRANSPARENT);
-        SetTextColor(dev->hdcsrc, RGB(255,255,255));
-        TextOut(dev->hdcsrc, dev->textposx, dev->textposy, dev->textstr, (int)strlen(dev->textstr));
+        SetBkMode   (context->hdcsrc, TRANSPARENT);
+        SetTextColor(context->hdcsrc, RGB(255,255,255));
+        TextOut(context->hdcsrc, context->textposx, context->textposy, context->textstr, (int)strlen(context->textstr));
     }
-    else dev->priority = 0;
+    else context->priority = 0;
 
     // bitblt picture to window witch stretching
-    StretchBlt(dev->hdcdst, dev->rtview.left, dev->rtview.top, dev->rtview.right, dev->rtview.bottom,
-               dev->hdcsrc, 0, 0, dev->width, dev->height, SRCCOPY);
+    StretchBlt(context->hdcdst, context->rtview.left, context->rtview.top, context->rtview.right, context->rtview.bottom,
+               context->hdcsrc, 0, 0, context->width, context->height, SRCCOPY);
 
     Sleep(1); // sleep is used to make frame pitch more uniform
 }
 
-void vdev_gdi_textout(void *ctxt, int x, int y, char *text, int time, int priority)
+static void vdev_gdi_textout(void *ctxt, int x, int y, char *text, int time, int priority)
 {
-    VDEVGDI *dev = (VDEVGDI*)ctxt;
-    if (priority >= dev->priority)
+    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
+    if (priority >= context->priority)
     {
-        strncpy(dev->textstr, text, 256);
-        dev->textposx = x;
-        dev->textposy = y;
-        dev->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
-        dev->priority = priority;
+        strncpy(context->textstr, text, 256);
+        context->textposx = x;
+        context->textposy = y;
+        context->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
+        context->priority = priority;
     }
 }
 
 // gdi vdev can't support fullscreen mode
-int  vdev_gdi_getfullsceen(void *ctxt)           { return ((VDEVGDI*)ctxt)->full; }
-void vdev_gdi_setfullsceen(void *ctxt, int full) { ((VDEVGDI*)ctxt)->full = full; }
+static void vdev_gdi_setfullsceen(void *ctxt, int full) { ((VDEV_CONTEXT*)ctxt)->full = full; }
+static int  vdev_gdi_getfullsceen(void *ctxt)           { return ((VDEV_CONTEXT*)ctxt)->full; }
+
+// 全局变量定义
+VDEV DEV_GDI =
+{
+    vdev_gdi_create,
+    vdev_gdi_destroy,
+    vdev_gdi_bufrequest,
+    vdev_gdi_bufpost,
+    vdev_gdi_textout,
+    vdev_gdi_setfullsceen,
+    vdev_gdi_getfullsceen,
+};
 

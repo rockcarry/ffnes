@@ -20,8 +20,8 @@ typedef struct
 // 内部函数实现
 void saver_restore_apu(APU *apu, int oldpclk, int newpclk)
 {
-    if (oldpclk > 0) adev_buf_post(apu->adevctxt, apu->audiobuf);
-    if (newpclk > 0) adev_buf_request(apu->adevctxt, &(apu->audiobuf));
+    if (oldpclk > 0) apu->adev->bufpost   (apu->actxt,   apu->audiobuf );
+    if (newpclk > 0) apu->adev->bufrequest(apu->actxt, &(apu->audiobuf));
 }
 
 void saver_restore_ppu(PPU *ppu, int oldpclk, int newpclk)
@@ -31,8 +31,8 @@ void saver_restore_ppu(PPU *ppu, int oldpclk, int newpclk)
     ppu->chrom_bkg = (ppu->regs[0x0000] & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
     ppu->chrom_spr = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
 
-    if (oldpclk <= NES_HTOTAL * 241 + 1) vdev_buf_post(ppu->vdevctxt);
-    if (newpclk <= NES_HTOTAL * 241 + 1) vdev_buf_request(ppu->vdevctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
+    if (oldpclk <= NES_HTOTAL * 241 + 1) ppu->vdev->bufpost(ppu->vctxt);
+    if (newpclk <= NES_HTOTAL * 241 + 1) ppu->vdev->bufrequest(ppu->vctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
 }
 
 void saver_restore_mmc(MMC *mmc)
@@ -125,8 +125,10 @@ void saver_load_game(NES *nes, char *file)
     static int plist[][2] =
     {
         { offsetof(NES, cpu.cbus    ),  sizeof(BUS       ) },
-        { offsetof(NES, ppu.vdevctxt),  sizeof(void*     ) },
-        { offsetof(NES, apu.adevctxt),  sizeof(void*     ) },
+        { offsetof(NES, ppu.vdev    ),  sizeof(VDEV*     ) },
+        { offsetof(NES, ppu.vctxt   ),  sizeof(void*     ) },
+        { offsetof(NES, apu.adev    ),  sizeof(ADEV*     ) },
+        { offsetof(NES, apu.actxt   ),  sizeof(void*     ) },
         { offsetof(NES, mmc.cart    ),  sizeof(CARTRIDGE*) },
         { offsetof(NES, mmc.cbus    ),  sizeof(BUS       ) },
         { offsetof(NES, mmc.pbus    ),  sizeof(BUS       ) },

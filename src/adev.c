@@ -12,12 +12,12 @@ typedef struct
     int      buflen;
     int      head;
     int      tail;
-} ADEV;
+} ADEV_CONTEXT;
 
 // 内部函数实现
 static void CALLBACK waveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2)
 {
-    ADEV *dev = (ADEV*)dwInstance;
+    ADEV_CONTEXT *dev = (ADEV_CONTEXT*)dwInstance;
     switch (uMsg)
     {
     case WOM_DONE:
@@ -27,16 +27,16 @@ static void CALLBACK waveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD dwInstance, DWOR
     }
 }
 
-// 函数实现
-void* adev_create(int bufnum, int buflen)
+// 接口函数实现
+static void* adev_waveout_create(int bufnum, int buflen)
 {
-    ADEV        *dev = NULL;
-    WAVEFORMATEX wfx = {0};
-    BYTE        *pwavbuf;
-    int          i;
+    ADEV_CONTEXT *dev = NULL;
+    WAVEFORMATEX  wfx = {0};
+    BYTE         *pwavbuf;
+    int           i;
 
     // allocate adev context
-    dev = malloc(sizeof(ADEV));
+    dev = malloc(sizeof(ADEV_CONTEXT));
     if (!dev) {
         log_printf("failed to allocate adev context !\n");
         exit(0);
@@ -76,10 +76,10 @@ void* adev_create(int bufnum, int buflen)
     return dev;
 }
 
-void adev_destroy(void *ctxt)
+static void adev_waveout_destroy(void *ctxt)
 {
-    int   i;
-    ADEV *dev = (ADEV*)ctxt;
+    ADEV_CONTEXT *dev = (ADEV_CONTEXT*)ctxt;
+    int i;
 
     // unprepare
     for (i=0; i<dev->bufnum; i++) {
@@ -92,17 +92,27 @@ void adev_destroy(void *ctxt)
     free(dev);
 }
 
-void adev_buf_request(void *ctxt, AUDIOBUF **ppab)
+static void adev_waveout_bufrequest(void *ctxt, AUDIOBUF **ppab)
 {
-    ADEV *dev = (ADEV*)ctxt;
+    ADEV_CONTEXT *dev = (ADEV_CONTEXT*)ctxt;
     WaitForSingleObject(dev->bufsem, -1);
     *ppab = (AUDIOBUF*)&(dev->pWaveHdr[dev->tail]);
 }
 
-void adev_buf_post(void *ctxt, AUDIOBUF *pab)
+static void adev_waveout_bufpost(void *ctxt, AUDIOBUF *pab)
 {
-    ADEV *dev = (ADEV*)ctxt;
+    ADEV_CONTEXT *dev = (ADEV_CONTEXT*)ctxt;
     waveOutWrite(dev->hWaveOut, (LPWAVEHDR)pab, sizeof(WAVEHDR));
     if (++dev->tail == dev->bufnum) dev->tail = 0;
 }
+
+// 全局变量定义
+ADEV DEV_WAVEOUT =
+{
+    adev_waveout_create,
+    adev_waveout_destroy,
+    adev_waveout_bufrequest,
+    adev_waveout_bufpost,
+};
+
 

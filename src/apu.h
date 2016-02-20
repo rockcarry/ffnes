@@ -3,8 +3,8 @@
 
 // 包含头文件
 #include "stdefine.h"
-#include "adev.h"
 #include "mem.h"
+#include "adev.h"
 
 // 类型定义
 typedef struct
@@ -68,13 +68,14 @@ typedef struct {
     DMC_CHANNEL      dmc;
 
 // private:
-    void     *adevctxt;
+    ADEV     *adev;
+    void     *actxt;
     AUDIOBUF *audiobuf;
     int       pclk_frame;
 } APU;
 
 // 函数声明
-void apu_init (APU *apu, DWORD extra);
+void apu_init (APU *apu, DWORD extra, ADEV *pdev);
 void apu_free (APU *apu);
 void apu_reset(APU *apu);
 void apu_run_pclk(APU *apu);
