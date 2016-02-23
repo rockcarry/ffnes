@@ -13,18 +13,18 @@ typedef struct
     DWORD head_size;    // head size
     DWORD neso_size;    // nes object size
     DWORD sram_size;    // sram size
-    DWORD cram_size;    // sram size
+    DWORD cram_size;    // cram size
     DWORD rply_size;    // replay size
 } NES_SAVE_FILE;
 
 // 内部函数实现
-void saver_restore_apu(APU *apu, int oldpclk, int newpclk)
+static void saver_restore_apu(APU *apu, int oldpclk, int newpclk)
 {
     if (oldpclk > 0) apu->adev->bufpost   (apu->actxt,   apu->audiobuf );
     if (newpclk > 0) apu->adev->bufrequest(apu->actxt, &(apu->audiobuf));
 }
 
-void saver_restore_ppu(PPU *ppu, int oldpclk, int newpclk)
+static void saver_restore_ppu(PPU *ppu, int oldpclk, int newpclk)
 {
     NES *nes = container_of(ppu, NES, ppu);
 
@@ -35,7 +35,7 @@ void saver_restore_ppu(PPU *ppu, int oldpclk, int newpclk)
     if (newpclk <= NES_HTOTAL * 241 + 1) ppu->vdev->bufrequest(ppu->vctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
 }
 
-void saver_restore_mmc(MMC *mmc)
+static void saver_restore_mmc(MMC *mmc)
 {
     if (mmc->pbanksize == 16 * 1024)
     {
