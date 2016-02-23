@@ -399,7 +399,6 @@ void ppu_reset(PPU *ppu)
     ppu->chrom_spr  = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
     ppu->pclk_frame = NES_HTOTAL * 242;
     ppu->pclk_line  = 0;
-    ppu->pclk_fend  = NES_HTOTAL * NES_VTOTAL;
     ppu->oddevenflag= 0;
     ppu->scanline   = 0;
 
@@ -567,7 +566,7 @@ void ppu_run_pclk(PPU *ppu)
         } while (i--);
         //-- for ppu open bus --//
 
-        if (ppu->oddevenflag && (ppu->regs[0x0001] & (0x3 << 3)))
+        if (ppu->oddevenflag)
         {
             // frame change
             ppu->pclk_frame = 0;
@@ -585,7 +584,9 @@ void ppu_run_pclk(PPU *ppu)
         ppu->pclk_frame  = 0;
         ppu->pclk_line   = 0;
         ppu->scanline    = 0;
-        ppu->oddevenflag = !ppu->oddevenflag; // toggle odd/even frame flag
+        if (ppu->regs[0x0001] & (0x3 << 3)) {
+            ppu->oddevenflag = 1; // next frame is odd frame
+        }
         return;
     }
 

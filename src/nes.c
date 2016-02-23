@@ -5,7 +5,7 @@
 #include "save.h"
 
 // 内部函数实现
-static void nes_do_reset(NES* nes)
+static void nes_do_reset(NES *nes)
 {
     // mmc need reset first
     mmc_reset(&(nes->mmc));
@@ -60,7 +60,7 @@ static void* nes_thread_proc(void *param)
         //-- for nes reset --//
 
         //++ run cpu & apu & ppu
-        totalpclk = NES_HTOTAL * NES_VTOTAL;
+        totalpclk = nes->ppu.oddevenflag ? NES_HTOTAL * NES_VTOTAL - 1 : NES_HTOTAL * NES_VTOTAL;
         do {
             cpu_run_pclk(&(nes->cpu)); // run cpu
             ppu_run_pclk(&(nes->ppu)); // run ppu
