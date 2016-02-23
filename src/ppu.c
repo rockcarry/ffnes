@@ -8,7 +8,7 @@
 // at x=255, it will get a better performance, without any
 // image flicker when you scrolling the screen.
 // so I enable this feature for ffnes by default.
-#define ENABLE_SPRITE0_HIT_ATX255 TRUE
+#define ENABLE_SPRITE0_HIT_ATX255 0
 
 // 内部全局变量定义
 BYTE DEF_PPU_PAL[64 * 3] =
@@ -566,7 +566,7 @@ void ppu_run_pclk(PPU *ppu)
         } while (i--);
         //-- for ppu open bus --//
 
-        if (ppu->oddevenflag)
+        if (ppu->oddevenflag && (ppu->regs[0x0001] & (0x3 << 3)))
         {
             // frame change
             ppu->pclk_frame = 0;
