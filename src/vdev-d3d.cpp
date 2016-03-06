@@ -21,7 +21,6 @@ typedef struct
     int   full_width;
     int   full_height;
 
-    RECT  rtcur;
     RECT  rtlast;
     RECT  rtview;
 
@@ -30,10 +29,10 @@ typedef struct
     int   textposy;
     DWORD texttick;
     int   priority;
-} VDEV_CONTEXT;
+} DEVD3DCTXT;
 
 // 内部函数实现
-static void create_device_surface(VDEV_CONTEXT *ctxt)
+static void create_device_surface(DEVD3DCTXT *ctxt)
 {
     if (ctxt->d3dpp.Windowed)
     {
@@ -83,14 +82,14 @@ static void create_device_surface(VDEV_CONTEXT *ctxt)
 // 接口函数实现
 static void* vdev_d3d_create(int w, int h, DWORD extra)
 {
-    VDEV_CONTEXT *ctxt = (VDEV_CONTEXT*)malloc(sizeof(VDEV_CONTEXT));
+    DEVD3DCTXT *ctxt = (DEVD3DCTXT*)malloc(sizeof(DEVD3DCTXT));
     if (!ctxt) {
         log_printf("failed to allocate d3d vdev context !\n");
         exit(0);
     }
 
     // init d3d vdev context
-    memset(ctxt, 0, sizeof(VDEV_CONTEXT));
+    memset(ctxt, 0, sizeof(DEVD3DCTXT));
     ctxt->width  = w;
     ctxt->height = h;
     ctxt->hwnd   = (HWND)extra;
@@ -145,20 +144,20 @@ static void* vdev_d3d_create(int w, int h, DWORD extra)
 
 static void vdev_d3d_destroy(void *ctxt)
 {
-    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
-    context->pSurface->Release();
-    context->pD3DDev->Release();
-    context->pD3D->Release();
-    free(context);
+    DEVD3DCTXT *c = (DEVD3DCTXT*)ctxt;
+    c->pSurface->Release();
+    c->pD3DDev->Release();
+    c->pD3D->Release();
+    free(c);
 }
 
 static void vdev_d3d_bufrequest(void *ctxt, void **buf, int *stride)
 {
-    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
+    DEVD3DCTXT *c = (DEVD3DCTXT*)ctxt;
 
     // lock texture rect
     D3DLOCKED_RECT d3d_rect;
-    context->pSurface->LockRect(&d3d_rect, NULL, D3DLOCK_DISCARD);
+    c->pSurface->LockRect(&d3d_rect, NULL, D3DLOCK_DISCARD);
 
     if (buf   ) *buf    = d3d_rect.pBits;
     if (stride) *stride = d3d_rect.Pitch / 4;
@@ -166,24 +165,25 @@ static void vdev_d3d_bufrequest(void *ctxt, void **buf, int *stride)
 
 static void vdev_d3d_bufpost(void *ctxt)
 {
-    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
+    DEVD3DCTXT *c = (DEVD3DCTXT*)ctxt;
+    RECT        rect;
 
     // unlock texture rect
-    context->pSurface->UnlockRect();
+    c->pSurface->UnlockRect();
 
-    GetClientRect(context->hwnd, &context->rtcur);
-    if (  context->rtlast.right  != context->rtcur.right
-       || context->rtlast.bottom != context->rtcur.bottom)
+    GetClientRect(c->hwnd, &rect);
+    if (  c->rtlast.right  != rect.right
+       || c->rtlast.bottom != rect.bottom)
     {
-        memcpy(&context->rtlast, &context->rtcur, sizeof(RECT));
-        memcpy(&context->rtview, &context->rtcur, sizeof(RECT));
+        memcpy(&c->rtlast, &rect, sizeof(RECT));
+        memcpy(&c->rtview, &rect, sizeof(RECT));
 
         int x  = 0;
         int y  = 0;
         int sw, sh, dw, dh;
 
-        sw = dw = context->rtcur.right;
-        sh = dh = context->rtcur.bottom;
+        sw = dw = rect.right;
+        sh = dh = rect.bottom;
 
         //++ keep picture w/h ratio when stretching ++//
         if (256 * sh > 240 * sw)
@@ -191,93 +191,93 @@ static void vdev_d3d_bufpost(void *ctxt)
             dh = dw * 240 / 256;
             y  = (sh - dh) / 2;
 
-            context->rtview.bottom = y;
-            InvalidateRect(context->hwnd, &context->rtview, TRUE);
-            context->rtview.top    = sh - y;
-            context->rtview.bottom = sh;
-            InvalidateRect(context->hwnd, &context->rtview, TRUE);
+            c->rtview.bottom = y;
+            InvalidateRect(c->hwnd, &c->rtview, TRUE);
+            c->rtview.top    = sh - y;
+            c->rtview.bottom = sh;
+            InvalidateRect(c->hwnd, &c->rtview, TRUE);
         }
         else
         {
             dw = dh * 256 / 240;
             x  = (sw - dw) / 2;
 
-            context->rtview.right  = x;
-            InvalidateRect(context->hwnd, &context->rtview, TRUE);
-            context->rtview.left   = sw - x;
-            context->rtview.right  = sw;
-            InvalidateRect(context->hwnd, &context->rtview, TRUE);
+            c->rtview.right  = x;
+            InvalidateRect(c->hwnd, &c->rtview, TRUE);
+            c->rtview.left   = sw - x;
+            c->rtview.right  = sw;
+            InvalidateRect(c->hwnd, &c->rtview, TRUE);
         }
         //-- keep picture w/h ratio when stretching --//
 
-        context->rtview.left   = x;
-        context->rtview.top    = y;
-        context->rtview.right  = x + dw;
-        context->rtview.bottom = y + dh;
+        c->rtview.left   = x;
+        c->rtview.top    = y;
+        c->rtview.right  = x + dw;
+        c->rtview.bottom = y + dh;
     }
 
-    if (context->texttick > GetTickCount())
+    if (c->texttick > GetTickCount())
     {
         HDC hdc = NULL;
-        context->pSurface->GetDC(&hdc);
+        c->pSurface->GetDC(&hdc);
         if (hdc)
         {
             SetBkMode   (hdc, TRANSPARENT);
             SetTextColor(hdc, RGB(255,255,255));
-            TextOut(hdc, context->textposx, context->textposy, context->textstr, (int)strlen(context->textstr));
-            context->pSurface->ReleaseDC(hdc);
+            TextOut(hdc, c->textposx, c->textposy, c->textstr, (int)strlen(c->textstr));
+            c->pSurface->ReleaseDC(hdc);
         }
     }
-    else context->priority = 0;
+    else c->priority = 0;
 
     IDirect3DSurface9 *pback = NULL;
-    if (SUCCEEDED(context->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback)))
+    if (SUCCEEDED(c->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback)))
     {
-        context->pD3DDev->StretchRect(context->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
+        c->pD3DDev->StretchRect(c->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
         pback->Release();
 
-        if (SUCCEEDED(context->pD3DDev->Present(NULL, &context->rtview, NULL, NULL)))
+        if (SUCCEEDED(c->pD3DDev->Present(NULL, &c->rtview, NULL, NULL)))
         {
             Sleep(1);
         }
     }
 
-    if (context->d3d_mode_changed)
+    if (c->d3d_mode_changed)
     {
         //++ re-create d3d device and surface
-        context->pSurface->Release();   // release
-        context->pD3DDev->Release();    // release
-        create_device_surface(context); // create
+        c->pSurface->Release();   // release
+        c->pD3DDev->Release();    // release
+        create_device_surface(c); // create
         //-- re-create d3d device and surface
 
-        context->d3d_mode_changed = 0;
+        c->d3d_mode_changed = 0;
     }
 }
 
 static void vdev_d3d_textout(void *ctxt, int x, int y, char *text, int time, int priority)
 {
-    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
-    if (priority >= context->priority)
+    DEVD3DCTXT *c = (DEVD3DCTXT*)ctxt;
+    if (priority >= c->priority)
     {
-        strncpy(context->textstr, text, 256);
-        context->textposx = x;
-        context->textposy = y;
-        context->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
-        context->priority = priority;
+        strncpy(c->textstr, text, 256);
+        c->textposx = x;
+        c->textposy = y;
+        c->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
+        c->priority = priority;
     }
 }
 
 static void vdev_d3d_setfullsceen(void *ctxt, int full)
 {
-    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
-    if (context->d3dpp.Windowed == !full) return;
-    context->d3dpp.Windowed   = !full;
-    context->d3d_mode_changed = 1;
+    DEVD3DCTXT *c = (DEVD3DCTXT*)ctxt;
+    if (c->d3dpp.Windowed == !full) return;
+    c->d3dpp.Windowed   = !full;
+    c->d3d_mode_changed = 1;
 }
 
 static int vdev_d3d_getfullsceen(void *ctxt)
 {
-    return !((VDEV_CONTEXT*)ctxt)->d3dpp.Windowed;
+    return !((DEVD3DCTXT*)ctxt)->d3dpp.Windowed;
 }
 
 // 全局变量定义

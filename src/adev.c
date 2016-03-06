@@ -7,22 +7,23 @@ typedef struct
 {
     HWAVEOUT hWaveOut;
     WAVEHDR *pWaveHdr;
-    HANDLE   bufsem;
+
     int      bufnum;
     int      buflen;
     int      head;
     int      tail;
+    HANDLE   bufsem;
 } ADEV_CONTEXT;
 
 // 内部函数实现
 static void CALLBACK waveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2)
 {
-    ADEV_CONTEXT *dev = (ADEV_CONTEXT*)dwInstance;
+    ADEV_CONTEXT *c = (ADEV_CONTEXT*)dwInstance;
     switch (uMsg)
     {
     case WOM_DONE:
-        if (++dev->head == dev->bufnum) dev->head = 0;
-        ReleaseSemaphore(dev->bufsem, 1, NULL);
+        if (++c->head == c->bufnum) c->head = 0;
+        ReleaseSemaphore(c->bufsem, 1, NULL);
         break;
     }
 }
@@ -30,25 +31,25 @@ static void CALLBACK waveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD dwInstance, DWOR
 // 接口函数实现
 static void* adev_waveout_create(int bufnum, int buflen)
 {
-    ADEV_CONTEXT *dev = NULL;
-    WAVEFORMATEX  wfx = {0};
+    ADEV_CONTEXT *ctxt = NULL;
+    WAVEFORMATEX  wfx  = {0};
     BYTE         *pwavbuf;
     int           i;
 
     // allocate adev context
-    dev = malloc(sizeof(ADEV_CONTEXT));
-    if (!dev) {
+    ctxt = malloc(sizeof(ADEV_CONTEXT));
+    if (!ctxt) {
         log_printf("failed to allocate adev context !\n");
         exit(0);
     }
 
-    dev->bufnum   = bufnum;
-    dev->buflen   = buflen;
-    dev->head     = 0;
-    dev->tail     = 0;
-    dev->pWaveHdr = (WAVEHDR*)malloc(bufnum * (sizeof(WAVEHDR) + buflen));
-    dev->bufsem   = CreateSemaphore(NULL, bufnum, bufnum, NULL);
-    if (!dev->pWaveHdr || !dev->bufsem) {
+    ctxt->bufnum   = bufnum;
+    ctxt->buflen   = buflen;
+    ctxt->head     = 0;
+    ctxt->tail     = 0;
+    ctxt->pWaveHdr = (WAVEHDR*)malloc(bufnum * (sizeof(WAVEHDR) + buflen));
+    ctxt->bufsem   = CreateSemaphore(NULL, bufnum, bufnum, NULL);
+    if (!ctxt->pWaveHdr || !ctxt->bufsem) {
         log_printf("failed to allocate waveout buffer and waveout semaphore !\n");
         exit(0);
     }
@@ -58,52 +59,54 @@ static void* adev_waveout_create(int bufnum, int buflen)
     wfx.wFormatTag      = WAVE_FORMAT_PCM;
     wfx.wBitsPerSample  = 16;    // 16bit
     wfx.nSamplesPerSec  = 44100; // 44.1k
-//  wfx.nSamplesPerSec  = 48000; // 48.0k
-    wfx.nChannels       = 1;     // stereo
+    wfx.nChannels       = 1;     // mono
     wfx.nBlockAlign     = wfx.nChannels * wfx.wBitsPerSample / 8;
     wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
-    waveOutOpen(&(dev->hWaveOut), WAVE_MAPPER, &wfx, (DWORD_PTR)waveOutProc, (DWORD)dev, CALLBACK_FUNCTION);
+    waveOutOpen(&(ctxt->hWaveOut), WAVE_MAPPER, &wfx, (DWORD_PTR)waveOutProc, (DWORD)ctxt, CALLBACK_FUNCTION);
 
     // init wavebuf
-    memset(dev->pWaveHdr, 0, bufnum * (sizeof(WAVEHDR) + buflen));
-    pwavbuf = (BYTE*)(dev->pWaveHdr + bufnum);
+    memset(ctxt->pWaveHdr, 0, bufnum * (sizeof(WAVEHDR) + buflen));
+    pwavbuf = (BYTE*)(ctxt->pWaveHdr + bufnum);
     for (i=0; i<bufnum; i++) {
-        dev->pWaveHdr[i].lpData         = (LPSTR)(pwavbuf + i * buflen);
-        dev->pWaveHdr[i].dwBufferLength = buflen;
-        waveOutPrepareHeader(dev->hWaveOut, &(dev->pWaveHdr[i]), sizeof(WAVEHDR));
+        ctxt->pWaveHdr[i].lpData         = (LPSTR)(pwavbuf + i * buflen);
+        ctxt->pWaveHdr[i].dwBufferLength = buflen;
+        waveOutPrepareHeader(ctxt->hWaveOut, &(ctxt->pWaveHdr[i]), sizeof(WAVEHDR));
     }
 
-    return dev;
+    return ctxt;
 }
 
 static void adev_waveout_destroy(void *ctxt)
 {
-    ADEV_CONTEXT *dev = (ADEV_CONTEXT*)ctxt;
+    ADEV_CONTEXT *c = (ADEV_CONTEXT*)ctxt;
     int i;
 
-    // unprepare
-    for (i=0; i<dev->bufnum; i++) {
-        waveOutUnprepareHeader(dev->hWaveOut, &(dev->pWaveHdr[i]), sizeof(WAVEHDR));
+    // unprepare wave header & close waveout device
+    for (i=0; i<c->bufnum; i++) {
+        waveOutUnprepareHeader(c->hWaveOut, &(c->pWaveHdr[i]), sizeof(WAVEHDR));
     }
+    waveOutClose(c->hWaveOut);
 
-    waveOutClose(dev->hWaveOut);
-    CloseHandle(dev->bufsem);
-    free(dev->pWaveHdr);
-    free(dev);
+    // close semaphore
+    CloseHandle(c->bufsem);
+
+    // free memory
+    free(c->pWaveHdr);
+    free(c);
 }
 
 static void adev_waveout_bufrequest(void *ctxt, AUDIOBUF **ppab)
 {
-    ADEV_CONTEXT *dev = (ADEV_CONTEXT*)ctxt;
-    WaitForSingleObject(dev->bufsem, -1);
-    *ppab = (AUDIOBUF*)&(dev->pWaveHdr[dev->tail]);
+    ADEV_CONTEXT *c = (ADEV_CONTEXT*)ctxt;
+    WaitForSingleObject(c->bufsem, -1);
+    *ppab = (AUDIOBUF*)&(c->pWaveHdr[c->tail]);
 }
 
-static void adev_waveout_bufpost(void *ctxt, AUDIOBUF *pab)
+static void adev_waveout_bufpost(void *ctxt)
 {
-    ADEV_CONTEXT *dev = (ADEV_CONTEXT*)ctxt;
-    waveOutWrite(dev->hWaveOut, (LPWAVEHDR)pab, sizeof(WAVEHDR));
-    if (++dev->tail == dev->bufnum) dev->tail = 0;
+    ADEV_CONTEXT *c = (ADEV_CONTEXT*)ctxt;
+    waveOutWrite(c->hWaveOut, c->pWaveHdr + c->tail, sizeof(WAVEHDR));
+    if (++c->tail == c->bufnum) c->tail = 0;
 }
 
 // 全局变量定义

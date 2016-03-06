@@ -20,7 +20,7 @@ typedef struct
 // 内部函数实现
 static void saver_restore_apu(APU *apu, int oldpclk, int newpclk)
 {
-    if (oldpclk > 0) apu->adev->bufpost   (apu->actxt,   apu->audiobuf );
+    if (oldpclk > 0) apu->adev->bufpost   (apu->actxt);
     if (newpclk > 0) apu->adev->bufrequest(apu->actxt, &(apu->audiobuf));
 }
 

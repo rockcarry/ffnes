@@ -14,7 +14,7 @@ typedef struct {
     void* (*create    )(int bufnum, int buflen);
     void  (*destroy   )(void *ctxt);
     void  (*bufrequest)(void *ctxt, AUDIOBUF **ppab);
-    void  (*bufpost   )(void *ctxt, AUDIOBUF  * pab);
+    void  (*bufpost   )(void *ctxt);
 } ADEV;
 
 // 全局变量声明

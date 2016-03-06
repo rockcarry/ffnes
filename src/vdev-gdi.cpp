@@ -15,7 +15,6 @@ typedef struct
     void   *pbuf;
     int     stride;
 
-    RECT    rtcur;
     RECT    rtlast;
     RECT    rtview;
     int     full;
@@ -25,19 +24,19 @@ typedef struct
     int     textposy;
     DWORD   texttick;
     int     priority;
-} VDEV_CONTEXT;
+} DEVGDICTXT;
 
 // 接口函数实现
 static void* vdev_gdi_create(int w, int h, DWORD extra)
 {
-    VDEV_CONTEXT *ctxt = (VDEV_CONTEXT*)malloc(sizeof(VDEV_CONTEXT));
+    DEVGDICTXT *ctxt = (DEVGDICTXT*)malloc(sizeof(DEVGDICTXT));
     if (!ctxt) {
         log_printf("failed to allocate gdi vdev context !\n");
         exit(0);
     }
 
     // init vdev context
-    memset(ctxt, 0, sizeof(VDEV_CONTEXT));
+    memset(ctxt, 0, sizeof(DEVGDICTXT));
     ctxt->width  = w;
     ctxt->height = h;
     ctxt->hwnd   = (HWND)extra;
@@ -75,37 +74,38 @@ static void* vdev_gdi_create(int w, int h, DWORD extra)
 
 static void vdev_gdi_destroy(void *ctxt)
 {
-    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
-    DeleteDC    (context->hdcsrc);
-    ReleaseDC   (context->hwnd, context->hdcdst);
-    DeleteObject(context->hbmp);
-    free(context); // free vdev context
+    DEVGDICTXT *c = (DEVGDICTXT*)ctxt;
+    DeleteDC    (c->hdcsrc);
+    ReleaseDC   (c->hwnd, c->hdcdst);
+    DeleteObject(c->hbmp);
+    free(c); // free vdev context
 }
 
 static void vdev_gdi_bufrequest(void *ctxt, void **buf, int *stride)
 {
-    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
-    if (buf   ) *buf    = context->pbuf;
-    if (stride) *stride = context->stride;
+    DEVGDICTXT *c = (DEVGDICTXT*)ctxt;
+    if (buf   ) *buf    = c->pbuf;
+    if (stride) *stride = c->stride;
 }
 
 static void vdev_gdi_bufpost(void *ctxt)
 {
-    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
+    DEVGDICTXT *c = (DEVGDICTXT*)ctxt;
+    RECT        rect;
 
-    GetClientRect(context->hwnd, &context->rtcur);
-    if (  context->rtlast.right  != context->rtcur.right
-       || context->rtlast.bottom != context->rtcur.bottom)
+    GetClientRect(c->hwnd, &rect);
+    if (  c->rtlast.right  != rect.right
+       || c->rtlast.bottom != rect.bottom)
     {
-        memcpy(&context->rtlast, &context->rtcur, sizeof(RECT));
-        memcpy(&context->rtview, &context->rtcur, sizeof(RECT));
+        memcpy(&c->rtlast, &rect, sizeof(RECT));
+        memcpy(&c->rtview, &rect, sizeof(RECT));
 
         int x  = 0;
         int y  = 0;
         int sw, sh, dw, dh;
 
-        sw = dw = context->rtcur.right;
-        sh = dh = context->rtcur.bottom;
+        sw = dw = rect.right;
+        sh = dh = rect.bottom;
 
         //++ keep picture w/h ratio when stretching ++//
         if (256 * sh > 240 * sw)
@@ -113,62 +113,62 @@ static void vdev_gdi_bufpost(void *ctxt)
             dh = dw * 240 / 256;
             y  = (sh - dh) / 2;
 
-            context->rtview.bottom = y;
-            InvalidateRect(context->hwnd, &context->rtview, TRUE);
-            context->rtview.top    = sh - y;
-            context->rtview.bottom = sh;
-            InvalidateRect(context->hwnd, &context->rtview, TRUE);
+            c->rtview.bottom = y;
+            InvalidateRect(c->hwnd, &c->rtview, TRUE);
+            c->rtview.top    = sh - y;
+            c->rtview.bottom = sh;
+            InvalidateRect(c->hwnd, &c->rtview, TRUE);
         }
         else
         {
             dw = dh * 256 / 240;
             x  = (sw - dw) / 2;
 
-            context->rtview.right = x;
-            InvalidateRect(context->hwnd, &context->rtview, TRUE);
-            context->rtview.left  = sw - x;
-            context->rtview.right = sw;
-            InvalidateRect(context->hwnd, &context->rtview, TRUE);
+            c->rtview.right = x;
+            InvalidateRect(c->hwnd, &c->rtview, TRUE);
+            c->rtview.left  = sw - x;
+            c->rtview.right = sw;
+            InvalidateRect(c->hwnd, &c->rtview, TRUE);
         }
         //-- keep picture w/h ratio when stretching --//
 
-        context->rtview.left   = x;
-        context->rtview.top    = y;
-        context->rtview.right  = dw;
-        context->rtview.bottom = dh;
+        c->rtview.left   = x;
+        c->rtview.top    = y;
+        c->rtview.right  = dw;
+        c->rtview.bottom = dh;
     }
 
-    if (context->texttick > GetTickCount())
+    if (c->texttick > GetTickCount())
     {
-        SetBkMode   (context->hdcsrc, TRANSPARENT);
-        SetTextColor(context->hdcsrc, RGB(255,255,255));
-        TextOut(context->hdcsrc, context->textposx, context->textposy, context->textstr, (int)strlen(context->textstr));
+        SetBkMode   (c->hdcsrc, TRANSPARENT);
+        SetTextColor(c->hdcsrc, RGB(255,255,255));
+        TextOut(c->hdcsrc, c->textposx, c->textposy, c->textstr, (int)strlen(c->textstr));
     }
-    else context->priority = 0;
+    else c->priority = 0;
 
     // bitblt picture to window witch stretching
-    StretchBlt(context->hdcdst, context->rtview.left, context->rtview.top, context->rtview.right, context->rtview.bottom,
-               context->hdcsrc, 0, 0, context->width, context->height, SRCCOPY);
+    StretchBlt(c->hdcdst, c->rtview.left, c->rtview.top, c->rtview.right, c->rtview.bottom,
+               c->hdcsrc, 0, 0, c->width, c->height, SRCCOPY);
 
     Sleep(1); // sleep is used to make frame pitch more uniform
 }
 
 static void vdev_gdi_textout(void *ctxt, int x, int y, char *text, int time, int priority)
 {
-    VDEV_CONTEXT *context = (VDEV_CONTEXT*)ctxt;
-    if (priority >= context->priority)
+    DEVGDICTXT *c = (DEVGDICTXT*)ctxt;
+    if (priority >= c->priority)
     {
-        strncpy(context->textstr, text, 256);
-        context->textposx = x;
-        context->textposy = y;
-        context->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
-        context->priority = priority;
+        strncpy(c->textstr, text, 256);
+        c->textposx = x;
+        c->textposy = y;
+        c->texttick = (time >= 0) ? (GetTickCount() + time) : 0xffffffff;
+        c->priority = priority;
     }
 }
 
 // gdi vdev can't support fullscreen mode
-static void vdev_gdi_setfullsceen(void *ctxt, int full) { ((VDEV_CONTEXT*)ctxt)->full = full; }
-static int  vdev_gdi_getfullsceen(void *ctxt)           { return ((VDEV_CONTEXT*)ctxt)->full; }
+static void vdev_gdi_setfullsceen(void *ctxt, int full) { ((DEVGDICTXT*)ctxt)->full = full; }
+static int  vdev_gdi_getfullsceen(void *ctxt)           { return ((DEVGDICTXT*)ctxt)->full; }
 
 // 全局变量定义
 VDEV DEV_GDI =
