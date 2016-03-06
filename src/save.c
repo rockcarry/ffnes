@@ -30,7 +30,6 @@ static void saver_restore_ppu(PPU *ppu, int oldpclk, int newpclk)
 
     ppu->chrom_bkg = (ppu->regs[0x0000] & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
     ppu->chrom_spr = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
-
     if (oldpclk <= NES_HTOTAL * 241 + 1) ppu->vdev->bufpost(ppu->vctxt);
     if (newpclk <= NES_HTOTAL * 241 + 1) ppu->vdev->bufrequest(ppu->vctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
 }
@@ -172,7 +171,7 @@ void saver_load_game(NES *nes, char *file)
     nes->replay.mode = NES_REPLAY_RECORD;
     replay_reset(&(nes->replay));
 
-    // copy replay data from .sav file to lastreplay.tmp
+    // copy replay data from .sav file to relay temp file
     lzw_fseek(fp, save.head_size + save.neso_size + save.sram_size + save.cram_size, SEEK_SET);
     while (save.rply_size--) fputc(lzw_fgetc(fp), nes->replay.fp);
 
@@ -228,7 +227,7 @@ void saver_load_replay(NES *nes, char *file)
     nes->replay.mode = NES_REPLAY_RECORD;
     replay_reset(&(nes->replay));
 
-    // copy replay data from .sav file to lastreplay.tmp
+    // copy replay data from .sav file to relay temp file
     lzw_fseek(fp, save.head_size + save.neso_size + save.sram_size + save.cram_size, SEEK_SET);
     while (save.rply_size--) fputc(lzw_fgetc(fp), nes->replay.fp);
 

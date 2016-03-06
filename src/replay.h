@@ -18,6 +18,7 @@ typedef struct {
     FILE *fp;
     long  total;
     long  curpos;
+    char *tmpnam;
 } REPLAY;
 
 // º¯ÊýÉùÃ÷
