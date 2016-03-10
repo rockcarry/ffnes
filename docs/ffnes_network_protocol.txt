@@ -1,0 +1,134 @@
+ffnes network protocol v1.0
+
+tcp frame:
++-------------------------------------+
+ head                          tail
+ 0x7E  ver   cmd   len    data 0x0D
+ 1byte 1byte 1byte 2bytes      1byte
++-------------------------------------+
+
+short_text
+8bits length + string
+
+long_text
+16bits length + string
+
+player_id
+4bits 0 - 15
+
+player_type
+4bits
+0 - closed, no player
+1 - 1P
+2 - 2P
+3 - 3P
+4 - 4P
+5 - viewers
+
+player_status
+4bits
+bit0 - login/logout
+bit1 - downloading game or not
+bit2 - ready or not
+bit3 - in game or not
+
+DS_NOP (client -> server, not wait ack)
+cmd - 0x80
+len - 0
+data- null
+
+SD_NOP (server -> client, not wait ack)
+cmd - 0x00
+len - 0
+data- null
+
+DS_INFO (client -> server, wait ack SD_INFO)
+cmd - 0x81
+len - 0
+data- null
+
+SD_INFO (server -> client, not wait ack)
+cmd - 0x01
+len - 1 + length(server_name) + length(game_name) + 1
+data-
+  server_state: byte 1 - available, 0 - not available
+  server_name : short_text
+  game_name   : short_text
+  player_num  : low 4bits current player num, high for max
+
+DS_LOGIN (client -> server, wait ack SD_ACCEPT)
+cmd - 0x82
+len - length(player_name)
+data-
+  player_name : short_text
+
+SD_ACCEPT (server -> client, not wait ack)
+cmd - 0x02
+len - 4bits + 4bits + 4bits
+data-
+  player_id    : id
+  player_type  : type
+  player_status: status
+
+DS_FINISH (client -> server, not wait ack)
+cmd - 0x83
+len - 0
+data- null
+
+SD_FINISH (server -> client, not wait ack)
+cmd - 0x03
+len - 0
+data- null
+
+SD_PLAYER_LIST (server -> client, wait ack DS_FINISH)
+cmd - 0x04
+len - 0.5 * 16 + 0.5 * 16 + length(player_name_list) 
+data-
+  player_type_list  : player_type * 16 players
+  player_status_list: player_status * 16 players
+  player_name_list  : short_text * 16 players
+
+DS_ID_TYPE_STATUS (client -> server, wait ack SD_ACCEPT)
+cmd - 0x85
+len - 4bits + 4bits + 4bits
+data-
+  player_id    : id
+  player_type  : type
+  player_status: status
+
+SD_ID_TYPE_STATUS (server -> client, wait ack DS_FINISH)
+cmd - 0x05
+len - 4bits + 4bits + 4bits
+data-
+  player_id    : id
+  player_type  : type
+  player_status: status
+
+DS_CHAT (client -> server, wait ack SD_CHAT)
+cmd - 0x86
+len - length(msg)
+data-
+  msg : short_text
+
+SD_CHAT (server -> client, not wait ack)
+cmd - 0x06
+len - length(player_name) + length(chat_message)
+data-
+  player_name : short_text
+  chat_message: short_text
+
+DS_START_GAME (client -> server, wait ack SD_START_GAME)
+cmd - 0x87
+len - 0
+data- null
+
+SD_START_GAME (server -> client, not wait ack)
+cmd - 0x07
+len - 0
+data- null
+
+
+
+
+
+
