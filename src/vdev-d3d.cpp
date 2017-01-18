@@ -20,6 +20,7 @@ typedef struct
     RECT  save_window_rect;
     int   full_width;
     int   full_height;
+    int   full_frate;
 
     RECT  rtlast;
     RECT  rtview;
@@ -34,19 +35,18 @@ typedef struct
 // 内部函数实现
 static void create_device_surface(DEVD3DCTXT *ctxt)
 {
-    if (ctxt->d3dpp.Windowed)
-    {
-        ctxt->d3dpp.BackBufferWidth  = ctxt->width;
-        ctxt->d3dpp.BackBufferHeight = ctxt->height;
+    if (ctxt->d3dpp.Windowed) {
+        ctxt->d3dpp.BackBufferWidth  = 0;
+        ctxt->d3dpp.BackBufferHeight = 0;
+        ctxt->d3dpp.FullScreen_RefreshRateInHz = 0;
         SetWindowLong(ctxt->hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW|WS_VISIBLE);
         MoveWindow   (ctxt->hwnd, ctxt->save_window_rect.left, ctxt->save_window_rect.top,
             ctxt->save_window_rect.right - ctxt->save_window_rect.left,
             ctxt->save_window_rect.bottom - ctxt->save_window_rect.top, TRUE);
-    }
-    else
-    {
+    } else {
         ctxt->d3dpp.BackBufferWidth  = ctxt->full_width;
         ctxt->d3dpp.BackBufferHeight = ctxt->full_height;
+        ctxt->d3dpp.FullScreen_RefreshRateInHz = ctxt->full_frate;
         SetWindowLong(ctxt->hwnd, GWL_STYLE, WS_POPUP|WS_VISIBLE);
         GetWindowRect(ctxt->hwnd, &ctxt->save_window_rect);
         MoveWindow   (ctxt->hwnd, 0, 0, ctxt->full_width, ctxt->full_height, TRUE);
@@ -57,17 +57,14 @@ static void create_device_surface(DEVD3DCTXT *ctxt)
     {
         log_printf("failed to create d3d device !\n");
         exit(0);
-    }
-    else {
+    } else {
         // create surface
         if (FAILED(ctxt->pD3DDev->CreateOffscreenPlainSurface(ctxt->width, ctxt->height,
                                     D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &ctxt->pSurface, NULL)))
         {
             log_printf("failed to create d3d off screen plain surface !\n");
             exit(0);
-        }
-        else
-        {
+        } else {
             D3DLOCKED_RECT d3d_rect;
             ctxt->pSurface->LockRect(&d3d_rect, NULL, D3DLOCK_DISCARD);
             memset(d3d_rect.pBits, 0, d3d_rect.Pitch * ctxt->height);
@@ -111,10 +108,11 @@ static void* vdev_d3d_create(int w, int h, DWORD extra)
         ctxt->pD3D->EnumAdapterModes(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8, nummode, &d3dmode);
         curdist = (640 - d3dmode.Width ) * (640 - d3dmode.Width )
             + (480 - d3dmode.Height) * (480 - d3dmode.Height);
-        if (curdist < mindist)
+        if (curdist < mindist && d3dmode.RefreshRate >= 60)
         {
             ctxt->full_width  = d3dmode.Width;
             ctxt->full_height = d3dmode.Height;
+            ctxt->full_frate  = d3dmode.RefreshRate;
             mindist = curdist;
         }
     }
@@ -126,7 +124,7 @@ static void* vdev_d3d_create(int w, int h, DWORD extra)
     ctxt->d3dpp.BackBufferCount       = 1;
     ctxt->d3dpp.MultiSampleType       = D3DMULTISAMPLE_NONE;
     ctxt->d3dpp.MultiSampleQuality    = 0;
-    ctxt->d3dpp.SwapEffect            = D3DSWAPEFFECT_DISCARD;
+    ctxt->d3dpp.SwapEffect            = D3DSWAPEFFECT_COPY;
     ctxt->d3dpp.hDeviceWindow         = ctxt->hwnd;
     ctxt->d3dpp.Windowed              = TRUE;
     ctxt->d3dpp.EnableAutoDepthStencil= FALSE;
@@ -205,6 +203,7 @@ static void vdev_d3d_enqueue(void *ctxt)
 
     if (c->texttick > GetTickCount())
     {
+        //++ these code may cause reboot on some pc
         HDC hdc = NULL;
         if (SUCCEEDED(c->pSurface->GetDC(&hdc))) {
             SetBkMode   (hdc, TRANSPARENT);
@@ -212,6 +211,7 @@ static void vdev_d3d_enqueue(void *ctxt)
             TextOut(hdc, c->textposx, c->textposy, c->textstr, (int)strlen(c->textstr));
             c->pSurface->ReleaseDC(hdc);
         }
+        //-- these code may cause reboot on some pc
     }
     else c->priority = 0;
 
