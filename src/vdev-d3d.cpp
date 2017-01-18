@@ -82,14 +82,13 @@ static void create_device_surface(DEVD3DCTXT *ctxt)
 // 接口函数实现
 static void* vdev_d3d_create(int w, int h, DWORD extra)
 {
-    DEVD3DCTXT *ctxt = (DEVD3DCTXT*)malloc(sizeof(DEVD3DCTXT));
+    DEVD3DCTXT *ctxt = (DEVD3DCTXT*)calloc(sizeof(DEVD3DCTXT));
     if (!ctxt) {
         log_printf("failed to allocate d3d vdev context !\n");
         exit(0);
     }
 
     // init d3d vdev context
-    memset(ctxt, 0, sizeof(DEVD3DCTXT));
     ctxt->width  = w;
     ctxt->height = h;
     ctxt->hwnd   = (HWND)extra;
@@ -107,19 +106,19 @@ static void* vdev_d3d_create(int w, int h, DWORD extra)
     //++ enum adapter modes
     D3DDISPLAYMODE d3dmode = {0};
     int            nummode = 0;
-    int            curdistance = 0x7fffffff;
-    int            mindistance = 0x7fffffff;
+    int            curdist = 0x7fffffff;
+    int            mindist = 0x7fffffff;
     nummode = ctxt->pD3D->GetAdapterModeCount(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8);
     while (nummode--)
     {
         ctxt->pD3D->EnumAdapterModes(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8, nummode, &d3dmode);
-        curdistance = (640 - d3dmode.Width ) * (640 - d3dmode.Width )
+        curdist = (640 - d3dmode.Width ) * (640 - d3dmode.Width )
             + (480 - d3dmode.Height) * (480 - d3dmode.Height);
-        if (curdistance < mindistance)
+        if (curdist < mindist)
         {
             ctxt->full_width  = d3dmode.Width;
             ctxt->full_height = d3dmode.Height;
-            mindistance = curdistance;
+            mindist = curdist;
         }
     }
     //-- enum adapter modes

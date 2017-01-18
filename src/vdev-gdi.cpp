@@ -29,14 +29,13 @@ typedef struct
 // 接口函数实现
 static void* vdev_gdi_create(int w, int h, DWORD extra)
 {
-    DEVGDICTXT *ctxt = (DEVGDICTXT*)malloc(sizeof(DEVGDICTXT));
+    DEVGDICTXT *ctxt = (DEVGDICTXT*)calloc(sizeof(DEVGDICTXT));
     if (!ctxt) {
         log_printf("failed to allocate gdi vdev context !\n");
         exit(0);
     }
 
     // init vdev context
-    memset(ctxt, 0, sizeof(DEVGDICTXT));
     ctxt->width  = w;
     ctxt->height = h;
     ctxt->hwnd   = (HWND)extra;

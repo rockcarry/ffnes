@@ -225,11 +225,10 @@ void* lzw_fopen(const char *filename, const char *mode)
     int         i;
 
     // allocate lzw context
-    lzw = malloc(sizeof(LZW));
+    lzw = calloc(1, sizeof(LZW));
     if (!lzw) return NULL;
 
     // init lzw context
-    memset(lzw, 0, sizeof(LZW));
     lzw->mode = *mode == 'w' ? LZW_MODE_ENCODE : LZW_MODE_DECODE;
     lzw->fp   = fopen(filename, mode);
 
