@@ -28,28 +28,20 @@ static void nes_do_reset(NES *nes)
 static void* nes_thread_proc(void *param)
 {
     NES *nes = (NES*)param;
-    int totalpclk, nmi, irq;
+    int nmi, irq;
 
     while (!nes->thread_exit)
     {
-        //++ for run/pause ++//
-        if (!nes->isrunning)
+        //++ for run/pause and end of replay ++//
+        if (  !nes->isrunning // request pause
+           || !replay_progress(&(nes->replay)) && nes->request_reset == 0) // end of replay
         {
             nes->ispaused = 1;
             nes->ppu.vdev->dequeue(nes->ppu.vctxt, NULL, NULL);
             nes->ppu.vdev->enqueue(nes->ppu.vctxt);
             continue;
         }
-        //-- for run/pause --//
-
-        //++ for replay playing ++//
-        if (!replay_progress(&(nes->replay)) && nes->request_reset == 0)
-        {
-            nes->ppu.vdev->dequeue(nes->ppu.vctxt, NULL, NULL);
-            nes->ppu.vdev->enqueue(nes->ppu.vctxt);
-            continue;
-        }
-        //-- for replay playing --//
+        //-- for run/pause and end of replay --//
 
         //++ for nes reset ++//
         if (nes->request_reset == 1)
@@ -61,9 +53,15 @@ static void* nes_thread_proc(void *param)
 
         //++ run cpu & apu & ppu
         do {
-            cpu_run_pclk(&(nes->cpu)); // run cpu
+            cpu_run_cclk(&(nes->cpu)); // run cpu
             ppu_run_pclk(&(nes->ppu)); // run ppu
-            apu_run_pclk(&(nes->apu)); // run apu
+            ppu_run_pclk(&(nes->ppu)); // run ppu
+            ppu_run_pclk(&(nes->ppu)); // run ppu
+            cpu_run_cclk(&(nes->cpu)); // run cpu
+            ppu_run_pclk(&(nes->ppu)); // run ppu
+            ppu_run_pclk(&(nes->ppu)); // run ppu
+            ppu_run_pclk(&(nes->ppu)); // run ppu
+            apu_run_aclk(&(nes->apu)); // run apu
 
             //+ for cpu nmi & irq
             nmi =   nes->ppu.pinvbl;
@@ -71,8 +69,8 @@ static void* nes_thread_proc(void *param)
             cpu_nmi(&(nes->cpu), nmi);
             cpu_irq(&(nes->cpu), irq);
             //- for cpu nmi & irq
-        } while (nes->ppu.pclk_frame != NES_HTOTAL * 241 + 2);
-        // at frame clk (241, 2) the frame buffer will be enqueued
+        } while (  nes->ppu.pclk_frame <= NES_HTOTAL * 241 + 1
+                || nes->ppu.pclk_frame >= NES_HTOTAL * 241 + 7);
         //-- run cpu & apu & ppu
 
         // run joypad for turbo key function

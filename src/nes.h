@@ -20,6 +20,7 @@
 #define NES_FREQ_MCLK   21477272            // mclk freq
 #define NES_FREQ_CPU   (NES_FREQ_MCLK / 12) // cpu freq
 #define NES_FREQ_PPU   (NES_FREQ_MCLK / 4 ) // ppu freq
+#define NES_FREQ_APU   (NES_FREQ_MCLK / 24) // apu freq
 #define NES_HTOTAL      341                 // htotal
 #define NES_VTOTAL      262                 // vtotal
 #define NES_WIDTH       256                 // screen width

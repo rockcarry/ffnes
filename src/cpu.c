@@ -444,7 +444,6 @@ void cpu_reset(CPU *cpu)
     cpu->nmi_last     = 1;
     cpu->nmi_cur      = 1;
     cpu->irq_flag     = 1;
-    cpu->cclk_divider = 3;
     cpu->cclk_counter = 0;
     cpu->cclk_dma     = 0;
 }
@@ -459,7 +458,7 @@ void cpu_irq(CPU *cpu, int irq)
     cpu->irq_flag = irq;
 }
 
-static void cpu_run_cclk(CPU *cpu)
+void cpu_run_cclk(CPU *cpu)
 {
     BYTE opcode, opmat, opopt, DT;
     WORD ET, EA, WT;
@@ -833,15 +832,6 @@ done:
 
         // cclk cycles needed of next instruction
         cpu->cclk_instr = CPU_CYCLE_TAB[READB(PC)];
-    }
-}
-
-void cpu_run_pclk(CPU *cpu)
-{
-    if (--cpu->cclk_divider == 0)
-    {
-        cpu_run_cclk(cpu);
-        cpu->cclk_divider = 3;
     }
 }
 

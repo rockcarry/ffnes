@@ -116,7 +116,7 @@ void saver_load_game(NES *nes, char *file)
     void         *fp;
     NES           buf;
     int           start, end, i;
-    int           oldapupclk, newapupclk;
+    int           oldapuaclk, newapuaclk;
     int           oldppupclk, newppupclk;
     int           running;
 
@@ -176,8 +176,8 @@ void saver_load_game(NES *nes, char *file)
     while (save.rply_size--) fputc(lzw_fgetc(fp), nes->replay.fp);
 
     // get ppu & apu old/new pclk
-    oldapupclk = nes->apu.pclk_frame;
-    newapupclk = buf. apu.pclk_frame;
+    oldapuaclk = nes->apu.aclk_counter;
+    newapuaclk = buf. apu.aclk_counter;
     oldppupclk = nes->ppu.pclk_frame;
     newppupclk = buf. ppu.pclk_frame;
 
@@ -192,7 +192,7 @@ void saver_load_game(NES *nes, char *file)
     //-- restore nes context data from save file data --//
 
     // restore ppu & mmc
-    saver_restore_apu(&(nes->apu), oldapupclk, newapupclk);
+    saver_restore_apu(&(nes->apu), oldapuaclk, newapuaclk);
     saver_restore_ppu(&(nes->ppu), oldppupclk, newppupclk);
     saver_restore_mmc(&(nes->mmc));
 

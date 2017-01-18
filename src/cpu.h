@@ -25,7 +25,6 @@ typedef struct {
     int nmi_last;
     int nmi_cur;
     int irq_flag;
-    int cclk_divider;
     int cclk_counter;
     int cclk_instr;
     int cclk_dma;
@@ -37,7 +36,7 @@ void cpu_free    (CPU *cpu);
 void cpu_reset   (CPU *cpu);
 void cpu_nmi     (CPU *cpu, int nmi);
 void cpu_irq     (CPU *cpu, int irq);
-void cpu_run_pclk(CPU *cpu);
+void cpu_run_cclk(CPU *cpu);
 
 #endif
 

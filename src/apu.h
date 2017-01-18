@@ -55,6 +55,7 @@ typedef struct
 typedef struct {
     BYTE regs[0x20];
 
+    int  aclk_counter;
     int  frame_divider;
     int  frame_counter;
 
@@ -71,14 +72,13 @@ typedef struct {
     ADEV     *adev;
     void     *actxt;
     AUDIOBUF *audiobuf;
-    int       pclk_frame;
 } APU;
 
 // º¯ÊýÉùÃ÷
 void apu_init (APU *apu, DWORD extra, ADEV *pdev);
 void apu_free (APU *apu);
 void apu_reset(APU *apu);
-void apu_run_pclk(APU *apu);
+void apu_run_aclk(APU *apu);
 
 BYTE NES_APU_REG_RCB(MEM *pm, int addr);
 void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte);

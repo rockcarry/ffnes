@@ -2,16 +2,16 @@
 #include "nes.h"
 
 // 内部常量定义
-#define APU_ABUF_NUM   5
-#define APU_ABUF_LEN  (738 * 2)
+#define APU_ABUF_NUM   6
+#define APU_ABUF_LEN  (745 * sizeof(WORD))
 
-#define FRAME_DIVIDER       (NES_FREQ_PPU / 240)
-#define MIXER_DIVIDER       (NES_HTOTAL*NES_VTOTAL / 738)
+#define FRAME_DIVIDER       (NES_FREQ_APU / 240)
+#define MIXER_DIVIDER       (NES_FREQ_APU / 60 / 745)
 #define SCH_SWEEPU_DIVIDER  (((regs[0x0001] >> 4) & 0x7) + 1)
-#define SCH_STIMER_DIVIDER  (6 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
-#define TCH_TTIMER_DIVIDER  (3 * ((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
-#define NCH_NTIMER_DIVIDER  (3 * (noise_timer_period_table[regs[0x0002] & 0xf]))
-#define DCH_DTIMER_DIVIDER  (3 * (dmc_timer_period_table  [regs[0x0000] & 0xf]))
+#define SCH_STIMER_DIVIDER  (((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1))
+#define TCH_TTIMER_DIVIDER  (((((regs[0x0003] & 0x7) << 8) | regs[0x0002]) + 1) / 2)
+#define NCH_NTIMER_DIVIDER  ((noise_timer_period_table[regs[0x0002] & 0xf]) / 2)
+#define DCH_DTIMER_DIVIDER  ((dmc_timer_period_table  [regs[0x0000] & 0xf]) / 2)
 
 // 内部全局变量定义
 static BYTE length_table[32] =
@@ -421,13 +421,13 @@ void apu_free(APU *apu)
 void apu_reset(APU *apu)
 {
     // if apu is in rendering, we need post adev buffer first
-    if (apu->pclk_frame > 0) apu->adev->enqueue(apu->actxt);
+    if (apu->aclk_counter > 0) apu->adev->enqueue(apu->actxt);
 
     // after reset, $4015 should be cleared
     apu->regs[0x0015] = 0;
 
-    // reset pclk_frame value
-    apu->pclk_frame = 0;
+    // reset aclk_counter value
+    apu->aclk_counter = 0;
 
     // reset frame sequencer
     apu->frame_divider = FRAME_DIVIDER;
@@ -441,11 +441,11 @@ void apu_reset(APU *apu)
     apu_reset_dmc_channel     (&(apu->dmc ), (BYTE*)apu->regs + 0x0010);
 }
 
-void apu_run_pclk(APU *apu)
+void apu_run_aclk(APU *apu)
 {
     int flew = (1 << 0);
 
-    if (apu->pclk_frame == 0) {
+    if (apu->aclk_counter == 0) {
         // request audio buffer
         apu->adev->dequeue(apu->actxt, &(apu->audiobuf));
 
@@ -510,9 +510,9 @@ void apu_run_pclk(APU *apu)
     }
     //-- render audio data on audio buffer --//
 
-    if (++apu->pclk_frame == NES_HTOTAL * NES_VTOTAL) {
+    if (++apu->aclk_counter == NES_FREQ_APU / 60) {
         apu->adev->enqueue(apu->actxt);
-        apu->pclk_frame = 0;
+        apu->aclk_counter = 0;
     }
 }
 
