@@ -59,9 +59,6 @@ static void create_device_surface(DEVD3DCTXT *ctxt)
         exit(0);
     }
     else {
-        // clear direct3d device
-        ctxt->pD3DDev->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0,0,0), 1.0f, 0);
-
         // create surface
         if (FAILED(ctxt->pD3DDev->CreateOffscreenPlainSurface(ctxt->width, ctxt->height,
                                     D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &ctxt->pSurface, NULL)))
@@ -82,7 +79,7 @@ static void create_device_surface(DEVD3DCTXT *ctxt)
 // 接口函数实现
 static void* vdev_d3d_create(int w, int h, DWORD extra)
 {
-    DEVD3DCTXT *ctxt = (DEVD3DCTXT*)calloc(sizeof(DEVD3DCTXT));
+    DEVD3DCTXT *ctxt = (DEVD3DCTXT*)calloc(1, sizeof(DEVD3DCTXT));
     if (!ctxt) {
         log_printf("failed to allocate d3d vdev context !\n");
         exit(0);
@@ -125,11 +122,11 @@ static void* vdev_d3d_create(int w, int h, DWORD extra)
 
     // fill d3dpp struct
     ctxt->pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3dmode);
-    ctxt->d3dpp.BackBufferFormat      = D3DFMT_X8R8G8B8;
+    ctxt->d3dpp.BackBufferFormat      = D3DFMT_UNKNOWN;
     ctxt->d3dpp.BackBufferCount       = 1;
     ctxt->d3dpp.MultiSampleType       = D3DMULTISAMPLE_NONE;
     ctxt->d3dpp.MultiSampleQuality    = 0;
-    ctxt->d3dpp.SwapEffect            = D3DSWAPEFFECT_COPY;
+    ctxt->d3dpp.SwapEffect            = D3DSWAPEFFECT_DISCARD;
     ctxt->d3dpp.hDeviceWindow         = ctxt->hwnd;
     ctxt->d3dpp.Windowed              = TRUE;
     ctxt->d3dpp.EnableAutoDepthStencil= FALSE;
@@ -175,52 +172,41 @@ static void vdev_d3d_enqueue(void *ctxt)
        || c->rtlast.bottom != rect.bottom)
     {
         memcpy(&c->rtlast, &rect, sizeof(RECT));
-        memcpy(&c->rtview, &rect, sizeof(RECT));
 
-        int x  = 0;
-        int y  = 0;
-        int sw, sh, dw, dh;
-
+        int x, y, sw, sh, dw, dh;
         sw = dw = rect.right;
         sh = dh = rect.bottom;
 
         //++ keep picture w/h ratio when stretching ++//
-        if (256 * sh > 240 * sw)
-        {
-            dh = dw * 240 / 256;
-            y  = (sh - dh) / 2;
-
-            c->rtview.bottom = y;
-            InvalidateRect(c->hwnd, &c->rtview, TRUE);
-            c->rtview.top    = sh - y;
-            c->rtview.bottom = sh;
-            InvalidateRect(c->hwnd, &c->rtview, TRUE);
+        if (c->width * sh > c->height * sw) {
+            dh = dw * c->height / c->width;
+        } else {
+            dw = dh * c->width / c->height;
         }
-        else
-        {
-            dw = dh * 256 / 240;
-            x  = (sw - dw) / 2;
-
-            c->rtview.right  = x;
-            InvalidateRect(c->hwnd, &c->rtview, TRUE);
-            c->rtview.left   = sw - x;
-            c->rtview.right  = sw;
-            InvalidateRect(c->hwnd, &c->rtview, TRUE);
-        }
+        x = (sw - dw) / 2;
+        y = (sh - dh) / 2;
         //-- keep picture w/h ratio when stretching --//
 
         c->rtview.left   = x;
         c->rtview.top    = y;
         c->rtview.right  = x + dw;
         c->rtview.bottom = y + dh;
+
+        RECT rect1, rect2, rect3, rect4;
+        rect1.left = 0;    rect1.top = 0;    rect1.right = sw; rect1.bottom = y;
+        rect2.left = 0;    rect2.top = y;    rect2.right = x;  rect2.bottom = y+dh;
+        rect3.left = x+dw; rect3.top = y;    rect3.right = sw; rect3.bottom = y+dh;
+        rect4.left = 0;    rect4.top = y+dh; rect4.right = sw; rect4.bottom = sh;
+        InvalidateRect(c->hwnd, &rect1, TRUE);
+        InvalidateRect(c->hwnd, &rect2, TRUE);
+        InvalidateRect(c->hwnd, &rect3, TRUE);
+        InvalidateRect(c->hwnd, &rect4, TRUE);
     }
 
     if (c->texttick > GetTickCount())
     {
         HDC hdc = NULL;
-        c->pSurface->GetDC(&hdc);
-        if (hdc)
-        {
+        if (SUCCEEDED(c->pSurface->GetDC(&hdc))) {
             SetBkMode   (hdc, TRANSPARENT);
             SetTextColor(hdc, RGB(255,255,255));
             TextOut(hdc, c->textposx, c->textposy, c->textstr, (int)strlen(c->textstr));
@@ -232,12 +218,11 @@ static void vdev_d3d_enqueue(void *ctxt)
     IDirect3DSurface9 *pback = NULL;
     if (SUCCEEDED(c->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback)))
     {
-        c->pD3DDev->StretchRect(c->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR);
-        pback->Release();
-
-        if (SUCCEEDED(c->pD3DDev->Present(NULL, &c->rtview, NULL, NULL)))
-        {
-            Sleep(1);
+        if (pback) {
+            if (SUCCEEDED(c->pD3DDev->StretchRect(c->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR))) {
+                c->pD3DDev->Present(NULL, &c->rtview, NULL, NULL); Sleep(1);
+            }
+            pback->Release();
         }
     }
 
