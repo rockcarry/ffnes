@@ -60,7 +60,6 @@ static void* nes_thread_proc(void *param)
         //-- for nes reset --//
 
         //++ run cpu & apu & ppu
-        totalpclk = nes->ppu.oddevenflag ? NES_HTOTAL * NES_VTOTAL - 1 : NES_HTOTAL * NES_VTOTAL;
         do {
             cpu_run_pclk(&(nes->cpu)); // run cpu
             ppu_run_pclk(&(nes->ppu)); // run ppu
@@ -72,7 +71,8 @@ static void* nes_thread_proc(void *param)
             cpu_nmi(&(nes->cpu), nmi);
             cpu_irq(&(nes->cpu), irq);
             //- for cpu nmi & irq
-        } while (--totalpclk > 0);
+        } while (nes->ppu.pclk_frame != NES_HTOTAL * 241 + 2);
+        // at frame clk (241, 2) the frame buffer will be enqueued
         //-- run cpu & apu & ppu
 
         // run joypad for turbo key function
