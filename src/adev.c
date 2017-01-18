@@ -95,14 +95,14 @@ static void adev_waveout_destroy(void *ctxt)
     free(c);
 }
 
-static void adev_waveout_bufrequest(void *ctxt, AUDIOBUF **ppab)
+static void adev_waveout_dequeue(void *ctxt, AUDIOBUF **ppab)
 {
     ADEV_CONTEXT *c = (ADEV_CONTEXT*)ctxt;
     WaitForSingleObject(c->bufsem, -1);
     *ppab = (AUDIOBUF*)&(c->pWaveHdr[c->tail]);
 }
 
-static void adev_waveout_bufpost(void *ctxt)
+static void adev_waveout_enqueue(void *ctxt)
 {
     ADEV_CONTEXT *c = (ADEV_CONTEXT*)ctxt;
     waveOutWrite(c->hWaveOut, c->pWaveHdr + c->tail, sizeof(WAVEHDR));
@@ -114,8 +114,8 @@ ADEV DEV_WAVEOUT =
 {
     adev_waveout_create,
     adev_waveout_destroy,
-    adev_waveout_bufrequest,
-    adev_waveout_bufpost,
+    adev_waveout_dequeue,
+    adev_waveout_enqueue,
 };
 
 

@@ -81,14 +81,14 @@ static void vdev_gdi_destroy(void *ctxt)
     free(c); // free vdev context
 }
 
-static void vdev_gdi_bufrequest(void *ctxt, void **buf, int *stride)
+static void vdev_gdi_dequeue(void *ctxt, void **buf, int *stride)
 {
     DEVGDICTXT *c = (DEVGDICTXT*)ctxt;
     if (buf   ) *buf    = c->pbuf;
     if (stride) *stride = c->stride;
 }
 
-static void vdev_gdi_bufpost(void *ctxt)
+static void vdev_gdi_enqueue(void *ctxt)
 {
     DEVGDICTXT *c = (DEVGDICTXT*)ctxt;
     RECT        rect;
@@ -175,8 +175,8 @@ VDEV DEV_GDI =
 {
     vdev_gdi_create,
     vdev_gdi_destroy,
-    vdev_gdi_bufrequest,
-    vdev_gdi_bufpost,
+    vdev_gdi_dequeue,
+    vdev_gdi_enqueue,
     vdev_gdi_textout,
     vdev_gdi_setfullsceen,
     vdev_gdi_getfullsceen,

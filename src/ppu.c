@@ -437,7 +437,7 @@ void ppu_run_pclk(PPU *ppu)
         }
 
         // request vdev buffer, obtain address & stride
-        ppu->vdev->bufrequest(ppu->vctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
+        ppu->vdev->dequeue(ppu->vctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
     }
 
     // scanline 0 - 239 visible scanlines
@@ -543,7 +543,7 @@ void ppu_run_pclk(PPU *ppu)
         }//-- for replay progress bar --//
 
         // post vdev buffer
-        ppu->vdev->bufpost(ppu->vctxt);
+        ppu->vdev->enqueue(ppu->vctxt);
 
         // set vblank bit of reg $2002
         ppu->vblklast = ppu->regs[0x0002] & (1 << 7);

@@ -151,7 +151,7 @@ static void vdev_d3d_destroy(void *ctxt)
     free(c);
 }
 
-static void vdev_d3d_bufrequest(void *ctxt, void **buf, int *stride)
+static void vdev_d3d_dequeue(void *ctxt, void **buf, int *stride)
 {
     DEVD3DCTXT *c = (DEVD3DCTXT*)ctxt;
 
@@ -163,7 +163,7 @@ static void vdev_d3d_bufrequest(void *ctxt, void **buf, int *stride)
     if (stride) *stride = d3d_rect.Pitch / 4;
 }
 
-static void vdev_d3d_bufpost(void *ctxt)
+static void vdev_d3d_enqueue(void *ctxt)
 {
     DEVD3DCTXT *c = (DEVD3DCTXT*)ctxt;
     RECT        rect;
@@ -285,8 +285,8 @@ VDEV DEV_D3D =
 {
     vdev_d3d_create,
     vdev_d3d_destroy,
-    vdev_d3d_bufrequest,
-    vdev_d3d_bufpost,
+    vdev_d3d_dequeue,
+    vdev_d3d_enqueue,
     vdev_d3d_textout,
     vdev_d3d_setfullsceen,
     vdev_d3d_getfullsceen,

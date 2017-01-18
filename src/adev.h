@@ -11,10 +11,10 @@ typedef struct {
 } AUDIOBUF;
 
 typedef struct {
-    void* (*create    )(int bufnum, int buflen);
-    void  (*destroy   )(void *ctxt);
-    void  (*bufrequest)(void *ctxt, AUDIOBUF **ppab);
-    void  (*bufpost   )(void *ctxt);
+    void* (*create )(int bufnum, int buflen);
+    void  (*destroy)(void *ctxt);
+    void  (*dequeue)(void *ctxt, AUDIOBUF **ppab);
+    void  (*enqueue)(void *ctxt);
 } ADEV;
 
 // 全局变量声明

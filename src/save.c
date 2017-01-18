@@ -20,8 +20,8 @@ typedef struct
 // 内部函数实现
 static void saver_restore_apu(APU *apu, int oldpclk, int newpclk)
 {
-    if (oldpclk > 0) apu->adev->bufpost   (apu->actxt);
-    if (newpclk > 0) apu->adev->bufrequest(apu->actxt, &(apu->audiobuf));
+    if (oldpclk > 0) apu->adev->enqueue(apu->actxt);
+    if (newpclk > 0) apu->adev->dequeue(apu->actxt, &(apu->audiobuf));
 }
 
 static void saver_restore_ppu(PPU *ppu, int oldpclk, int newpclk)
@@ -30,8 +30,8 @@ static void saver_restore_ppu(PPU *ppu, int oldpclk, int newpclk)
 
     ppu->chrom_bkg = (ppu->regs[0x0000] & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
     ppu->chrom_spr = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
-    if (oldpclk <= NES_HTOTAL * 241 + 1) ppu->vdev->bufpost(ppu->vctxt);
-    if (newpclk <= NES_HTOTAL * 241 + 1) ppu->vdev->bufrequest(ppu->vctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
+    if (oldpclk <= NES_HTOTAL * 241 + 1) ppu->vdev->enqueue(ppu->vctxt);
+    if (newpclk <= NES_HTOTAL * 241 + 1) ppu->vdev->dequeue(ppu->vctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
 }
 
 static void saver_restore_mmc(MMC *mmc)

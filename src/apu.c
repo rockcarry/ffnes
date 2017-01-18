@@ -421,7 +421,7 @@ void apu_free(APU *apu)
 void apu_reset(APU *apu)
 {
     // if apu is in rendering, we need post adev buffer first
-    if (apu->pclk_frame > 0) apu->adev->bufpost(apu->actxt);
+    if (apu->pclk_frame > 0) apu->adev->enqueue(apu->actxt);
 
     // after reset, $4015 should be cleared
     apu->regs[0x0015] = 0;
@@ -447,7 +447,7 @@ void apu_run_pclk(APU *apu)
 
     if (apu->pclk_frame == 0) {
         // request audio buffer
-        apu->adev->bufrequest(apu->actxt, &(apu->audiobuf));
+        apu->adev->dequeue(apu->actxt, &(apu->audiobuf));
 
         // reset mixer sequencer
         apu->mixer_divider = MIXER_DIVIDER;
@@ -511,7 +511,7 @@ void apu_run_pclk(APU *apu)
     //-- render audio data on audio buffer --//
 
     if (++apu->pclk_frame == NES_HTOTAL * NES_VTOTAL) {
-        apu->adev->bufpost(apu->actxt);
+        apu->adev->enqueue(apu->actxt);
         apu->pclk_frame = 0;
     }
 }

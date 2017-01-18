@@ -8,8 +8,8 @@
 typedef struct {
     void* (*create       )(int w, int h, DWORD extra);
     void  (*destroy      )(void *ctxt);
-    void  (*bufrequest   )(void *ctxt, void **buf, int *stride);
-    void  (*bufpost      )(void *ctxt);
+    void  (*dequeue      )(void *ctxt, void **buf, int *stride);
+    void  (*enqueue      )(void *ctxt);
     void  (*textout      )(void *ctxt, int x, int y, char *text, int time, int priority);
     void  (*setfullscreen)(void *ctxt, int full);
     int   (*getfullscreen)(void *ctxt);

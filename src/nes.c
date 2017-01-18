@@ -36,8 +36,8 @@ static void* nes_thread_proc(void *param)
         if (!nes->isrunning)
         {
             nes->ispaused = 1;
-            nes->ppu.vdev->bufrequest(nes->ppu.vctxt, NULL, NULL);
-            nes->ppu.vdev->bufpost   (nes->ppu.vctxt);
+            nes->ppu.vdev->dequeue(nes->ppu.vctxt, NULL, NULL);
+            nes->ppu.vdev->enqueue(nes->ppu.vctxt);
             continue;
         }
         //-- for run/pause --//
@@ -45,8 +45,8 @@ static void* nes_thread_proc(void *param)
         //++ for replay playing ++//
         if (!replay_progress(&(nes->replay)) && nes->request_reset == 0)
         {
-            nes->ppu.vdev->bufrequest(nes->ppu.vctxt, NULL, NULL);
-            nes->ppu.vdev->bufpost   (nes->ppu.vctxt);
+            nes->ppu.vdev->dequeue(nes->ppu.vctxt, NULL, NULL);
+            nes->ppu.vdev->enqueue(nes->ppu.vctxt);
             continue;
         }
         //-- for replay playing --//
