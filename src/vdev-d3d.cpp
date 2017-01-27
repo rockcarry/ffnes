@@ -166,9 +166,7 @@ static void vdev_d3d_enqueue(void *ctxt)
     c->pSurface->UnlockRect();
 
     GetClientRect(c->hwnd, &rect);
-    if (  c->rtlast.right  != rect.right
-       || c->rtlast.bottom != rect.bottom)
-    {
+    if (memcmp(&c->rtlast, &rect, sizeof(RECT))) {
         memcpy(&c->rtlast, &rect, sizeof(RECT));
 
         int x, y, sw, sh, dw, dh;
@@ -199,7 +197,6 @@ static void vdev_d3d_enqueue(void *ctxt)
         InvalidateRect(c->hwnd, &rect2, TRUE);
         InvalidateRect(c->hwnd, &rect3, TRUE);
         InvalidateRect(c->hwnd, &rect4, TRUE);
-        return;
     }
 
     if (c->texttick > GetTickCount()) {
