@@ -31,7 +31,6 @@
 #define NES_CRAM_SIZE     0x0800
 #define NES_PPUREGS_SIZE  0x0008
 #define NES_APUREGS_SIZE  0x0020
-#define NES_EROM_SIZE     0x1FE0
 #define NES_SRAM_SIZE     0x2000
 #define NES_PRGROM_SIZE   0x4000
 
@@ -60,7 +59,6 @@ typedef struct tagNES {
     MEM cram;    // cpu ram
     MEM ppuregs; // ppu regs
     MEM apuregs; // apu regs
-    MEM erom;    // expansion rom
     MEM sram;    // sram
     MEM prom0;   // PRG-ROM 0
     MEM prom1;   // PRG-ROM 1
@@ -87,7 +85,6 @@ typedef struct tagNES {
     // ndb object
     struct tagNDB ndb;
 
-    BYTE buf_erom   [NES_EROM_SIZE]; // erom buffer on cbus
     BYTE buf_vram[4][NES_VRAM_SIZE]; // vram buffer on pbus
 } NES;
 

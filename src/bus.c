@@ -86,3 +86,40 @@ WORD bus_readw_norwcb(BUS bus, int addr)
     else return 0;
 }
 
+//++ for fast cbus
+static MEM* find_mem_bank_fast_cbus(BUS bus, int baddr, int *maddr)
+{
+    static int map[8] = { 5, 4, 3, 2, 1, 1, 0, 0 };
+    int b = map[baddr >> 13];
+    if (baddr & 0x8000) {
+        *maddr = baddr & ~0x8000;
+    } else {
+        *maddr = baddr & ~0xC000;
+    }
+    return bus[b].membank;
+}
+
+BYTE bus_readb_fast_cbus(BUS bus, int addr)
+{
+    MEM *mbank = find_mem_bank_fast_cbus(bus, addr, &addr);
+    return mbank ? mem_readb(mbank, addr) : 0;
+}
+
+WORD bus_readw_fast_cbus(BUS bus, int addr)
+{
+    MEM *mbank = find_mem_bank_fast_cbus(bus, addr, &addr);
+    return mbank ? mem_readw(mbank, addr) : 0;
+}
+
+void bus_writeb_fast_cbus(BUS bus, int addr, BYTE byte)
+{
+    MEM *mbank = find_mem_bank_fast_cbus(bus, addr, &addr);
+    if (mbank) mem_writeb(mbank, addr, byte);
+}
+
+void bus_writew_fast_cbus(BUS bus, int addr, WORD word)
+{
+    MEM *mbank = find_mem_bank_fast_cbus(bus, addr, &addr);
+    if (mbank) mem_writew(mbank, addr, word);
+}
+//-- for fast cbus

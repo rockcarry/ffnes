@@ -13,6 +13,13 @@
 #define NCH_NTIMER_DIVIDER  ((noise_timer_period_table[regs[0x0002] & 0xf]) / 2)
 #define DCH_DTIMER_DIVIDER  ((dmc_timer_period_table  [regs[0x0000] & 0xf]) / 2)
 
+#ifdef ENABLE_FAST_CBUS
+#define bus_readb  bus_readb_fast_cbus
+#define bus_readw  bus_readw_fast_cbus
+#define bus_writeb bus_writeb_fast_cbus
+#define bus_writew bus_writew_fast_cbus
+#endif
+
 // 内部全局变量定义
 static BYTE length_table[32] =
 {

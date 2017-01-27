@@ -5,6 +5,9 @@
 #include "stdefine.h"
 #include "mem.h"
 
+// 预编译开关
+#define ENABLE_FAST_CBUS
+
 // 常量定义
 enum {
     BUS_MAP_MEMORY,
@@ -33,6 +36,11 @@ void bus_setmir(BUS bus, int i, int start, int end, WORD mirmask);
 // bus read without rw callback
 BYTE bus_readb_norwcb(BUS bus, int addr);
 WORD bus_readw_norwcb(BUS bus, int addr);
+
+BYTE bus_readb_fast_cbus (BUS bus, int addr);
+WORD bus_readw_fast_cbus (BUS bus, int addr);
+void bus_writeb_fast_cbus(BUS bus, int addr, BYTE byte);
+void bus_writew_fast_cbus(BUS bus, int addr, WORD word);
 
 #endif
 

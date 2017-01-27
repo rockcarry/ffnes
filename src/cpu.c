@@ -63,6 +63,13 @@ instruction, except it does not store the result anywhere nor affects the
 flags.
 */
 
+#ifdef ENABLE_FAST_CBUS
+#define bus_readb  bus_readb_fast_cbus
+#define bus_readw  bus_readw_fast_cbus
+#define bus_writeb bus_writeb_fast_cbus
+#define bus_writew bus_writew_fast_cbus
+#endif
+
 // 常量定义
 #define IRQ_FLAG    (1 << 0)
 #define NMI_FLAG    (1 << 1)
