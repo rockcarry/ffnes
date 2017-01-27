@@ -60,8 +60,9 @@ static void* vdev_gdi_create(int w, int h, DWORD extra)
     if (!ctxt->hbmp) {
         log_printf("failed to create gdi dib section !\n");
         exit(0);
+    } else {
+        SelectObject(ctxt->hdcsrc, ctxt->hbmp);
     }
-    else SelectObject(ctxt->hdcsrc, ctxt->hbmp);
 
     BITMAP bitmap;
     GetObject(ctxt->hbmp, sizeof(BITMAP), &bitmap);
@@ -126,30 +127,28 @@ static void vdev_gdi_enqueue(void *ctxt)
         InvalidateRect(c->hwnd, &rect2, TRUE);
         InvalidateRect(c->hwnd, &rect3, TRUE);
         InvalidateRect(c->hwnd, &rect4, TRUE);
+        return;
     }
 
-    if (c->texttick > GetTickCount())
-    {
+    if (c->texttick > GetTickCount()) {
         SetBkMode   (c->hdcsrc, TRANSPARENT);
         SetTextColor(c->hdcsrc, RGB(255,255,255));
         TextOut(c->hdcsrc, c->textposx, c->textposy, c->textstr, (int)strlen(c->textstr));
+    } else {
+        c->priority = 0;
     }
-    else c->priority = 0;
 
     // bitblt picture to window witch stretching
     StretchBlt(c->hdcdst, c->rtview.left, c->rtview.top,
                c->rtview.right - c->rtview.left,
                c->rtview.bottom - c->rtview.top,
                c->hdcsrc, 0, 0, c->width, c->height, SRCCOPY);
-
-    Sleep(1); // sleep is used to make frame pitch more uniform
 }
 
 static void vdev_gdi_textout(void *ctxt, int x, int y, char *text, int time, int priority)
 {
     DEVGDICTXT *c = (DEVGDICTXT*)ctxt;
-    if (priority >= c->priority)
-    {
+    if (priority >= c->priority) {
         strncpy(c->textstr, text, 256);
         c->textposx = x;
         c->textposy = y;

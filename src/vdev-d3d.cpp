@@ -199,10 +199,10 @@ static void vdev_d3d_enqueue(void *ctxt)
         InvalidateRect(c->hwnd, &rect2, TRUE);
         InvalidateRect(c->hwnd, &rect3, TRUE);
         InvalidateRect(c->hwnd, &rect4, TRUE);
+        return;
     }
 
-    if (c->texttick > GetTickCount())
-    {
+    if (c->texttick > GetTickCount()) {
         //++ these code may cause reboot on some pc
         HDC hdc = NULL;
         if (SUCCEEDED(c->pSurface->GetDC(&hdc))) {
@@ -212,22 +212,21 @@ static void vdev_d3d_enqueue(void *ctxt)
             c->pSurface->ReleaseDC(hdc);
         }
         //-- these code may cause reboot on some pc
+    } else {
+        c->priority = 0;
     }
-    else c->priority = 0;
 
     IDirect3DSurface9 *pback = NULL;
-    if (SUCCEEDED(c->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback)))
-    {
+    if (SUCCEEDED(c->pD3DDev->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pback))) {
         if (pback) {
             if (SUCCEEDED(c->pD3DDev->StretchRect(c->pSurface, NULL, pback, NULL, D3DTEXF_LINEAR))) {
-                c->pD3DDev->Present(NULL, &c->rtview, NULL, NULL); Sleep(1);
+                c->pD3DDev->Present(NULL, &c->rtview, NULL, NULL);
             }
             pback->Release();
         }
     }
 
-    if (c->d3d_mode_changed)
-    {
+    if (c->d3d_mode_changed) {
         //++ re-create d3d device and surface
         c->pSurface->Release();   // release
         c->pD3DDev->Release();    // release
@@ -241,8 +240,7 @@ static void vdev_d3d_enqueue(void *ctxt)
 static void vdev_d3d_textout(void *ctxt, int x, int y, char *text, int time, int priority)
 {
     DEVD3DCTXT *c = (DEVD3DCTXT*)ctxt;
-    if (priority >= c->priority)
-    {
+    if (priority >= c->priority) {
         strncpy(c->textstr, text, 256);
         c->textposx = x;
         c->textposy = y;
