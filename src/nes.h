@@ -39,7 +39,7 @@
 #define NES_PALETTE_SIZE  0x0020
 
 // nes max bus size
-#define NES_MAX_BUS_SIZE  10
+#define NES_MAX_BUS_SIZE  8
 
 // ¿‡–Õ…˘√˜
 struct tagNDB; // for ndb

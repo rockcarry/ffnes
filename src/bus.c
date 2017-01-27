@@ -90,13 +90,12 @@ WORD bus_readw_norwcb(BUS bus, int addr)
 static MEM* find_mem_bank_fast_cbus(BUS bus, int baddr, int *maddr)
 {
     static int map[8] = { 5, 4, 3, 2, 1, 1, 0, 0 };
-    int b = map[baddr >> 13];
     if (baddr & 0x8000) {
-        *maddr = baddr & ~0x8000;
+        *maddr = baddr & 0x7FFF;
     } else {
-        *maddr = baddr & ~0xC000;
+        *maddr = baddr & 0x3FFF;
     }
-    return bus[b].membank;
+    return bus[map[baddr>>13]].membank;
 }
 
 BYTE bus_readb_fast_cbus(BUS bus, int addr)
@@ -123,3 +122,42 @@ void bus_writew_fast_cbus(BUS bus, int addr, WORD word)
     if (mbank) mem_writew(mbank, addr, word);
 }
 //-- for fast cbus
+
+//++ for fast pbus
+static MEM* find_mem_bank_fast_pbus(BUS bus, int baddr, int *maddr)
+{
+    int b;
+    if (baddr & 0x2000) {
+        b = 5 - ((baddr & 0x0C00) >> 10);
+        *maddr = baddr & 0x03FF;
+    } else {
+        b = (baddr & 0x1000) ? 6 : 7;
+        *maddr = baddr & 0x0FFF;
+    }
+    return bus[b].membank;
+}
+
+BYTE bus_readb_fast_pbus(BUS bus, int addr)
+{
+    MEM *mbank = find_mem_bank_fast_pbus(bus, addr, &addr);
+    return mbank ? mem_readb(mbank, addr) : 0;
+}
+
+WORD bus_readw_fast_pbus(BUS bus, int addr)
+{
+    MEM *mbank = find_mem_bank_fast_pbus(bus, addr, &addr);
+    return mbank ? mem_readw(mbank, addr) : 0;
+}
+
+void bus_writeb_fast_pbus(BUS bus, int addr, BYTE byte)
+{
+    MEM *mbank = find_mem_bank_fast_pbus(bus, addr, &addr);
+    if (mbank) mem_writeb(mbank, addr, byte);
+}
+
+void bus_writew_fast_pbus(BUS bus, int addr, WORD word)
+{
+    MEM *mbank = find_mem_bank_fast_pbus(bus, addr, &addr);
+    if (mbank) mem_writew(mbank, addr, word);
+}
+//-- for fast pbus

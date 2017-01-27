@@ -10,6 +10,13 @@
 // so I enable this feature for ffnes by default.
 #define ENABLE_SPRITE0_HIT_ATX255 0
 
+#ifdef ENABLE_FAST_PBUS
+#define bus_readb  bus_readb_fast_pbus
+#define bus_readw  bus_readw_fast_pbus
+#define bus_writeb bus_writeb_fast_pbus
+#define bus_writew bus_writew_fast_pbus
+#endif
+
 // 内部全局变量定义
 BYTE DEF_PPU_PAL[64 * 3] =
 {
@@ -634,16 +641,13 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
         break;
 
     case 0x0007:
-        if (vaddr < 0x3f00)
-        {
+        if (vaddr < 0x3f00) {
             byte            = ppu->_2007_lazy;
             ppu->_2007_lazy = bus_readb(nes->pbus, vaddr);
-        }
-        else
-        {
+        } else {
             //++ for ppu open bus & palette read ++//
             mask            = 0xc0;
-            byte            = bus_readb(nes->pbus, vaddr) & 0x3f;
+            byte            = ppu->palette[vaddr & 0x1f] & 0x3f;
             byte           |= ppu->open_busv & 0xc0;
             //-- for ppu open bus & palette read --//
             ppu->_2007_lazy = bus_readb(nes->pbus, vaddr & 0x2fff); // palette addr dummy read
@@ -736,14 +740,12 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
 
     case 0x0007:
         if (vaddr < 0x3f00) bus_writeb(nes->pbus, vaddr, byte);
-        else
-        {
+        else {
             //+ for ppu palette mirroring
             vaddr &= 0x1f;
             byte  &= 0x3f;
             if (vaddr & 0x03) ppu->palette[vaddr] = byte;
-            else
-            {
+            else {
                 ppu->palette[vaddr & ~0x10] = byte;
                 ppu->palette[vaddr |  0x10] = byte;
             }

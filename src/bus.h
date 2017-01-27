@@ -7,6 +7,7 @@
 
 // 预编译开关
 #define ENABLE_FAST_CBUS
+#define ENABLE_FAST_PBUS
 
 // 常量定义
 enum {
@@ -41,6 +42,11 @@ BYTE bus_readb_fast_cbus (BUS bus, int addr);
 WORD bus_readw_fast_cbus (BUS bus, int addr);
 void bus_writeb_fast_cbus(BUS bus, int addr, BYTE byte);
 void bus_writew_fast_cbus(BUS bus, int addr, WORD word);
+
+BYTE bus_readb_fast_pbus (BUS bus, int addr);
+WORD bus_readw_fast_pbus (BUS bus, int addr);
+void bus_writeb_fast_pbus(BUS bus, int addr, BYTE byte);
+void bus_writew_fast_pbus(BUS bus, int addr, WORD word);
 
 #endif
 

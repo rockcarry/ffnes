@@ -55,7 +55,7 @@ void mmc_switch_cbank4k0(MMC *mmc, int bank)
     mmc->cbanksize = 4 * 1024;
     mmc->cbank0000 = bank;
     bank = (bank == -1) ? (mmc->cart->crom_count * 2 - 1) : bank; // -1 is special, means the last bank
-    mmc->pbus[8].membank->data = mmc->cart->buf_crxm + 0x1000 * (bank % (mmc->cart->crom_count * 2));
+    mmc->pbus[7].membank->data = mmc->cart->buf_crxm + 0x1000 * (bank % (mmc->cart->crom_count * 2));
 }
 
 void mmc_switch_cbank4k1(MMC *mmc, int bank)
@@ -63,7 +63,7 @@ void mmc_switch_cbank4k1(MMC *mmc, int bank)
     mmc->cbanksize = 4 * 1024;
     mmc->cbank1000 = bank;
     bank = (bank == -1) ? (mmc->cart->crom_count * 2 - 1) : bank; // -1 is special, means the last bank
-    mmc->pbus[7].membank->data = mmc->cart->buf_crxm + 0x1000 * (bank % (mmc->cart->crom_count * 2));
+    mmc->pbus[6].membank->data = mmc->cart->buf_crxm + 0x1000 * (bank % (mmc->cart->crom_count * 2));
 }
 
 void mmc_switch_cbank8k(MMC *mmc, int bank)
@@ -72,8 +72,8 @@ void mmc_switch_cbank8k(MMC *mmc, int bank)
     mmc->cbank0000 = bank;
     mmc->cbank1000 = bank;
     bank = (bank == -1) ? (mmc->cart->crom_count - 1) : bank; // -1 is special, means the last bank
-    mmc->pbus[8].membank->data = mmc->cart->buf_crxm + 0x2000 * (bank % mmc->cart->crom_count);
-    mmc->pbus[7].membank->data = mmc->pbus[8].membank->data + 0x1000;
+    mmc->pbus[7].membank->data = mmc->cart->buf_crxm + 0x2000 * (bank % mmc->cart->crom_count);
+    mmc->pbus[6].membank->data = mmc->pbus[7].membank->data + 0x1000;
 }
 
 // 内部类型定义
@@ -349,8 +349,8 @@ void mmc_init(MMC *mmc, CARTRIDGE *cart, BUS cbus, BUS pbus)
     // if cartridge is using chr-ram
     if (mmc->cart->ischrram)
     {
-        mmc->pbus[8].membank->type = MEM_RAM;
         mmc->pbus[7].membank->type = MEM_RAM;
+        mmc->pbus[6].membank->type = MEM_RAM;
     }
 
     // call mapper init if exsits

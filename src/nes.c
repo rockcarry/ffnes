@@ -165,15 +165,14 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     nes->palette.data = nes->ppu.palette;
 
     // init nes pbus
-    bus_setmir(nes->pbus, 0, 0x3F20, 0x3FFF, 0x3F1F);
-    bus_setmem(nes->pbus, 1, 0x3F00, 0x3F1F, &(nes->palette));
-    bus_setmir(nes->pbus, 2, 0x3000, 0x3EFF, 0x2FFF);
-    bus_setmem(nes->pbus, 3, 0x2C00, 0x2FFF, &(nes->vram[3]));
-    bus_setmem(nes->pbus, 4, 0x2800, 0x2BFF, &(nes->vram[2]));
-    bus_setmem(nes->pbus, 5, 0x2400, 0x27FF, &(nes->vram[1]));
-    bus_setmem(nes->pbus, 6, 0x2000, 0x23FF, &(nes->vram[0]));
-    bus_setmem(nes->pbus, 7, 0x1000, 0x1FFF, &(nes->chrrom1));
-    bus_setmem(nes->pbus, 8, 0x0000, 0x0FFF, &(nes->chrrom0));
+    bus_setmem(nes->pbus, 0, 0x3F00, 0x3FFF, &(nes->palette));
+    bus_setmir(nes->pbus, 1, 0x3000, 0x3EFF, 0x2FFF);
+    bus_setmem(nes->pbus, 2, 0x2C00, 0x2FFF, &(nes->vram[3]));
+    bus_setmem(nes->pbus, 3, 0x2800, 0x2BFF, &(nes->vram[2]));
+    bus_setmem(nes->pbus, 4, 0x2400, 0x27FF, &(nes->vram[1]));
+    bus_setmem(nes->pbus, 5, 0x2000, 0x23FF, &(nes->vram[0]));
+    bus_setmem(nes->pbus, 6, 0x1000, 0x1FFF, &(nes->chrrom1));
+    bus_setmem(nes->pbus, 7, 0x0000, 0x0FFF, &(nes->chrrom0));
     //-- pbus mem map --//
 
     // init mmc before cpu & ppu & apu, due to mmc will do bank switch
