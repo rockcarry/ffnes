@@ -18,20 +18,17 @@ typedef struct
 } NES_SAVE_FILE;
 
 // 内部函数实现
-static void saver_restore_apu(APU *apu, int oldpclk, int newpclk)
+static void saver_restore_apu(APU *apu, int oldaclk, int newaclk)
 {
-    if (oldpclk > 0) apu->adev->enqueue(apu->actxt);
-    if (newpclk > 0) apu->adev->dequeue(apu->actxt, &(apu->audiobuf));
+    if (oldaclk > 0) apu->adev->enqueue(apu->actxt);
+    if (newaclk > 0) apu->adev->dequeue(apu->actxt, &(apu->audiobuf));
 }
 
-static void saver_restore_ppu(PPU *ppu, int oldpclk, int newpclk)
+static void saver_restore_ppu(PPU *ppu)
 {
     NES *nes = container_of(ppu, NES, ppu);
-
     ppu->chrom_bkg = (ppu->regs[0x0000] & (1 << 4)) ? nes->chrrom1.data : nes->chrrom0.data;
     ppu->chrom_spr = (ppu->regs[0x0000] & (1 << 3)) ? nes->chrrom1.data : nes->chrrom0.data;
-    if (oldpclk <= NES_HTOTAL * 241 + 1) ppu->vdev->enqueue(ppu->vctxt);
-    if (newpclk <= NES_HTOTAL * 241 + 1) ppu->vdev->dequeue(ppu->vctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
 }
 
 static void saver_restore_mmc(MMC *mmc)
@@ -87,7 +84,7 @@ void saver_save_game(NES *nes, char *file)
     save.rply_size = (save.rply_size == -1) ? 0 : save.rply_size;
 
     if (save.head_size) lzw_fwrite(&save             , sizeof(save)  , 1, fp);
-    if (save.neso_size) lzw_fwrite(nes               , sizeof(NES)   , 1, fp);
+    if (save.neso_size) lzw_fwrite(nes               , sizeof(NES )  , 1, fp);
     if (save.sram_size) lzw_fwrite(nes->cart.buf_sram, save.sram_size, 1, fp);
     if (save.cram_size) lzw_fwrite(nes->cart.buf_crxm, save.cram_size, 1, fp);
 
@@ -116,8 +113,8 @@ void saver_load_game(NES *nes, char *file)
     void         *fp;
     NES           buf;
     int           start, end, i;
-    int           oldapuaclk, newapuaclk;
-    int           oldppupclk, newppupclk;
+    int           oldapuaclk;
+    int           newapuaclk;
     int           running;
 
     // protected member list
@@ -178,8 +175,6 @@ void saver_load_game(NES *nes, char *file)
     // get ppu & apu old/new pclk
     oldapuaclk = nes->apu.aclk_counter;
     newapuaclk = buf. apu.aclk_counter;
-    oldppupclk = nes->ppu.pclk_frame;
-    newppupclk = buf. ppu.pclk_frame;
 
     //++ restore nes context data from save file data ++//
     i = start = 0;
@@ -193,7 +188,7 @@ void saver_load_game(NES *nes, char *file)
 
     // restore ppu & mmc
     saver_restore_apu(&(nes->apu), oldapuaclk, newapuaclk);
-    saver_restore_ppu(&(nes->ppu), oldppupclk, newppupclk);
+    saver_restore_ppu(&(nes->ppu));
     saver_restore_mmc(&(nes->mmc));
 
     // show text
