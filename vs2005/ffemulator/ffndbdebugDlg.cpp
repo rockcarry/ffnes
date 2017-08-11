@@ -172,10 +172,10 @@ BOOL CffndbdebugDlg::OnInitDialog()
 
     // update button
     CWnd *pwnd = GetDlgItem(IDC_BTN_NES_RUN_PAUSE);
-    if (m_pNES->isrunning) {
-        pwnd->SetWindowText("pause");
+    if (m_pNES->thread_status & TS_PAUSE_REQ) {
+        pwnd->SetWindowText("run");
     }
-    else pwnd->SetWindowText("run");
+    else pwnd->SetWindowText("pause");
 
     pwnd = GetDlgItem(IDC_BTN_CPU_TRACKING);
     if (m_bEnableTracking) {

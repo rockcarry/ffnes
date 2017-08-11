@@ -29,13 +29,13 @@ static void* nes_thread_proc(void *param)
 {
     NES *nes = (NES*)param;
 
-    while (!nes->thread_exit)
+    while (!(nes->thread_status & TS_EXIT))
     {
         //++ for run/pause and end of replay ++//
-        if (  !nes->isrunning // request pause
-           || !replay_progress(&nes->replay) && nes->request_reset == 0) // end of replay
+        if (  (nes->thread_status & TS_PAUSE_REQ) // request pause
+           ||!(nes->thread_status & TS_RESET) && !replay_isend(&nes->replay)) // end of replay
         {
-            nes->ispaused = 1;
+            nes->thread_status |= TS_PAUSE_ACK;
             nes->ppu.vdev->dequeue(nes->ppu.vctxt, NULL, NULL);
             nes->ppu.vdev->enqueue(nes->ppu.vctxt);
             continue;
@@ -43,8 +43,8 @@ static void* nes_thread_proc(void *param)
         //-- for run/pause and end of replay --//
 
         //++ for nes reset ++//
-        if (nes->request_reset == 1) {
-            nes->request_reset = 0;
+        if (nes->thread_status & TS_RESET) {
+            nes->thread_status &= ~TS_RESET;
             nes_do_reset(nes);
         }
         //-- for nes reset --//
@@ -201,7 +201,7 @@ void nes_free(NES *nes)
     ndb_set_debug(&nes->ndb, NDB_DEBUG_MODE_DISABLE);
 
     // destroy nes thread
-    nes->thread_exit = TRUE;
+    nes->thread_status |= TS_EXIT;
     pthread_join(nes->thread_id, NULL);
 
     // free replay
@@ -229,22 +229,27 @@ void nes_reset(NES *nes)
 {
     // disable ndb debugging will make cpu keep running
     ndb_set_debug(&nes->ndb, NDB_DEBUG_MODE_DISABLE);
-    nes->request_reset = 1; // request reset
+    nes->thread_status |= TS_RESET; // request reset
     nes_textout(nes, 0, 222, "reset", 2000, 1);
 }
 
 void nes_setrun(NES *nes, int run)
 {
-    if (run) { nes_textout(nes, 0, 222, "running", 2000, 1); }
-    else     { nes_textout(nes, 0, 222, "paused" , -1  , 1); Sleep(16); }
-    nes->isrunning = run;
-    nes->ispaused  = 0;
-    if (!run) while (!nes->ispaused) Sleep(1);
+    if (run) {
+        nes_textout(nes, 0, 222, "running", 2000, 1); Sleep(20);
+        nes->thread_status &= ~TS_PAUSE_ACK;
+        nes->thread_status &= ~TS_PAUSE_REQ;
+    } else {
+        nes_textout(nes, 0, 222, "paused" , -1  , 1); Sleep(20);
+        nes->thread_status &= ~TS_PAUSE_ACK;
+        nes->thread_status |=  TS_PAUSE_REQ;
+        while (!(nes->thread_status & TS_PAUSE_ACK)) Sleep(1);
+    }
 }
 
 int nes_getrun(NES *nes)
 {
-    return nes->isrunning;
+    return !(nes->thread_status & TS_PAUSE_REQ);
 }
 
 void nes_joypad(NES *nes, int pad, int key, int value)

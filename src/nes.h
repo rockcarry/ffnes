@@ -70,14 +70,13 @@ typedef struct tagNES {
     MEM vram[4]; // vram0 1KB * 4 vram, in ppu/cart
     MEM palette; // color palette in ppu
 
-    // for reset nes
-    int request_reset;
-
     // for nes thread
+    #define TS_EXIT      (1 << 0 )
+    #define TS_RESET     (1 << 1 )
+    #define TS_PAUSE_REQ (1 << 2 )
+    #define TS_PAUSE_ACK (1 << 18)
     pthread_t thread_id;
-    BOOL      thread_exit;
-    BOOL      isrunning;
-    BOOL      ispaused;
+    int       thread_status;
 
     // for replay
     REPLAY replay;
