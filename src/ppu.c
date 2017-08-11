@@ -397,13 +397,11 @@ void ppu_reset(PPU *ppu)
 
 void ppu_run_pclk(PPU *ppu)
 {
-    // scanline 261 pre-render scanline
     if (ppu->pclk_frame == NES_HTOTAL * 261 + 0) { // scanline 261, tick 0
-        ppu->regs[0x0002] &= ~(3 << 5);
-    } else if (ppu->pclk_frame == NES_HTOTAL * 261 + 1) { // scanline 261, tick 1
-        // clear vblank bit of reg $2002
         ppu->vblklast = ppu->regs[0x0002] & (1 << 7);
-        ppu->regs[0x0002] &= ~(1 << 7);
+        ppu->regs[0x0002] &= ~(1 << 7); // clear vblank flag
+        ppu->regs[0x0002] &= ~(1 << 6); // clear sprite 0 hit flag
+        ppu->regs[0x0002] &= ~(1 << 5); // clear sprite 0 overflag
 
         // if sprite or name-tables are visible.
         if (ppu->regs[0x0001] & (0x3 << 3)) {
@@ -415,6 +413,22 @@ void ppu_run_pclk(PPU *ppu)
 
         // request vdev buffer, obtain address & stride
         ppu->vdev->dequeue(ppu->vctxt, (void**)&ppu->draw_buffer, &ppu->draw_stride);
+    } else if (ppu->pclk_frame == NES_HTOTAL * 241 + 0) { // scanline 241, tick 0
+        // set vblank bit of reg $2002
+        ppu->vblklast = ppu->regs[0x0002] & (1 << 7);
+        ppu->regs[0x0002] |= (1 << 7);
+
+        {//++ for replay progress bar ++//
+            NES *nes = container_of(ppu, NES, ppu);
+            if (nes->replay.mode == NES_REPLAY_PLAY) {
+                int i = 256 * nes->replay.curpos / nes->replay.total;
+                ppu->draw_buffer -= ppu->draw_stride;
+                while (i--) ppu->draw_buffer[i] = RGB(255, 128, 255);
+            }
+        }//-- for replay progress bar --//
+
+        // post vdev buffer
+        ppu->vdev->enqueue(ppu->vctxt);
     }
 
     // scanline 0 - 239 visible scanlines
@@ -472,7 +486,7 @@ void ppu_run_pclk(PPU *ppu)
 
             // write pixel on vdev
             *ppu->draw_buffer++ = ((DWORD*)ppu->vdevpal)[ppu->palette[pixel]];
-        } else if (ppu->pclk_line == 321) { // tick 321
+        } else if (ppu->pclk_line == 320) { // tick 320
             if (ppu->regs[0x0001] & (0x3 << 3)) {
                 // evaluate sprite
                 sprite_evaluate(ppu);
@@ -490,28 +504,6 @@ void ppu_run_pclk(PPU *ppu)
             ppu->draw_buffer -= 256;
             ppu->draw_buffer += ppu->draw_stride;
         }
-    }
-
-    // scanline 240 post-render scanline
-    // do nothing
-
-    // scanline 241 - 260 vblank
-    else if (ppu->pclk_frame == NES_HTOTAL * 241 + 1) { // scanline 241, tick 1
-        {//++ for replay progress bar ++//
-            NES *nes = container_of(ppu, NES, ppu);
-            if (nes->replay.mode == NES_REPLAY_PLAY) {
-                int i = 256 * nes->replay.curpos / nes->replay.total;
-                ppu->draw_buffer -= ppu->draw_stride;
-                while (i--) ppu->draw_buffer[i] = RGB(255, 128, 255);
-            }
-        }//-- for replay progress bar --//
-
-        // post vdev buffer
-        ppu->vdev->enqueue(ppu->vctxt);
-
-        // set vblank bit of reg $2002
-        ppu->vblklast = ppu->regs[0x0002] & (1 << 7);
-        ppu->regs[0x0002] |= (1 << 7);
     }
 
     // the last tick of frame, odd frame with tick skipping
