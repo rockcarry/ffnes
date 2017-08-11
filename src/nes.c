@@ -65,8 +65,8 @@ static void* nes_thread_proc(void *param)
             ppu_run_pclk(&nes->ppu); // run ppu
 			cpu_nmi(&nes->cpu, ppu_pin_vbl(&nes->ppu));
             cpu_run_cclk(&nes->cpu); // run cpu
-        } while (  nes->ppu.pclk_frame <= NES_HTOTAL * 241 + 1
-                || nes->ppu.pclk_frame >= NES_HTOTAL * 241 + 7);
+        } while (!(  nes->ppu.pclk_frame >= NES_HTOTAL * 241 + 1
+                  && nes->ppu.pclk_frame <= NES_HTOTAL * 241 + 6));
         //-- run cpu & apu & ppu
 
         // run joypad for turbo key function
