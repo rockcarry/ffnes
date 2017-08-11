@@ -6,19 +6,19 @@
 void replay_init(REPLAY *rep)
 {
     // init replay mode
-    rep->mode   = NES_REPLAY_RECORD;
-    rep->tmpnam = tmpnam(NULL);
-    rep->fp     = fopen(rep->tmpnam, "wb+");
+    strcpy(rep->fname, getenv("TEMP"));
+    strcat(rep->fname, "\\lastreplay");
+    rep->fp   = fopen(rep->fname, "wb+");
+    rep->mode = NES_REPLAY_RECORD;
 }
 
 void replay_free(REPLAY *rep)
 {
-    if (rep->fp)
-    {
+    if (rep->fp) {
         fclose(rep->fp);
         rep->fp = NULL;
     }
-    unlink(rep->tmpnam);
+    unlink(rep->fname);
 }
 
 void replay_reset(REPLAY *rep)
@@ -29,10 +29,10 @@ void replay_reset(REPLAY *rep)
     switch (rep->mode)
     {
     case NES_REPLAY_RECORD:
-        rep->fp = fopen(rep->tmpnam, "wb+");
+        rep->fp = fopen(rep->fname, "wb+");
         break;
     case NES_REPLAY_PLAY:
-        rep->fp = fopen(rep->tmpnam, "rb");
+        rep->fp = fopen(rep->fname, "rb");
         fseek(rep->fp, 0, SEEK_END);
         rep->total = ftell(rep->fp);
         fseek(rep->fp, 0, SEEK_SET);

@@ -18,7 +18,7 @@ typedef struct {
     FILE *fp;
     long  total;
     long  curpos;
-    char *tmpnam;
+    char  fname[MAX_PATH];
 } REPLAY;
 
 // º¯ÊýÉùÃ÷
