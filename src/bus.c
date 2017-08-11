@@ -5,8 +5,7 @@
 static MEM* find_mem_bank(BUS bus, int baddr, int *maddr)
 {
     do {
-        if (baddr >= bus->start /*&& baddr <= bus->end*/)
-        {
+        if (baddr >= bus->start /*&& baddr <= bus->end*/) {
             switch (bus->type)
             {
             case BUS_MAP_MEMORY:

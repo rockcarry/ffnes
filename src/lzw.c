@@ -49,8 +49,7 @@ typedef struct
 // 内部函数实现
 static void resetlzwcodec(LZW *lzw)
 {
-    if (lzw->mode == LZW_MODE_ENCODE)
-    {
+    if (lzw->mode == LZW_MODE_ENCODE) {
         LZWSTRITEM *strtab_cur = &(lzw->lzw_str_tab[0]);
         LZWSTRITEM *strtab_end = strtab_cur + LZW_TAB_SIZE;
         /* init lzw prefix link list */
@@ -80,8 +79,7 @@ static BOOL AddToLZWStringTable(LZW *lzw, int prefix, int byte, BOOL flag)
     strtab[lzw->str_tab_pos].firstbyte = strtab[prefix].firstbyte;
     strtab[lzw->str_tab_pos].lastbyte  = byte;
 
-    if (flag)
-    {
+    if (flag) {
         /* 更新前缀链表 */
         strtab[lzw->str_tab_pos].next = strtab[prefix].head;
         strtab[prefix].head           = lzw->str_tab_pos;
@@ -108,8 +106,7 @@ static int FindInLZWStringTable(LZW *lzw, int prefix, int byte)
 
     /* 在 while 循环中遍历前缀链表 */
     link = strtab[prefix].head;
-    while (link)
-    {
+    while (link) {
         if (strtab[link].lastbyte == byte) return link;
         link = strtab[link].next;
     }
@@ -138,20 +135,18 @@ static void DecodeLZWString(LZW *lzw, int code)
     int        *pbuf   = lzw->lzw_str_buf;
 
     /* 构造 LZW 字符串 */
-    while (code != -1 && lzw->str_buf_pos++ < LZW_TAB_SIZE)
-    {
+    while (code != -1 && lzw->str_buf_pos++ < LZW_TAB_SIZE) {
        *pbuf++ = strtab[code].lastbyte;
         code   = strtab[code].prefix;
     }
 }
 
-BOOL getbits(LZW *lzw, DWORD *data, int size)
+static BOOL getbits(LZW *lzw, DWORD *data, int size)
 {
     int pos, byte, need, i;
 
     need = (size - lzw->bitflag + 7) / 8;
-    if (need > 0)
-    {
+    if (need > 0) {
        *data = lzw->bitbuf;
         pos  = lzw->bitflag;
         for (i=0; i<need; i++) {
@@ -163,9 +158,7 @@ BOOL getbits(LZW *lzw, DWORD *data, int size)
         }
         lzw->bitflag = need * 8 + lzw->bitflag - size;
         lzw->bitbuf  = byte >> (8 - lzw->bitflag);
-    }
-    else
-    {
+    } else {
        *data  = lzw->bitbuf;
         lzw->bitflag -= size;
         lzw->bitbuf >>= size;
@@ -174,14 +167,13 @@ BOOL getbits(LZW *lzw, DWORD *data, int size)
     return TRUE;
 }
 
-BOOL putbits(LZW *lzw, DWORD data, int size)
+static BOOL putbits(LZW *lzw, DWORD data, int size)
 {
     int nbit;
 
     data &= (1L << size) - 1;
 
-    if (lzw->bitflag)
-    {
+    if (lzw->bitflag) {
         nbit = size < 8 - lzw->bitflag ? size : 8 - lzw->bitflag;
         lzw->bitbuf |= data << lzw->bitflag;
         lzw->bitflag+= nbit;
@@ -192,8 +184,7 @@ BOOL putbits(LZW *lzw, DWORD data, int size)
         size  -= nbit;
     }
 
-    while (size >= 8)
-    {
+    while (size >= 8) {
         if (EOF == fputc(data, lzw->fp)) return FALSE;
         data >>= 8;
         size  -= 8;
@@ -204,7 +195,7 @@ BOOL putbits(LZW *lzw, DWORD data, int size)
     return TRUE;
 }
 
-BOOL flushbits(LZW *lzw, int flag)
+static BOOL flushbits(LZW *lzw, int flag)
 {
     DWORD fill;
 
@@ -234,8 +225,7 @@ void* lzw_fopen(const char *filename, const char *mode)
 
     // init lzw root code
     strtab = lzw->lzw_str_tab;
-    for (i=0; i<LZW_END_CODE; i++)
-    {
+    for (i=0; i<LZW_END_CODE; i++) {
         strtab[i].prefix    = -1;
         strtab[i].firstbyte =  i;
         strtab[i].lastbyte  =  i;
@@ -250,10 +240,8 @@ void* lzw_fopen(const char *filename, const char *mode)
 int lzw_fclose(void *stream)
 {
     LZW *lzw = (LZW*)stream;
-    if (lzw)
-    {
-        if (lzw->fp)
-        {
+    if (lzw) {
+        if (lzw->fp) {
             if (!putbits(lzw, lzw->prefixcode, lzw->curcodesize)) return EOF;
             if (!putbits(lzw, LZW_END_CODE   , lzw->curcodesize)) return EOF;
             if (!flushbits(lzw, 0)) return EOF;
@@ -280,12 +268,11 @@ int lzw_fgetc(void *stream)
           && getbits(lzw, &curcode, lzw->curcodesize)
           && curcode != LZW_END_CODE )
     {
-        if (curcode == LZW_CLR_CODE)
-        {   /* 如果读到的是清除码 */
+        if (curcode == LZW_CLR_CODE) {
+            /* 如果读到的是清除码 */
             resetlzwcodec(lzw); /* reset lzw codec */
-        }
-        else
-        {   /* 如果读到的不是清除码 */
+        } else {
+            /* 如果读到的不是清除码 */
             /* 查找编码表中是否有该编码 */
             find = IsCodeInLZWStringTable(lzw, curcode);
 
@@ -310,8 +297,7 @@ int lzw_fgetc(void *stream)
     }
 
     if (lzw->str_buf_pos <= 0) return EOF;
-    else
-    {
+    else {
         lzw->fpos++; // file read/write pos
         return lzw->lzw_str_buf[--lzw->str_buf_pos];
     }
@@ -343,9 +329,8 @@ int lzw_fputc(int c, void *stream)
                 return EOF;
             }
             resetlzwcodec(lzw); /* reset lzw codec */
-        }
-        else 
-        {   /* 加入到编码表成功 */
+        } else {
+            /* 加入到编码表成功 */
             /* 根据 _str_tab_pos 重新计算新的 curcodesize */
             if (   lzw->str_tab_pos - 1 == (1 << lzw->curcodesize)
                 && lzw->curcodesize < LZW_CODE_SIZE_MAX) /* note: 这个限制条件必须要 */
@@ -357,9 +342,8 @@ int lzw_fputc(int c, void *stream)
 
         /* 置当前前缀码为 currentbyte */
         lzw->prefixcode = c;
-    }
-    else
-    {   /* 在 LZW 编码表中找到该字符串 */
+    } else {
+        /* 在 LZW 编码表中找到该字符串 */
         /* 置当前前缀码为该字符串的编码 */
         lzw->prefixcode = find;
     }
@@ -374,11 +358,9 @@ size_t lzw_fread(void *buffer, size_t size, size_t count, void *stream)
     BYTE  *dst   = (BYTE*)buffer;
     size_t total = size * count;
     int    value;
-    while (total--)
-    {
+    while (total--) {
         value = *dst++ = lzw_fgetc(stream);
-        if (value == EOF)
-        {
+        if (value == EOF) {
             total++;
             break;
         }
@@ -390,10 +372,8 @@ size_t lzw_fwrite(void *buffer, size_t size, size_t count, void *stream)
 {
     BYTE  *dst   = (BYTE*)buffer;
     size_t total = size * count;
-    while (total--)
-    {
-        if (EOF == lzw_fputc(*dst++, stream))
-        {
+    while (total--) {
+        if (EOF == lzw_fputc(*dst++, stream)) {
             total++;
             break;
         }
@@ -423,8 +403,7 @@ int lzw_fseek(void *stream, long offset, int origin)
 
     // seek lzw file
     skip = offset - lzw->fpos;
-    if (skip < 0)
-    {
+    if (skip < 0) {
         resetlzwcodec(lzw);
         lzw->str_buf_pos = 0;
         lzw->fpos        = 0;

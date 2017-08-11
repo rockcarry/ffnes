@@ -33,8 +33,7 @@ void mem_writeb(MEM *pm, int addr, BYTE byte)
     addr %= pm->size;
 
     // memory write callback
-    if (pm->w_callback)
-    {
+    if (pm->w_callback) {
         pm->w_callback(pm, addr, byte);
         return;
     }

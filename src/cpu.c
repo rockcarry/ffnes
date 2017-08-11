@@ -474,8 +474,7 @@ void cpu_run_cclk(CPU *cpu)
     if (cpu->cclk_dma > 0) { cpu->cclk_dma--; return; }
     //-- dma cclk counting --//
 
-    if (++cpu->cclk_counter == cpu->cclk_instr)
-    {
+    if (++cpu->cclk_counter == cpu->cclk_instr) {
         //++ for ndb cpu debug ++//
         {
             NES *nes = container_of(cpu, NES, cpu);
@@ -492,19 +491,14 @@ void cpu_run_cclk(CPU *cpu)
         cpu->cclk_counter = 0;
 
         //++ ORA, AND, EOR, ADC, STA, LDA, CMP, SBC ++//
-        if ((opcode & 0x3) == 0x01)
-        {
-            if (opopt != 4)
-            {
+        if ((opcode & 0x3) == 0x01) {
+            if (opopt != 4) {
                 //++ for lda abs,x & lda abs,y dummy read
-                if (opcode == 0xbd)
-                {
+                if (opcode == 0xbd) {
                     ET = READW(PC); PC += 2; EA = ET + XI;
                     if ((ET & 0xFF00) != (EA & 0xFF00)) { READB(ET + (EA & 0xff)); cpu->cclk_counter--; }
                     DT = READB(EA);
-                }
-                else if (opcode == 0xb1)
-                {
+                } else if (opcode == 0xb1) {
                     DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI;
                     if ((ET & 0xFF00) != (EA & 0xFF00)) { READB(ET + (EA & 0xff)); cpu->cclk_counter--; }
                     DT = READB(EA);
@@ -537,9 +531,7 @@ void cpu_run_cclk(CPU *cpu)
                 case 6: CMP(); break; // CMP
                 case 7: SBC(); break; // SBC
                 }
-            }
-            else
-            {
+            } else {
                 switch (opmat)
                 {
                 case 0: EA_IX(); STA(); MW_EA(); break; // STA (indir,x)
@@ -558,8 +550,7 @@ void cpu_run_cclk(CPU *cpu)
 
 
         //++ SLO, RLA, SRE, RRA ++//
-        if ((opcode & 0x83) == 0x03 && opmat != 2)
-        {
+        if ((opcode & 0x83) == 0x03 && opmat != 2) {
             // addressing
             switch (opmat)
             {
@@ -595,11 +586,9 @@ void cpu_run_cclk(CPU *cpu)
 
         //++ ASL, ROL, LSR, ROR ++//
         if ( (opcode & 0x83) == 0x02
-           && opmat != 0 && opmat != 4 && opmat != 6)
-        {
+           && opmat != 0 && opmat != 4 && opmat != 6) {
             //++ for rol abs,x dummy read
-            if (opcode == 0x3e)
-            {
+            if (opcode == 0x3e) {
                 ET = READW(PC); PC += 2; EA = ET + XI;
                 READB(ET + (EA & 0xff));
                 DT = READB(EA);
@@ -825,8 +814,7 @@ done:
         //-- handle nmi interrupt --//
 
         //++ handle irq interrupt ++//
-        if (!cpu->irq_flag && !(cpu->ps & I_FLAG))
-        {
+        if (!cpu->irq_flag && !(cpu->ps & I_FLAG)) {
             PUSH((PC >> 8) & 0xff);
             PUSH((PC >> 0) & 0xff);
             CLR_FLAG(B_FLAG);

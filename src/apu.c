@@ -62,12 +62,9 @@ static void apu_envelope_unit_clocked(int *env, BYTE reg)
         ENVELOPE_COUNTER(env) = 15;
         ENVELOPE_DIVIDER(env) = ENVELOPE_DRELOAD;
         ENVELOPE_RESET(env)   = 0;
-    }
-    else
-    {
+    } else {
         // otherwise the envelope's divider is clocked
-        if (--ENVELOPE_DIVIDER(env) == 0)
-        {
+        if (--ENVELOPE_DIVIDER(env) == 0) {
             // when the envelope's divider outputs a clock
             // if the counter is non-zero, it is decremented
             if (ENVELOPE_COUNTER(env) > 0) ENVELOPE_COUNTER(env)--;
@@ -81,8 +78,7 @@ static void apu_envelope_unit_clocked(int *env, BYTE reg)
     }
 
     // when constant volume is set, the channel's volume is n
-    if (reg & (1 << 4))
-    {
+    if (reg & (1 << 4)) {
         ENVELOPE_VOLUME(env) = reg & 0x0f;
     }
     // otherwise it is the value in the counter
@@ -141,28 +137,23 @@ static void apu_reset_dmc_channel(DMC_CHANNEL *dmc, BYTE *regs)
 
 static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int flew)
 {
-    if ((flew & (1 << 1)))
-    {
+    if ((flew & (1 << 1))) {
         // envelope clocked by the frame sequencer
         apu_envelope_unit_clocked(sch->envlop_unit, regs[0x0000]);
     }
 
-    if ((flew & (1 << 2)))
-    {
+    if ((flew & (1 << 2))) {
         //++ sweep unit
         // the divider is *first* clocked
-        if (--sch->sweepu_divider == 0)
-        {
+        if (--sch->sweepu_divider == 0) {
             int negate = (regs[0x0001] & 0x8) ? -1 : 1;
             int shift  = (regs[0x0001] & 0x7);
             int period = ((regs[0x0003] & 0x7) << 8) | regs[0x0002];
             int target = period + negate * (period >> shift);
 
             if (period < 8 || target > 0x7ff) sch->sweepu_silence = 1;
-            else
-            {
-                if (shift && (regs[0x0001] & (1 << 7)))
-                {
+            else {
+                if (shift && (regs[0x0001] & (1 << 7))) {
                     regs[0x0002]  = target & 0xff;
                     regs[0x0003] &= ~0x7;
                     regs[0x0003] |= target >> 8;
@@ -175,8 +166,7 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int flew)
 
         // and then if there was a write to the sweep register since the last sweep
         // clock, the divider is reset.
-        if (sch->sweepu_reset)
-        {
+        if (sch->sweepu_reset) {
             sch->sweepu_divider = SCH_SWEEPU_DIVIDER;
             sch->sweepu_reset   = 0;
         }
@@ -185,20 +175,16 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int flew)
         //++ length counter
         // when clocked by the frame sequencer, if the halt flag is clear
         // and the counter is non-zero, it is decremented
-        if (!(regs[0x0000] & (1 << 5)))
-        {
+        if (!(regs[0x0000] & (1 << 5))) {
             if (sch->length_counter > 0) sch->length_counter--;
         }
         //-- length counter
     }
 
-    if (flew & (1 << 0))
-    {
+    if (flew & (1 << 0)) {
         //++ square channel sequencer
-        if (--sch->stimer_divider == 0)
-        {
-            if (sch->length_counter && !sch->sweepu_silence)
-            {
+        if (--sch->stimer_divider == 0) {
+            if (sch->length_counter && !sch->sweepu_silence) {
                 int w = -1;
                 switch (regs[0x0000] >> 6)
                 {
@@ -208,8 +194,7 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int flew)
                 case 3: if (sch->schseq_counter == 0 || sch->schseq_counter >= 3) w = 1; break;
                 }
                 sch->output_value = w * ENVELOPE_VOLUME(sch->envlop_unit);
-            }
-            else sch->output_value = 0;
+            } else sch->output_value = 0;
 
             sch->schseq_counter++;
             sch->schseq_counter %= 8;
@@ -223,8 +208,7 @@ static void apu_render_square_channel(SQUARE_CHANNEL *sch, BYTE *regs, int flew)
 
 static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int flew)
 {
-    if ((flew & (1 << 1)))
-    {
+    if ((flew & (1 << 1))) {
         //++ linear counter
         // if halt flag is set, set counter to reload value,
         // otherwise if counter is non-zero, decrement it.
@@ -236,35 +220,27 @@ static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int f
         //-- linear counter
     }
 
-    if ((flew & (1 << 2)))
-    {
+    if ((flew & (1 << 2))) {
         //++ length counter
         // when clocked by the frame sequencer, if the halt flag is clear
         // and the counter is non-zero, it is decremented
-        if (!(regs[0x0000] & (1 << 7)))
-        {
+        if (!(regs[0x0000] & (1 << 7))) {
             if (tch->length_counter > 0) tch->length_counter--;
         }
         //-- length counter
     }
 
-    if (flew & (1 << 0))
-    {
+    if (flew & (1 << 0)) {
         //++ timer generator
-        if (--tch->ttimer_divider == 0)
-        {
+        if (--tch->ttimer_divider == 0) {
             //-- triangle channel sequencer
-            if (tch->length_counter && tch->linear_counter)
-            {
-                if ((regs[0x0003] & 0x7) + regs[0x0002] < 2)
-                {
+            if (tch->length_counter && tch->linear_counter) {
+                if ((regs[0x0003] & 0x7) + regs[0x0002] < 2) {
                     // at the lowest two periods ($400B = 0 and $400A = 0 or 1),
                     // the resulting frequency is so high that the DAC effectively
                     // outputs a value half way between 7 and 8.
                     tch->output_value = (tch->tchseq_counter & 1) ? -1 : 1;
-                }
-                else
-                {
+                } else {
                     static char tch_seq_out_tab[32] =
                     {
                         15, 13, 11, 9, 7, 5, 3, 1,-1,-3,-5,-7,-9,-11,-13,-15,
@@ -286,47 +262,37 @@ static void apu_render_triangle_channel(TRIANGLE_CHANNEL *tch, BYTE *regs, int f
 
 static void apu_render_noise_channel(NOISE_CHANNEL *nch, BYTE *regs, int flew)
 {
-    if ((flew & (1 << 1)))
-    {
+    if ((flew & (1 << 1))) {
         // envelope clocked by the frame sequencer
         apu_envelope_unit_clocked(nch->envlop_unit, regs[0x0000]);
     }
 
-    if ((flew & (1 << 2)))
-    {
+    if ((flew & (1 << 2))) {
         //++ length counter
         // when clocked by the frame sequencer, if the halt flag is clear
         // and the counter is non-zero, it is decremented
-        if (!(regs[0x0000] & (1 << 5)))
-        {
+        if (!(regs[0x0000] & (1 << 5))) {
             if (nch->length_counter > 0) nch->length_counter--;
         }
         //-- length counter
     }
 
-    if (flew & (1 << 0))
-    {
+    if (flew & (1 << 0)) {
         //++ timer generator
-        if (--nch->ntimer_divider == 0)
-        {
+        if (--nch->ntimer_divider == 0) {
             int xor;
-            if (regs[0x0002] & (1 << 7))
-            {
+            if (regs[0x0002] & (1 << 7)) {
                 xor = (nch->nshift_register ^ (nch->nshift_register >> 6)) & 1;
-            }
-            else
-            {
+            } else {
                 xor = (nch->nshift_register ^ (nch->nshift_register >> 1)) & 1;
             }
             nch->nshift_register >>= 1;
             nch->nshift_register  |= (xor << 14);
 
-            if (nch->length_counter)
-            {
+            if (nch->length_counter) {
                 if (nch->nshift_register & 1) nch->output_value =  ENVELOPE_VOLUME(nch->envlop_unit);
                 else                          nch->output_value = -ENVELOPE_VOLUME(nch->envlop_unit);
-            }
-            else nch->output_value = 0;
+            } else nch->output_value = 0;
 
             // reload noise channel timer divider
             nch->ntimer_divider = NCH_NTIMER_DIVIDER;
@@ -337,16 +303,13 @@ static void apu_render_noise_channel(NOISE_CHANNEL *nch, BYTE *regs, int flew)
 
 static void apu_render_dmc_channel(DMC_CHANNEL *dch, BYTE *regs, int flew)
 {
-    if (flew & (1 << 0))
-    {
+    if (flew & (1 << 0)) {
         //++ timer generator
-        if (--dch->dtimer_divider == 0)
-        {
+        if (--dch->dtimer_divider == 0) {
             APU *apu = container_of(dch, APU, dmc);
             NES *nes = container_of(apu, NES, apu);
 
-            if (dch->sample_empty && dch->remain_bytes > 0)
-            {
+            if (dch->sample_empty && dch->remain_bytes > 0) {
                 nes->cpu.cclk_dma += 4;
                 dch->sample_buffer = bus_readb(nes->cbus, dch->curdma_addr);
                 dch->sample_empty  = 0;
@@ -355,12 +318,10 @@ static void apu_render_dmc_channel(DMC_CHANNEL *dch, BYTE *regs, int flew)
                 if (++dch->curdma_addr > 0xffff) dch->curdma_addr = 0x8000;
 
                 // the bytes remaining counter is decremented;
-                if (--dch->remain_bytes == 0)
-                {
+                if (--dch->remain_bytes == 0) {
                     // if the bytes counter becomes zero and the loop flag is
                     // set, the sample is restarted
-                    if (regs[0x0000] & (1 << 6))
-                    {
+                    if (regs[0x0000] & (1 << 6)) {
                         // restart
                         nes->apu.dmc.curdma_addr  = 0xC000 + (apu->regs[0x0012] << 6);
                         nes->apu.dmc.remain_bytes = (apu->regs[0x0013] << 4) + 1;
@@ -371,11 +332,9 @@ static void apu_render_dmc_channel(DMC_CHANNEL *dch, BYTE *regs, int flew)
                 }
             }
 
-            if (dch->remain_bits == 0)
-            {
+            if (dch->remain_bits == 0) {
                 if (dch->sample_empty) dch->dmc_silence = 1;
-                else
-                {
+                else {
                     dch->remain_bits  = dch->sample_buffer;
                     dch->dmc_silence  = 0;
                     dch->sample_empty = 1;
@@ -383,14 +342,10 @@ static void apu_render_dmc_channel(DMC_CHANNEL *dch, BYTE *regs, int flew)
                 dch->remain_bits = 8;
             }
 
-            if (!dch->dmc_silence)
-            {
-                if (dch->buffer_bits & 1)
-                {
+            if (!dch->dmc_silence) {
+                if (dch->buffer_bits & 1) {
                     if (dch->output_value <= 123) dch->output_value += 4;
-                }
-                else
-                {
+                } else {
                     if (dch->output_value >=-123) dch->output_value -= 4;
                 }
             }
@@ -463,10 +418,9 @@ void apu_run_aclk(APU *apu)
 
     //++ render audio data on audio buffer ++//
     //+ frame sequencer
-    if (--apu->frame_divider == 0)
-    {
-        if (apu->regs[0x0017] & (1 << 7))
-        {   // 5 step
+    if (--apu->frame_divider == 0) {
+        if (apu->regs[0x0017] & (1 << 7)) {
+            // 5 step
             switch (apu->frame_counter)
             {
             case 0: flew |= (3 << 1); break; //  le
@@ -476,9 +430,8 @@ void apu_run_aclk(APU *apu)
             }
             apu->frame_counter++;
             apu->frame_counter %= 5;
-        }
-        else // 4 step
-        {
+        } else {
+            // 4 step
             switch (apu->frame_counter)
             {
             case 0: flew |= (1 << 1); break; //   e
@@ -506,8 +459,7 @@ void apu_run_aclk(APU *apu)
     apu_render_dmc_channel     (&(apu->dmc ), (BYTE*)apu->regs + 0x0010, flew);
 
     // for mixer ouput
-    if (--apu->mixer_divider == 0)
-    {
+    if (--apu->mixer_divider == 0) {
         short sample = (short)( 247 *(apu->sch1.output_value + apu->sch2.output_value)
             + 279 * apu->tch.output_value
             + 162 * apu->nch.output_value
@@ -534,8 +486,7 @@ BYTE NES_APU_REG_RCB(MEM *pm, int addr)
         //++ apu status register
         // reading this register clears the frame interrupt flag
         // (but not the DMC interrupt flag).
-        if (pm->data[0x0015] & (1 << 6))
-        {
+        if (pm->data[0x0015] & (1 << 6)) {
             pm->data[0x0015] &= ~(1 << 6);
             byte |= (1 << 6);
         }
@@ -631,10 +582,8 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         if (!(byte & (1 << 4))) nes->apu.dmc .remain_bytes   = 0;
         // if the DMC bit is set, the DMC sample will be restarted only if
         // its bytes remaining is 0
-        else
-        {
-            if (nes->apu.dmc.remain_bytes == 0)
-            {
+        else {
+            if (nes->apu.dmc.remain_bytes == 0) {
                 nes->apu.dmc.curdma_addr  = 0xC000 + (pm->data[0x0012] << 6);
                 nes->apu.dmc.remain_bytes = (pm->data[0x0013] << 4) + 1;
             }
@@ -659,8 +608,7 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
         if (byte & (1 << 6)) pm->data[0x0015] &= ~(1 << 6);
 
         // if the 5-step is selected the sequencer is immediately clocked once
-        if (byte & (1 << 7))
-        {
+        if (byte & (1 << 7)) {
             apu_render_square_channel  (&(nes->apu.sch1), (BYTE*)pm->data + 0x0000, 6);
             apu_render_square_channel  (&(nes->apu.sch2), (BYTE*)pm->data + 0x0004, 6);
             apu_render_triangle_channel(&(nes->apu.tch ), (BYTE*)pm->data + 0x0008, 6);

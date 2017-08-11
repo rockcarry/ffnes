@@ -103,13 +103,11 @@ static void* vdev_d3d_create(int w, int h, DWORD extra)
     int            curdist = 0x7fffffff;
     int            mindist = 0x7fffffff;
     nummode = ctxt->pD3D->GetAdapterModeCount(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8);
-    while (nummode--)
-    {
+    while (nummode--) {
         ctxt->pD3D->EnumAdapterModes(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8, nummode, &d3dmode);
         curdist = (640 - d3dmode.Width ) * (640 - d3dmode.Width )
-            + (480 - d3dmode.Height) * (480 - d3dmode.Height);
-        if (curdist < mindist && d3dmode.RefreshRate >= 60)
-        {
+                + (480 - d3dmode.Height) * (480 - d3dmode.Height);
+        if (curdist < mindist && d3dmode.RefreshRate >= 60) {
             ctxt->full_width  = d3dmode.Width;
             ctxt->full_height = d3dmode.Height;
             ctxt->full_frate  = d3dmode.RefreshRate;

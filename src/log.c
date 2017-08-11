@@ -19,8 +19,7 @@ void log_init(const char *file)
     if (!s_log_fp) {
         if (strcmp(file, "DEBUGER") == 0) {
             s_log_mode = LOG_MODE_DEBUGER;
-        }
-        else {
+        } else {
             s_log_fp = fopen(file, "w");
             if (s_log_fp) {
                 s_log_mode = LOG_MODE_FILE;

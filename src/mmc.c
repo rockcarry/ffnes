@@ -10,8 +10,7 @@ void mmc_switch_pbank16k0(MMC *mmc, int bank)
     bank = (bank == -1) ? (mmc->cart->prom_count - 1) : bank; // -1 is special, means the last bank
     mmc->cbus[1].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
 
-    if (oldbank0 != mmc->cbus[1].membank->data)
-    {
+    if (oldbank0 != mmc->cbus[1].membank->data) {
         ((NES*)container_of(mmc, NES, mmc))->ndb.banksw = 1;
     }
 }
@@ -24,8 +23,7 @@ void mmc_switch_pbank16k1(MMC *mmc, int bank)
     bank = (bank == -1) ? (mmc->cart->prom_count - 1) : bank; // -1 is special, means the last bank
     mmc->cbus[0].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
 
-    if (oldbank1 != mmc->cbus[0].membank->data)
-    {
+    if (oldbank1 != mmc->cbus[0].membank->data) {
         ((NES*)container_of(mmc, NES, mmc))->ndb.banksw = 1;
     }
 }
@@ -44,8 +42,7 @@ void mmc_switch_pbank32k(MMC *mmc, int bank)
     mmc->cbus[1].membank->data = mmc->cbus[0].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
     if (bank + 1 < mmc->cart->prom_count) mmc->cbus[0].membank->data += 0x4000;
 
-    if (oldbank0 != mmc->cbus[1].membank->data || oldbank1 != mmc->cbus[0].membank->data)
-    {
+    if (oldbank0 != mmc->cbus[1].membank->data || oldbank1 != mmc->cbus[0].membank->data) {
         ((NES*)container_of(mmc, NES, mmc))->ndb.banksw = 1;
     }
 }
@@ -122,18 +119,14 @@ static void mapper001_reset(MMC *mmc)
 static void mapper001_wcb0(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prom0);
-    if (byte & (1 << 7))
-    {
+    if (byte & (1 << 7)) {
         MAPPER001_TEMPREG = 0;    // reset tempreg
         MAPPER001_COUNTER = 0;    // reset counter
         MAPPER001_REG(0) |= 0xc0; // bits 2,3 of reg $8000 are set (16k PRG mode, $8000 swappable)
-    }
-    else
-    {
+    } else {
         // shift bit into temp reg
         MAPPER001_TEMPREG |= (byte & 1) << MAPPER001_COUNTER;
-        if (++MAPPER001_COUNTER == 5)
-        {
+        if (++MAPPER001_COUNTER == 5) {
             //++ for vram nametable mirroring ++//
             static int vram_mirroring_map[4][4] =
             {
@@ -182,18 +175,14 @@ static void mapper001_wcb0(MEM *pm, int addr, BYTE byte)
 static void mapper001_wcb1(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prom1);
-    if (byte & (1 << 7))
-    {
+    if (byte & (1 << 7)) {
         MAPPER001_TEMPREG = 0;    // reset tempreg
         MAPPER001_COUNTER = 0;    // reset counter
         MAPPER001_REG(0) |= 0xc0; // bits 2,3 of reg $8000 are set (16k PRG mode, $8000 swappable)
-    }
-    else
-    {
+    } else {
         // shift bit into temp reg
         MAPPER001_TEMPREG |=  (byte & 1) << MAPPER001_COUNTER;
-        if (++MAPPER001_COUNTER == 5)
-        {
+        if (++MAPPER001_COUNTER == 5) {
             // it's time to store value into reg
             int regaddr = 1 + (addr >> 13);
             MAPPER001_REG(regaddr) = MAPPER001_TEMPREG;
@@ -211,32 +200,27 @@ static void mapper001_wcb1(MEM *pm, int addr, BYTE byte)
 
             case 3:
                 //++ prg rom bank switch
-                if (MAPPER001_REG(0) & (1 << 3))
-                {   // 16k mode
-                    if (MAPPER001_REG(0) & (1 << 4))
-                    {   // $8000 swappable, $C000 fixed to page $0F (mode B)
+                if (MAPPER001_REG(0) & (1 << 3)) {
+                    // 16k mode
+                    if (MAPPER001_REG(0) & (1 << 4)) {
+                        // $8000 swappable, $C000 fixed to page $0F (mode B)
                         mmc_switch_pbank16k0(&(nes->mmc), MAPPER001_REG(3) & 0x0f);
                         mmc_switch_pbank16k1(&(nes->mmc), -1                     );
-                    }
-                    else
-                    {   // $C000 swappable, $8000 fixed to page $00 (mode A)
+                    } else {
+                        // $C000 swappable, $8000 fixed to page $00 (mode A)
                         mmc_switch_pbank16k0(&(nes->mmc), 0                      );
                         mmc_switch_pbank16k1(&(nes->mmc), MAPPER001_REG(3) & 0x0f);
                     }
-                }
-                else
-                {   // 32k mode
+                } else {
+                    // 32k mode
                     mmc_switch_pbank32k(&(nes->mmc), (MAPPER001_REG(3) & 0x0f) >> 1);
                 }
                 //-- prg rom bank switch
 
                 //++ for wram enable/disable
-                if (MAPPER001_REG(3) & (1 << 4))
-                {
+                if (MAPPER001_REG(3) & (1 << 4)) {
                     nes->cbus[4].membank = NULL;
-                }
-                else
-                {
+                } else {
                     nes->cbus[4].membank = &(nes->sram);
                 }
                 //-- for wram enable/disable
@@ -340,15 +324,13 @@ void mmc_init(MMC *mmc, CARTRIDGE *cart, BUS cbus, BUS pbus)
     mapper = g_mapper_list[mmc->number];
 
     // init cbus memory bank callback
-    if (mapper)
-    {
+    if (mapper) {
         mmc->cbus[1].membank->w_callback = mapper->wcb0;
         mmc->cbus[0].membank->w_callback = mapper->wcb1;
     }
 
     // if cartridge is using chr-ram
-    if (mmc->cart->ischrram)
-    {
+    if (mmc->cart->ischrram) {
         mmc->pbus[7].membank->type = MEM_RAM;
         mmc->pbus[6].membank->type = MEM_RAM;
     }
