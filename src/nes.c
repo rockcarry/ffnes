@@ -57,13 +57,13 @@ static void* nes_thread_proc(void *param)
             ppu_run_pclk(&nes->ppu); // run ppu
             ppu_run_pclk(&nes->ppu); // run ppu
             ppu_run_pclk(&nes->ppu); // run ppu
-			cpu_nmi(&nes->cpu, ppu_pin_vbl(&nes->ppu));
+            cpu_nmi(&nes->cpu, ppu_pin_vbl(&nes->ppu));
             cpu_run_cclk(&nes->cpu); // run cpu
 
             ppu_run_pclk(&nes->ppu); // run ppu
             ppu_run_pclk(&nes->ppu); // run ppu
             ppu_run_pclk(&nes->ppu); // run ppu
-			cpu_nmi(&nes->cpu, ppu_pin_vbl(&nes->ppu));
+            cpu_nmi(&nes->cpu, ppu_pin_vbl(&nes->ppu));
             cpu_run_cclk(&nes->cpu); // run cpu
         } while (!(  nes->ppu.pclk_frame >= NES_HTOTAL * 241 + 1
                   && nes->ppu.pclk_frame <= NES_HTOTAL * 241 + 6));
