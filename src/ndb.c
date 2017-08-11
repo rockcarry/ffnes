@@ -80,7 +80,7 @@ void ndb_cpu_debug(NDB *ndb)
         break;
 
     case NDB_CPU_RUN_STEP_OUT:
-        if (ndb->pcstepout != 0xffff) {
+        if (ndb->pcstepout != 0xffffffff) {
             if (  ndb->curpc == ndb->pcstepout + 0
                || ndb->curpc == ndb->pcstepout + 1)
             {
@@ -90,7 +90,7 @@ void ndb_cpu_debug(NDB *ndb)
         break;
 
     case NDB_CPU_RUN_STEP_OVER:
-        if (ndb->pcstepover != 0xffff) {
+        if (ndb->pcstepover != 0xffffffff) {
             if (ndb->curpc == ndb->pcstepover) ndb->stop = 1;
         }
         else ndb->stop = 1;
@@ -127,7 +127,7 @@ void ndb_cpu_runto(NDB *ndb, int cond, DWORD dwparam)
         if (ndb->pcstacktop > 0) {
             ndb->pcstepout = ndb->pcstackbuf[ndb->pcstacktop - 1];
         }
-        else ndb->pcstepout = 0xffff;
+        else ndb->pcstepout = 0xffffffff;
         ndb->stop = 0;
         break;
 
@@ -135,7 +135,7 @@ void ndb_cpu_runto(NDB *ndb, int cond, DWORD dwparam)
         if (ndb->curopcode == 0x00 || ndb->curopcode == 0x20) {
             ndb->pcstepover = ndb->curpc + ndb_cal_inst_len(ndb->curopcode);
         }
-        else ndb->pcstepover = 0xffff;
+        else ndb->pcstepover = 0xffffffff;
         ndb->stop = 0;
         break;
 
@@ -331,7 +331,7 @@ BOOL ndb_add_bpoint(NDB *ndb, WORD bpoint)
     int i, free = -1;
     for (i=0; i<16; i++) {
         if (ndb->bpoints[i] == bpoint) return TRUE;
-        if (ndb->bpoints[i] == 0xffff && free == -1) free = i;
+        if (ndb->bpoints[i] == 0xffffffff && free == -1) free = i;
     }
     if (free != -1) {
         ndb->bpoints[free] = bpoint;
@@ -346,7 +346,7 @@ void ndb_del_bpoint(NDB *ndb, WORD bpoint)
     for (i=0; i<16; i++) {
         if (ndb->bpoints[i] == bpoint) break;
     }
-    if (i < 16) ndb->bpoints[i] = 0xffff;
+    if (i < 16) ndb->bpoints[i] = 0xffffffff;
 }
 
 BOOL ndb_add_watch(NDB *ndb, WORD watch)
@@ -354,7 +354,7 @@ BOOL ndb_add_watch(NDB *ndb, WORD watch)
     int i, free = -1;
     for (i=0; i<16; i++) {
         if (ndb->watches[i] == watch) return TRUE;
-        if (ndb->watches[i] == 0xffff && free == -1) free = i;
+        if (ndb->watches[i] == 0xffffffff && free == -1) free = i;
     }
     if (free != -1) {
         ndb->watches[free] = watch;
@@ -369,7 +369,7 @@ void ndb_del_watch(NDB *ndb, WORD watch)
     for (i=0; i<16; i++) {
         if (ndb->watches[i] == watch) break;
     }
-    if (i < 16) ndb->watches[i] = 0xffff;
+    if (i < 16) ndb->watches[i] = 0xffffffff;
 }
 
 void ndb_del_all_bpoints(NDB *ndb)
@@ -439,12 +439,12 @@ static void ndb_dump_cpu_vector(NDB *ndb, char *str)
 
 static void ndb_dump_break_point(NDB *ndb, int type, char *str)
 {
-    WORD *bps = ndb->bpoints;
-    int   i;
+    DWORD *bps = ndb->bpoints;
+    int    i;
 
     if (type == NDB_DUMP_BREAK_POINT1) bps += 8;
     for (i=0; i<8; i++) {
-        if (bps[i] == 0xffff) {
+        if (bps[i] == 0xffffffff) {
             sprintf(str+i*5, "---- ");
         }
         else sprintf(str+i*5, "%04X ", bps[i]);
@@ -453,22 +453,22 @@ static void ndb_dump_break_point(NDB *ndb, int type, char *str)
 
 static void ndb_dump_watch(NDB *ndb, int type, char *str)
 {
-    WORD *wts = ndb->watches;
-    BYTE  byte;
-    int   i;
+    DWORD *wts = ndb->watches;
+    BYTE   byte;
+    int    i;
 
     if (type == NDB_DUMP_WATCH2 || type == NDB_DUMP_WATCH3) wts += 8;
 
     if (type == NDB_DUMP_WATCH0 || type == NDB_DUMP_WATCH2) {
         sprintf(str, "addr "); str += 5;
         for (i=0; i<8; i++) {
-            if (wts[i] == 0xffff) sprintf(str+i*5, "---- ");
+            if (wts[i] == 0xffffffff) sprintf(str+i*5, "---- ");
             else sprintf(str+i*5, "%04X ", wts[i]);
         }
     } else {
         sprintf(str, "data "); str += 5;
         for (i=0; i<8; i++) {
-            if (wts[i] == 0xffff) sprintf(str+i*5, " --  ");
+            if (wts[i] == 0xffffffff) sprintf(str+i*5, " --  ");
             else {
                 byte = bus_readb_norwcb(ndb->nes->cbus, wts[i]);
                 sprintf(str+i*5, " %02X  ", byte);

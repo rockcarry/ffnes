@@ -58,13 +58,13 @@ typedef struct tagNDB
     WORD  curpc;       // current pc
     BYTE  curopcode;   // current opcode
     int   nsteps;      // for run n steps
-    WORD  bpoints[16]; // totally 16 break points
-    WORD  watches[16]; // totally 16 watch variables
+    DWORD bpoints[16]; // totally 16 break points
+    DWORD watches[16]; // totally 16 watch variables
 
     WORD  pcstackbuf[128];
     int   pcstacktop;
-    WORD  pcstepout;
-    WORD  pcstepover;
+    DWORD pcstepout;
+    DWORD pcstepover;
 
     // for save & restore
     BOOL  save_enable;

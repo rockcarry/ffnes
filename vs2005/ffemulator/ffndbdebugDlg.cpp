@@ -423,16 +423,16 @@ void CffndbdebugDlg::OnBnClickedBtnDelWatch()
 void CffndbdebugDlg::OnBnClickedBtnDelAllWatch()
 {
     for (int i=0; i<16; i++ ) {
-        m_pNES->ndb.watches[i] = 0xffff;
+        m_pNES->ndb.watches[i] = 0xffffffff;
     }
 }
 
 void CffndbdebugDlg::OnBnClickedBtnDelAllBpoint()
 {
     for (int i=0; i<16; i++) {
-        int n = ndb_dasm_pc2instn(&m_pNES->ndb, m_pDASM, m_pNES->ndb.bpoints[i]);
+        int n = ndb_dasm_pc2instn(&m_pNES->ndb, m_pDASM, (WORD)m_pNES->ndb.bpoints[i]);
         m_ctrInstructionList.SetItemText(n, 0, "");
-        m_pNES->ndb.bpoints[i] = 0xffff;
+        m_pNES->ndb.bpoints[i] = 0xffffffff;
     }
 }
 
@@ -1008,9 +1008,9 @@ void CffndbdebugDlg::UpdateDasmListControl()
         m_ctrInstructionList.SetItemText(n, 4, m_pDASM->instlist[n].comment);
     }
     for (int i=0; i<16; i++) {
-        if (m_pNES->ndb.bpoints[i] != 0xffff) {
+        if (m_pNES->ndb.bpoints[i] != 0xffffffff) {
             m_ctrInstructionList.SetItemText(
-                ndb_dasm_pc2instn(&m_pNES->ndb, m_pDASM, m_pNES->ndb.bpoints[i]),
+                ndb_dasm_pc2instn(&m_pNES->ndb, m_pDASM, (WORD)m_pNES->ndb.bpoints[i]),
                 0, "B");
         }
     }
