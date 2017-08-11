@@ -80,6 +80,8 @@ void apu_free (APU *apu);
 void apu_reset(APU *apu);
 void apu_run_aclk(APU *apu);
 
+__inline int apu_pin_irq(APU *apu) { return (apu->regs[0x0015] & 0xC0) ? 0 : 1; }
+
 BYTE NES_APU_REG_RCB(MEM *pm, int addr);
 void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte);
 

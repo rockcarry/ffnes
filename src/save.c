@@ -32,7 +32,7 @@ typedef struct
 static void saver_restore_apu(APU *apu, int oldaclk, int newaclk)
 {
     if (oldaclk > 0) apu->adev->enqueue(apu->actxt);
-    if (newaclk > 0) apu->adev->dequeue(apu->actxt, &(apu->audiobuf));
+    if (newaclk > 0) apu->adev->dequeue(apu->actxt, &apu->audiobuf);
 }
 
 static void saver_restore_ppu(PPU *ppu)
@@ -85,7 +85,7 @@ void saver_save_game(NES *nes, char *file)
     save.version   = 0x00000001; // v0.1
     save.head_size = sizeof(save);
     save.neso_size = sizeof(NES );
-    save.sram_size = cartridge_has_sram(&(nes->cart)) ? 0x2000 : 0;
+    save.sram_size = cartridge_has_sram(&nes->cart) ? 0x2000 : 0;
     save.cram_size = nes->cart.ischrram ? nes->cart.crom_count * 0x2000 : 0;
     save.rply_size = ftell(nes->replay.fp);
     save.rply_size = (save.rply_size == -1) ? 0 : save.rply_size;
@@ -156,7 +156,7 @@ void saver_load_game(NES *nes, char *file)
         fread(&buf, sizeof(buf), 1, fp);
     }
 
-    if (save.sram_size && cartridge_has_sram(&(nes->cart))) {
+    if (save.sram_size && cartridge_has_sram(&nes->cart)) {
         fseek(fp, save.head_size + save.neso_size, SEEK_SET);
         fread(nes->cart.buf_sram, 0x2000, 1, fp);
     }
@@ -168,7 +168,7 @@ void saver_load_game(NES *nes, char *file)
 
     // reset replay to record mode
     nes->replay.mode = NES_REPLAY_RECORD;
-    replay_reset(&(nes->replay));
+    replay_reset(&nes->replay);
 
     // copy replay data from .sav file to relay temp file
     fseek(fp, save.head_size + save.neso_size + save.sram_size + save.cram_size, SEEK_SET);
@@ -189,9 +189,9 @@ void saver_load_game(NES *nes, char *file)
     //-- restore nes context data from save file data --//
 
     // restore ppu & mmc
-    saver_restore_apu(&(nes->apu), oldapuaclk, newapuaclk);
-    saver_restore_ppu(&(nes->ppu));
-    saver_restore_mmc(&(nes->mmc));
+    saver_restore_apu(&nes->apu, oldapuaclk, newapuaclk);
+    saver_restore_ppu(&nes->ppu);
+    saver_restore_mmc(&nes->mmc);
 
     // show text
     nes_textout(nes, 0, 222, "load save...", 2000, 2);
@@ -222,7 +222,7 @@ void saver_load_replay(NES *nes, char *file)
 
     // reset replay to record mode
     nes->replay.mode = NES_REPLAY_RECORD;
-    replay_reset(&(nes->replay));
+    replay_reset(&nes->replay);
 
     // copy replay data from .sav file to relay temp file
     fseek(fp, save.head_size + save.neso_size + save.sram_size + save.cram_size, SEEK_SET);
@@ -230,7 +230,7 @@ void saver_load_replay(NES *nes, char *file)
 
     // reset replay to play mode
     nes->replay.mode = NES_REPLAY_PLAY;
-    replay_reset(&(nes->replay));
+    replay_reset(&nes->replay);
 
     // reset nes
     nes_reset(nes);

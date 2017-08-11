@@ -153,13 +153,12 @@ static void mapper001_wcb0(MEM *pm, int addr, BYTE byte)
 
             case 1:
                 // chr rom reg0, chr rom bank switch 0
-                if (MAPPER001_REG(0) & (1 << 4))
-                {   // 4k mode
-                    mmc_switch_cbank4k0(&(nes->mmc), MAPPER001_REG(0) & 0x1f);
-                }
-                else
-                {   // 8k mode
-                    mmc_switch_cbank8k (&(nes->mmc), MAPPER001_REG(0) & 0x1f);
+                if (MAPPER001_REG(0) & (1 << 4)) {
+                    // 4k mode
+                    mmc_switch_cbank4k0(&nes->mmc, MAPPER001_REG(0) & 0x1f);
+                } else {
+                    // 8k mode
+                    mmc_switch_cbank8k (&nes->mmc, MAPPER001_REG(0) & 0x1f);
                 }
                 break;
             }
@@ -192,9 +191,9 @@ static void mapper001_wcb1(MEM *pm, int addr, BYTE byte)
             {
             case 2:
                 // chr rom reg1, chr rom bank switch 1
-                if (MAPPER001_REG(0) & (1 << 4))
-                {   // 4k mode
-                    mmc_switch_cbank4k0(&(nes->mmc), MAPPER001_REG(2) & 0x1f);
+                if (MAPPER001_REG(0) & (1 << 4)) {
+                    // 4k mode
+                    mmc_switch_cbank4k0(&nes->mmc, MAPPER001_REG(2) & 0x1f);
                 }
                 break;
 
@@ -204,16 +203,16 @@ static void mapper001_wcb1(MEM *pm, int addr, BYTE byte)
                     // 16k mode
                     if (MAPPER001_REG(0) & (1 << 4)) {
                         // $8000 swappable, $C000 fixed to page $0F (mode B)
-                        mmc_switch_pbank16k0(&(nes->mmc), MAPPER001_REG(3) & 0x0f);
-                        mmc_switch_pbank16k1(&(nes->mmc), -1                     );
+                        mmc_switch_pbank16k0(&nes->mmc, MAPPER001_REG(3) & 0x0f);
+                        mmc_switch_pbank16k1(&nes->mmc, -1                     );
                     } else {
                         // $C000 swappable, $8000 fixed to page $00 (mode A)
-                        mmc_switch_pbank16k0(&(nes->mmc), 0                      );
-                        mmc_switch_pbank16k1(&(nes->mmc), MAPPER001_REG(3) & 0x0f);
+                        mmc_switch_pbank16k0(&nes->mmc, 0                      );
+                        mmc_switch_pbank16k1(&nes->mmc, MAPPER001_REG(3) & 0x0f);
                     }
                 } else {
                     // 32k mode
-                    mmc_switch_pbank32k(&(nes->mmc), (MAPPER001_REG(3) & 0x0f) >> 1);
+                    mmc_switch_pbank32k(&nes->mmc, (MAPPER001_REG(3) & 0x0f) >> 1);
                 }
                 //-- prg rom bank switch
 
@@ -221,7 +220,7 @@ static void mapper001_wcb1(MEM *pm, int addr, BYTE byte)
                 if (MAPPER001_REG(3) & (1 << 4)) {
                     nes->cbus[4].membank = NULL;
                 } else {
-                    nes->cbus[4].membank = &(nes->sram);
+                    nes->cbus[4].membank = &nes->sram;
                 }
                 //-- for wram enable/disable
                 break;
@@ -250,13 +249,13 @@ static MAPPER mapper001 =
 static void mapper002_wcb0(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prom0);
-    mmc_switch_pbank16k0(&(nes->mmc), byte);
+    mmc_switch_pbank16k0(&nes->mmc, byte);
 }
 
 static void mapper002_wcb1(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prom1);
-    mmc_switch_pbank16k0(&(nes->mmc), byte);
+    mmc_switch_pbank16k0(&nes->mmc, byte);
 }
 
 static MAPPER mapper002 =
@@ -279,13 +278,13 @@ static void mapper003_reset(MMC *mmc)
 static void mapper003_wcb0(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prom0);
-    mmc_switch_cbank8k(&(nes->mmc), byte);
+    mmc_switch_cbank8k(&nes->mmc, byte);
 }
 
 static void mapper003_wcb1(MEM *pm, int addr, BYTE byte)
 {
     NES *nes = container_of(pm, NES, prom1);
-    mmc_switch_cbank8k(&(nes->mmc), byte);
+    mmc_switch_cbank8k(&nes->mmc, byte);
 }
 
 static MAPPER mapper003 =

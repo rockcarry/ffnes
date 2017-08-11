@@ -8,33 +8,32 @@
 static void nes_do_reset(NES *nes)
 {
     // mmc need reset first
-    mmc_reset(&(nes->mmc));
+    mmc_reset(&nes->mmc);
 
     // reset cpu & ppu & apu
-    cpu_reset(&(nes->cpu));
-    ppu_reset(&(nes->ppu));
-    apu_reset(&(nes->apu));
+    cpu_reset(&nes->cpu);
+    ppu_reset(&nes->ppu);
+    apu_reset(&nes->apu);
 
     // reset joypad
-    joypad_reset(&(nes->pad));
+    joypad_reset(&nes->pad);
 
     // reset replay
-    replay_reset(&(nes->replay));
+    replay_reset(&nes->replay);
 
     // restart ndb
-    ndb_set_debug(&(nes->ndb), NDB_DEBUG_MODE_RESTART);
+    ndb_set_debug(&nes->ndb, NDB_DEBUG_MODE_RESTART);
 }
 
 static void* nes_thread_proc(void *param)
 {
     NES *nes = (NES*)param;
-    int nmi, irq;
 
     while (!nes->thread_exit)
     {
         //++ for run/pause and end of replay ++//
         if (  !nes->isrunning // request pause
-           || !replay_progress(&(nes->replay)) && nes->request_reset == 0) // end of replay
+           || !replay_progress(&nes->replay) && nes->request_reset == 0) // end of replay
         {
             nes->ispaused = 1;
             nes->ppu.vdev->dequeue(nes->ppu.vctxt, NULL, NULL);
@@ -44,8 +43,7 @@ static void* nes_thread_proc(void *param)
         //-- for run/pause and end of replay --//
 
         //++ for nes reset ++//
-        if (nes->request_reset == 1)
-        {
+        if (nes->request_reset == 1) {
             nes->request_reset = 0;
             nes_do_reset(nes);
         }
@@ -53,28 +51,26 @@ static void* nes_thread_proc(void *param)
 
         //++ run cpu & apu & ppu
         do {
-            cpu_run_cclk(&(nes->cpu)); // run cpu
-            ppu_run_pclk(&(nes->ppu)); // run ppu
-            ppu_run_pclk(&(nes->ppu)); // run ppu
-            ppu_run_pclk(&(nes->ppu)); // run ppu
-            cpu_run_cclk(&(nes->cpu)); // run cpu
-            ppu_run_pclk(&(nes->ppu)); // run ppu
-            ppu_run_pclk(&(nes->ppu)); // run ppu
-            ppu_run_pclk(&(nes->ppu)); // run ppu
-            apu_run_aclk(&(nes->apu)); // run apu
+            apu_run_aclk(&nes->apu); // run apu
+            cpu_irq(&nes->cpu, apu_pin_irq(&nes->apu));
 
-            //+ for cpu nmi & irq
-            nmi =   nes->ppu.pinvbl;
-            irq = !(nes->apu.regs[0x0015] & 0xC0);
-            cpu_nmi(&(nes->cpu), nmi);
-            cpu_irq(&(nes->cpu), irq);
-            //- for cpu nmi & irq
+            ppu_run_pclk(&nes->ppu); // run ppu
+            ppu_run_pclk(&nes->ppu); // run ppu
+            ppu_run_pclk(&nes->ppu); // run ppu
+			cpu_nmi(&nes->cpu, ppu_pin_vbl(&nes->ppu));
+            cpu_run_cclk(&nes->cpu); // run cpu
+
+            ppu_run_pclk(&nes->ppu); // run ppu
+            ppu_run_pclk(&nes->ppu); // run ppu
+            ppu_run_pclk(&nes->ppu); // run ppu
+			cpu_nmi(&nes->cpu, ppu_pin_vbl(&nes->ppu));
+            cpu_run_cclk(&nes->cpu); // run cpu
         } while (  nes->ppu.pclk_frame <= NES_HTOTAL * 241 + 1
                 || nes->ppu.pclk_frame >= NES_HTOTAL * 241 + 7);
         //-- run cpu & apu & ppu
 
         // run joypad for turbo key function
-        joypad_run(&(nes->pad));
+        joypad_run(&nes->pad);
     }
     return NULL;
 }
@@ -94,7 +90,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     nes->extra = extra;
 
     // load cartridge first
-    if (!cartridge_load(&(nes->cart), file))
+    if (!cartridge_load(&nes->cart, file))
     {
         log_printf("failed to load nes rom file !\n");
     }
@@ -133,12 +129,12 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     nes->prom1.size = NES_PRGROM_SIZE;
 
     // init nes cbus
-    bus_setmem(nes->cbus, 0, 0xC000, 0xFFFF, &(nes->prom1  ));
-    bus_setmem(nes->cbus, 1, 0x8000, 0xBFFF, &(nes->prom0  ));
-    bus_setmem(nes->cbus, 2, 0x6000, 0x7FFF, &(nes->sram   ));
-    bus_setmem(nes->cbus, 3, 0x4000, 0x5FFF, &(nes->apuregs));
-    bus_setmem(nes->cbus, 4, 0x2000, 0x3FFF, &(nes->ppuregs));
-    bus_setmem(nes->cbus, 5, 0x0000, 0x1FFF, &(nes->cram   ));
+    bus_setmem(nes->cbus, 0, 0xC000, 0xFFFF, &nes->prom1  );
+    bus_setmem(nes->cbus, 1, 0x8000, 0xBFFF, &nes->prom0  );
+    bus_setmem(nes->cbus, 2, 0x6000, 0x7FFF, &nes->sram   );
+    bus_setmem(nes->cbus, 3, 0x4000, 0x5FFF, &nes->apuregs);
+    bus_setmem(nes->cbus, 4, 0x2000, 0x3FFF, &nes->ppuregs);
+    bus_setmem(nes->cbus, 5, 0x0000, 0x1FFF, &nes->cram   );
     //-- cbus mem map --//
 
     //++ pbus mem map ++//
@@ -151,7 +147,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     nes->chrrom1.size = NES_CHRROM_SIZE;
 
     // create vram
-    mirroring = cartridge_get_vram_mirroring(&(nes->cart));
+    mirroring = cartridge_get_vram_mirroring(&nes->cart);
     for (i=0; i<4; i++)
     {
         nes->vram[i].type = MEM_RAM;
@@ -165,36 +161,36 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     nes->palette.data = nes->ppu.palette;
 
     // init nes pbus
-    bus_setmem(nes->pbus, 0, 0x3F00, 0x3FFF, &(nes->palette));
+    bus_setmem(nes->pbus, 0, 0x3F00, 0x3FFF, &nes->palette);
     bus_setmir(nes->pbus, 1, 0x3000, 0x3EFF, 0x2FFF);
-    bus_setmem(nes->pbus, 2, 0x2C00, 0x2FFF, &(nes->vram[3]));
-    bus_setmem(nes->pbus, 3, 0x2800, 0x2BFF, &(nes->vram[2]));
-    bus_setmem(nes->pbus, 4, 0x2400, 0x27FF, &(nes->vram[1]));
-    bus_setmem(nes->pbus, 5, 0x2000, 0x23FF, &(nes->vram[0]));
-    bus_setmem(nes->pbus, 6, 0x1000, 0x1FFF, &(nes->chrrom1));
-    bus_setmem(nes->pbus, 7, 0x0000, 0x0FFF, &(nes->chrrom0));
+    bus_setmem(nes->pbus, 2, 0x2C00, 0x2FFF, &nes->vram[3]);
+    bus_setmem(nes->pbus, 3, 0x2800, 0x2BFF, &nes->vram[2]);
+    bus_setmem(nes->pbus, 4, 0x2400, 0x27FF, &nes->vram[1]);
+    bus_setmem(nes->pbus, 5, 0x2000, 0x23FF, &nes->vram[0]);
+    bus_setmem(nes->pbus, 6, 0x1000, 0x1FFF, &nes->chrrom1);
+    bus_setmem(nes->pbus, 7, 0x0000, 0x0FFF, &nes->chrrom0);
     //-- pbus mem map --//
 
     // init mmc before cpu & ppu & apu, due to mmc will do bank switch
     // this will change memory mapping on cbus & pbus
-    mmc_init(&(nes->mmc), &(nes->cart), nes->cbus, nes->pbus);
+    mmc_init(&nes->mmc, &nes->cart, nes->cbus, nes->pbus);
 
     // now it's time to init cpu & ppu & apu
-    cpu_init(&(nes->cpu), nes->cbus );
-    ppu_init(&(nes->ppu), nes->extra, NULL);
-    apu_init(&(nes->apu), nes->extra, NULL);
-    ndb_init(&(nes->ndb), nes       );
+    cpu_init(&nes->cpu, nes->cbus );
+    ppu_init(&nes->ppu, nes->extra, NULL);
+    apu_init(&nes->apu, nes->extra, NULL);
+    ndb_init(&nes->ndb, nes       );
 
     // init joypad
-    joypad_init  (&(nes->pad));
-    joypad_setkey(&(nes->pad), 0, NES_PAD_CONNECT, 1);
-    joypad_setkey(&(nes->pad), 1, NES_PAD_CONNECT, 1);
+    joypad_init  (&nes->pad);
+    joypad_setkey(&nes->pad, 0, NES_PAD_CONNECT, 1);
+    joypad_setkey(&nes->pad, 1, NES_PAD_CONNECT, 1);
 
     // init replay
-    replay_init(&(nes->replay));
+    replay_init(&nes->replay);
 
     // create nes event & thread
-    pthread_create(&(nes->thread_id), NULL, nes_thread_proc, nes);
+    pthread_create(&nes->thread_id, NULL, nes_thread_proc, nes);
 
     return TRUE;
 }
@@ -202,29 +198,29 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
 void nes_free(NES *nes)
 {
     // disable ndb debugging will make cpu keep running
-    ndb_set_debug(&(nes->ndb), NDB_DEBUG_MODE_DISABLE);
+    ndb_set_debug(&nes->ndb, NDB_DEBUG_MODE_DISABLE);
 
     // destroy nes thread
     nes->thread_exit = TRUE;
     pthread_join(nes->thread_id, NULL);
 
     // free replay
-    replay_free(&(nes->replay));
+    replay_free(&nes->replay);
 
     // free joypad
-    joypad_setkey(&(nes->pad), 0, NES_PAD_CONNECT, 0);
-    joypad_setkey(&(nes->pad), 1, NES_PAD_CONNECT, 0);
-    joypad_free  (&(nes->pad ));
+    joypad_setkey(&nes->pad, 0, NES_PAD_CONNECT, 0);
+    joypad_setkey(&nes->pad, 1, NES_PAD_CONNECT, 0);
+    joypad_free  (&nes->pad);
 
     // free cpu & ppu & apu & mmc
-    cpu_free(&(nes->cpu));
-    ppu_free(&(nes->ppu));
-    apu_free(&(nes->apu));
-    mmc_free(&(nes->mmc));
-    ndb_free(&(nes->ndb));
+    cpu_free(&nes->cpu);
+    ppu_free(&nes->ppu);
+    apu_free(&nes->apu);
+    mmc_free(&nes->mmc);
+    ndb_free(&nes->ndb);
 
     // free cartridge
-    cartridge_free(&(nes->cart));
+    cartridge_free(&nes->cart);
 
     log_done(); // log done
 }
@@ -232,7 +228,7 @@ void nes_free(NES *nes)
 void nes_reset(NES *nes)
 {
     // disable ndb debugging will make cpu keep running
-    ndb_set_debug(&(nes->ndb), NDB_DEBUG_MODE_DISABLE);
+    ndb_set_debug(&nes->ndb, NDB_DEBUG_MODE_DISABLE);
     nes->request_reset = 1; // request reset
     nes_textout(nes, 0, 222, "reset", 2000, 1);
 }
@@ -253,7 +249,7 @@ int nes_getrun(NES *nes)
 
 void nes_joypad(NES *nes, int pad, int key, int value)
 {
-    joypad_setkey(&(nes->pad), pad, key, value);
+    joypad_setkey(&nes->pad, pad, key, value);
 }
 
 void nes_textout(NES *nes, int x, int y, char *text, int time, int priority)

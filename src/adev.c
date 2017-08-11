@@ -62,7 +62,7 @@ static void* adev_waveout_create(int bufnum, int buflen)
     wfx.nChannels       = 1;     // mono
     wfx.nBlockAlign     = wfx.nChannels * wfx.wBitsPerSample / 8;
     wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
-    waveOutOpen(&(ctxt->hWaveOut), WAVE_MAPPER, &wfx, (DWORD_PTR)waveOutProc, (DWORD)ctxt, CALLBACK_FUNCTION);
+    waveOutOpen(&ctxt->hWaveOut, WAVE_MAPPER, &wfx, (DWORD_PTR)waveOutProc, (DWORD)ctxt, CALLBACK_FUNCTION);
 
     // init wavebuf
     pwavbuf = (BYTE*)(ctxt->pWaveHdr + bufnum);

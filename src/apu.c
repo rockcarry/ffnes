@@ -396,11 +396,11 @@ void apu_reset(APU *apu)
     apu->frame_counter = 0;
 
     // reset square channel 1 & 2
-    apu_reset_square_channel  (&(apu->sch1), (BYTE*)apu->regs + 0x0000);
-    apu_reset_square_channel  (&(apu->sch2), (BYTE*)apu->regs + 0x0004);
-    apu_reset_triangle_channel(&(apu->tch ), (BYTE*)apu->regs + 0x0008);
-    apu_reset_noise_channel   (&(apu->nch ), (BYTE*)apu->regs + 0x000C);
-    apu_reset_dmc_channel     (&(apu->dmc ), (BYTE*)apu->regs + 0x0010);
+    apu_reset_square_channel  (&apu->sch1, (BYTE*)apu->regs + 0x0000);
+    apu_reset_square_channel  (&apu->sch2, (BYTE*)apu->regs + 0x0004);
+    apu_reset_triangle_channel(&apu->tch , (BYTE*)apu->regs + 0x0008);
+    apu_reset_noise_channel   (&apu->nch , (BYTE*)apu->regs + 0x000C);
+    apu_reset_dmc_channel     (&apu->dmc , (BYTE*)apu->regs + 0x0010);
 }
 
 void apu_run_aclk(APU *apu)
@@ -409,7 +409,7 @@ void apu_run_aclk(APU *apu)
 
     if (apu->aclk_counter == 0) {
         // request audio buffer
-        apu->adev->dequeue(apu->actxt, &(apu->audiobuf));
+        apu->adev->dequeue(apu->actxt, &apu->audiobuf);
 
         // reset mixer sequencer
         apu->mixer_divider = MIXER_DIVIDER;
@@ -452,11 +452,11 @@ void apu_run_aclk(APU *apu)
     //- frame sequencer
 
     // render square channel 1 & 2
-    apu_render_square_channel  (&(apu->sch1), (BYTE*)apu->regs + 0x0000, flew);
-    apu_render_square_channel  (&(apu->sch2), (BYTE*)apu->regs + 0x0004, flew);
-    apu_render_triangle_channel(&(apu->tch ), (BYTE*)apu->regs + 0x0008, flew);
-    apu_render_noise_channel   (&(apu->nch ), (BYTE*)apu->regs + 0x000C, flew);
-    apu_render_dmc_channel     (&(apu->dmc ), (BYTE*)apu->regs + 0x0010, flew);
+    apu_render_square_channel  (&apu->sch1, (BYTE*)apu->regs + 0x0000, flew);
+    apu_render_square_channel  (&apu->sch2, (BYTE*)apu->regs + 0x0004, flew);
+    apu_render_triangle_channel(&apu->tch , (BYTE*)apu->regs + 0x0008, flew);
+    apu_render_noise_channel   (&apu->nch , (BYTE*)apu->regs + 0x000C, flew);
+    apu_render_dmc_channel     (&apu->dmc , (BYTE*)apu->regs + 0x0010, flew);
 
     // for mixer ouput
     if (--apu->mixer_divider == 0) {
@@ -501,7 +501,7 @@ BYTE NES_APU_REG_RCB(MEM *pm, int addr)
 
     case 0x0016:
     case 0x0017:
-        return replay_run(&(nes->replay), NES_PAD_REG_RCB(pm, addr));
+        return replay_run(&nes->replay, NES_PAD_REG_RCB(pm, addr));
 
     default:
         return pm->data[addr];
@@ -609,11 +609,11 @@ void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte)
 
         // if the 5-step is selected the sequencer is immediately clocked once
         if (byte & (1 << 7)) {
-            apu_render_square_channel  (&(nes->apu.sch1), (BYTE*)pm->data + 0x0000, 6);
-            apu_render_square_channel  (&(nes->apu.sch2), (BYTE*)pm->data + 0x0004, 6);
-            apu_render_triangle_channel(&(nes->apu.tch ), (BYTE*)pm->data + 0x0008, 6);
-            apu_render_noise_channel   (&(nes->apu.nch ), (BYTE*)pm->data + 0x000C, 6);
-            apu_render_dmc_channel     (&(nes->apu.dmc ), (BYTE*)pm->data + 0x0010, 6);
+            apu_render_square_channel  (&nes->apu.sch1, (BYTE*)pm->data + 0x0000, 6);
+            apu_render_square_channel  (&nes->apu.sch2, (BYTE*)pm->data + 0x0004, 6);
+            apu_render_triangle_channel(&nes->apu.tch , (BYTE*)pm->data + 0x0008, 6);
+            apu_render_noise_channel   (&nes->apu.nch , (BYTE*)pm->data + 0x000C, 6);
+            apu_render_dmc_channel     (&nes->apu.dmc , (BYTE*)pm->data + 0x0010, 6);
         }
 
         // call joypad memrw callback

@@ -117,17 +117,15 @@ static void ppu_set_vdev_pal(PPU *ppu, int flags)
     int   factor = flags >> 5;
     int   r, g, b, i;
 
-    for (i=0; i<64; i++)
-    {
-        if (flags & (1 << 0))
-        {   // monochrome
+    for (i=0; i<64; i++) {
+        if (flags & (1 << 0)) {
+            // monochrome
             // how to convert rgb color to gray ?
             // gray = R*0.299 + G*0.587 + B*0.114
             r = g = b = (psrc[0]*77 + psrc[1]*150 + psrc[2]*29) >> 8;
             psrc += 3;
-        }
-        else
-        {   // colorized
+        } else {
+            // colorized
             r = *psrc++;
             g = *psrc++;
             b = *psrc++;
@@ -177,8 +175,7 @@ static void ppu_fetch_tile(PPU *ppu)
 // vaddr increment
 static void ppu_vincrement(PPU *ppu)
 {
-    if ((ppu->vaddr & 0x1f) == 31)
-    {
+    if ((ppu->vaddr & 0x1f) == 31) {
         ppu->vaddr &=~0x1f;
         ppu->vaddr ^= (1 << 10);
     }
@@ -188,8 +185,7 @@ static void ppu_vincrement(PPU *ppu)
 // x increment
 static void ppu_xincrement(PPU *ppu)
 {
-    if (FINEX == 7)
-    {
+    if (FINEX == 7) {
         FINEX = 0;
         ppu_fetch_tile(ppu);
         ppu_vincrement(ppu);
@@ -200,8 +196,7 @@ static void ppu_xincrement(PPU *ppu)
 // y increment
 static void ppu_yincrement(PPU *ppu)
 {
-    if ((ppu->vaddr & 0x7000) == 0x7000)
-    {
+    if ((ppu->vaddr & 0x7000) == 0x7000) {
         ppu->vaddr &=~0x7000;
         switch (ppu->vaddr & (0x1f << 5))
         {
@@ -240,8 +235,7 @@ static void sprite_evaluate(PPU *ppu)
     if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh) ppu->sprzero = sprdst;
 
     do {
-        if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh)
-        {
+        if (ppu->scanline >= sprsrc[0] && ppu->scanline < sprsrc[0] + sh) {
             tile = sprsrc[1];
             sy   = ppu->scanline - sprsrc[0]; // sy
             if (sprsrc[2] & (1 << 7)) sy = sh - sy - 1; // vflip
@@ -254,12 +248,9 @@ static void sprite_evaluate(PPU *ppu)
 
             case 16:
                 chrrom = (sprsrc[1] & 1) ? nes->chrrom1.data : nes->chrrom0.data;
-                if (sy < 8)
-                {
+                if (sy < 8) {
                     tile &= ~(1 << 0);
-                }
-                else
-                {
+                } else {
                     tile |=  (1 << 0);
                     sy -= 8;
                 }
@@ -303,32 +294,24 @@ static int sprite_render(PPU *ppu, int bkcolor)
         if (  sprdata[3] == ppu->pclk_line
            && !(sprdata[2] & (1 << 3)) )
         {
-            if (sprdata[2] & (1 << 7)) // hflip - 1
-            {
+            if (sprdata[2] & (1 << 7)) { // hflip - 1
                 scolor = (sprdata[0] & 1) | ((sprdata[1] & 1) << 1);
                 sprdata[0] >>= 1;
                 sprdata[1] >>= 1;
-            }
-            else // hflip - 0
-            {
+            } else { // hflip - 0
                 scolor = (sprdata[0] >> 7) | (sprdata[1] >> 7 << 1);
                 sprdata[0] <<= 1;
                 sprdata[1] <<= 1;
             }
 
-            if (!(ppu->regs[0x0001] & (1 << 2)) && ppu->pclk_line < 8)
-            {
+            if (!(ppu->regs[0x0001] & (1 << 2)) && ppu->pclk_line < 8) {
                 scolor = 0;
             }
 
-            if (scolor)
-            {
-                if ((sprdata[2] & (1 << 6)) && (bkcolor & 0x3))
-                {
+            if (scolor) {
+                if ((sprdata[2] & (1 << 6)) && (bkcolor & 0x3)) {
                     result = bkcolor;
-                }
-                else
-                {
+                } else {
                     result = (scolor | ((sprdata[2] >> 2) & 0xc)) + 16;
                 }
 
@@ -395,7 +378,6 @@ void ppu_reset(PPU *ppu)
     ppu->regs[0]    = 0;
     ppu->regs[1]    = 0;
     ppu->regs[5]    = 0;
-    ppu->pinvbl     = 1;
     ppu->toggle     = 0;
     ppu->finex      = 0;
     ppu->vaddr      = 0;
@@ -415,28 +397,16 @@ void ppu_reset(PPU *ppu)
 
 void ppu_run_pclk(PPU *ppu)
 {
-    //++ update vblank pin status
-    if (  (ppu->pclk_frame >= NES_HTOTAL * 241 + 4 && ppu->pclk_frame <= NES_HTOTAL * 261)
-       || (ppu->pclk_frame >= NES_HTOTAL * 261 + 4) )
-    {
-        ppu->pinvbl = ~(ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7);
-    }
-    //-- update vblank pin status
-
     // scanline 261 pre-render scanline
-    if (ppu->pclk_frame == NES_HTOTAL * 261 + 0) // scanline 261, tick 0
-    {
+    if (ppu->pclk_frame == NES_HTOTAL * 261 + 0) { // scanline 261, tick 0
         ppu->regs[0x0002] &= ~(3 << 5);
-    }
-    else if (ppu->pclk_frame == NES_HTOTAL * 261 + 1) // scanline 261, tick 1
-    {
+    } else if (ppu->pclk_frame == NES_HTOTAL * 261 + 1) { // scanline 261, tick 1
         // clear vblank bit of reg $2002
         ppu->vblklast = ppu->regs[0x0002] & (1 << 7);
         ppu->regs[0x0002] &= ~(1 << 7);
 
         // if sprite or name-tables are visible.
-        if (ppu->regs[0x0001] & (0x3 << 3))
-        {
+        if (ppu->regs[0x0001] & (0x3 << 3)) {
             // the ppu address copies the ppu's
             // temp at the beginning of the line
             ppu->vaddr = ppu->temp0;
@@ -444,23 +414,19 @@ void ppu_run_pclk(PPU *ppu)
         }
 
         // request vdev buffer, obtain address & stride
-        ppu->vdev->dequeue(ppu->vctxt, (void**)&(ppu->draw_buffer), &(ppu->draw_stride));
+        ppu->vdev->dequeue(ppu->vctxt, (void**)&ppu->draw_buffer, &ppu->draw_stride);
     }
 
     // scanline 0 - 239 visible scanlines
-    else if (ppu->pclk_frame < NES_HTOTAL * 240)
-    {
-        if (ppu->pclk_line < 256)
-        {
+    else if (ppu->pclk_frame < NES_HTOTAL * 240) {
+        if (ppu->pclk_line < 256) {
             int pixel = 0; // default pixel value
 
             // fetch tile and do x increment
-            if (ppu->regs[0x0001] & (0x3 << 3))
-            {
+            if (ppu->regs[0x0001] & (0x3 << 3)) {
                 // according to ppu pipeline, on each visiable scanline
                 //++ pre-fetch three times tile data for rendering
-                if (ppu->pclk_line == 0)
-                {
+                if (ppu->pclk_line == 0) {
                     // clear it first
                     ppu->tdatal  = 0;
                     ppu->tdatah  = 0;
@@ -486,10 +452,8 @@ void ppu_run_pclk(PPU *ppu)
                 //-- pre-fetch three times tile data for rendering
 
                 // render background
-                if (ppu->regs[0x0001] & (1 << 3))
-                {
-                    if ((ppu->regs[0x0001] & (1 << 1)) || ppu->pclk_line >= 8)
-                    {
+                if (ppu->regs[0x0001] & (1 << 3)) {
+                    if ((ppu->regs[0x0001] & (1 << 1)) || ppu->pclk_line >= 8) {
                         pixel = (ppu->tdatah << 8 >> 31 << 1) | (ppu->tdatal << 8 >> 31);
                         if (pixel) pixel |= (ppu->adata & 0xf);
                     }
@@ -501,20 +465,15 @@ void ppu_run_pclk(PPU *ppu)
 
                 // do x increment
                 ppu_xincrement(ppu);
-            }
-            else if ((ppu->vaddr & 0x3f00) == 0x3f00)
-            {
+            } else if ((ppu->vaddr & 0x3f00) == 0x3f00) {
                 // pixel value for palette hack
                 pixel = ppu->vaddr & 0x1f;
             }
 
             // write pixel on vdev
             *ppu->draw_buffer++ = ((DWORD*)ppu->vdevpal)[ppu->palette[pixel]];
-        }
-        else if (ppu->pclk_line == 321) // tick 321
-        {
-            if (ppu->regs[0x0001] & (0x3 << 3))
-            {
+        } else if (ppu->pclk_line == 321) { // tick 321
+            if (ppu->regs[0x0001] & (0x3 << 3)) {
                 // evaluate sprite
                 sprite_evaluate(ppu);
 
@@ -537,12 +496,10 @@ void ppu_run_pclk(PPU *ppu)
     // do nothing
 
     // scanline 241 - 260 vblank
-    else if (ppu->pclk_frame == NES_HTOTAL * 241 + 1) // scanline 241, tick 1
-    {
+    else if (ppu->pclk_frame == NES_HTOTAL * 241 + 1) { // scanline 241, tick 1
         {//++ for replay progress bar ++//
             NES *nes = container_of(ppu, NES, ppu);
-            if (nes->replay.mode == NES_REPLAY_PLAY)
-            {
+            if (nes->replay.mode == NES_REPLAY_PLAY) {
                 int i = 256 * nes->replay.curpos / nes->replay.total;
                 ppu->draw_buffer -= ppu->draw_stride;
                 while (i--) ppu->draw_buffer[i] = RGB(255, 128, 255);
@@ -558,23 +515,19 @@ void ppu_run_pclk(PPU *ppu)
     }
 
     // the last tick of frame, odd frame with tick skipping
-    else if (ppu->pclk_frame == NES_HTOTAL * NES_VTOTAL - 2)
-    {
+    else if (ppu->pclk_frame == NES_HTOTAL * NES_VTOTAL - 2) {
         //++ for ppu open bus ++//
         int i = 7;
         do {
-            if (ppu->open_bust[i] > 0)
-            {
-                if (--ppu->open_bust[i] == 0)
-                {
+            if (ppu->open_bust[i] > 0) {
+                if (--ppu->open_bust[i] == 0) {
                     ppu->open_busv &= ~(1 << i);
                 }
             }
         } while (i--);
         //-- for ppu open bus --//
 
-        if (ppu->oddevenflag && (ppu->regs[0x0001] & (0x3 << 3)))
-        {
+        if (ppu->oddevenflag && (ppu->regs[0x0001] & (0x3 << 3))) {
             // frame change
             ppu->pclk_frame = 0;
             ppu->pclk_line  = 0;
@@ -585,8 +538,7 @@ void ppu_run_pclk(PPU *ppu)
     }
 
     // the last tick of frame, even frame or without tick skipping
-    else if (ppu->pclk_frame == NES_HTOTAL * NES_VTOTAL - 1)
-    {
+    else if (ppu->pclk_frame == NES_HTOTAL * NES_VTOTAL - 1) {
         // frame change
         ppu->pclk_frame  = 0;
         ppu->pclk_line   = 0;
@@ -600,8 +552,7 @@ void ppu_run_pclk(PPU *ppu)
     // pclk increment
     ppu->pclk_frame++;
     ppu->pclk_line ++;
-    if (ppu->pclk_line == NES_HTOTAL)
-    {
+    if (ppu->pclk_line == NES_HTOTAL) {
         // scanline change
         ppu->pclk_line = 0;
         ppu->scanline++;
@@ -611,7 +562,7 @@ void ppu_run_pclk(PPU *ppu)
 BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
 {
     NES *nes   = container_of(pm, NES, ppuregs);
-    PPU *ppu   = &(nes->ppu);
+    PPU *ppu   = &nes->ppu;
     BYTE byte  = pm->data[addr];
     int  vaddr = ppu->vaddr & 0x3fff;
 
@@ -671,7 +622,7 @@ BYTE NES_PPU_REG_RCB(MEM *pm, int addr)
 void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
 {
     NES *nes   = container_of(pm, NES, ppuregs);
-    PPU *ppu   = &(nes->ppu);
+    PPU *ppu   = &nes->ppu;
     int  vaddr = ppu->vaddr & 0x3fff;
 
     //++ for ppu open bus ++//
@@ -690,8 +641,7 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
 
     case 0x0001:
         // if d7-d5 or d0 changed, we need update palette
-        if ((ppu->regs[0x0001] & 0xe1) != (byte & 0xe1))
-        {
+        if ((ppu->regs[0x0001] & 0xe1) != (byte & 0xe1)) {
             ppu_set_vdev_pal(ppu, byte & 0xe1);
         }
         break;
@@ -707,14 +657,11 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
 
     case 0x0005:
         ppu->toggle = !ppu->toggle;
-        if (ppu->toggle)
-        {
+        if (ppu->toggle) {
             ppu->temp0 &= ~(0x1f <<  0);
             ppu->temp0 |=  (byte >>  3);
             ppu->temp1  =  (byte & 0x7);
-        }
-        else
-        {
+        } else {
             ppu->temp0 &= ~(0x1f <<  5);
             ppu->temp0 |=  (byte >>  3) << 5;
             ppu->temp0 &= ~(0x07 << 12);
@@ -724,14 +671,11 @@ void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte)
 
     case 0x0006:
         ppu->toggle = !ppu->toggle;
-        if (ppu->toggle)
-        {
+        if (ppu->toggle) {
             ppu->temp0 &=~(0xff << 8);
             ppu->temp0 |= (byte << 8);
             ppu->temp0 &= 0x3fff;
-        }
-        else
-        {
+        } else {
             ppu->temp0 &=~(0xff << 0);
             ppu->temp0 |= (byte << 0);
             ppu->vaddr  = ppu->temp0;

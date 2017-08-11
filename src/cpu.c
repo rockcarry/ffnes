@@ -478,7 +478,7 @@ void cpu_run_cclk(CPU *cpu)
         //++ for ndb cpu debug ++//
         {
             NES *nes = container_of(cpu, NES, cpu);
-            ndb_cpu_debug(&(nes->ndb));
+            ndb_cpu_debug(&nes->ndb);
         }
         //-- for ndb cpu debug --//
 

@@ -58,8 +58,7 @@ BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
     switch (pMsg->message)
     {
     case WM_KEYDOWN:
-        if (::GetFocus() == m_ctrInstructionList.GetSafeHwnd())
-        {
+        if (::GetFocus() == m_ctrInstructionList.GetSafeHwnd()) {
             if (  (pMsg->wParam == VK_HOME || pMsg->wParam == VK_END)
                 && GetKeyState(VK_CONTROL) < 0 )
             {
@@ -86,46 +85,38 @@ BOOL CffndbdebugDlg::PreTranslateMessage(MSG* pMsg)
                 return TRUE;
             }
 
-            if (pMsg->wParam == VK_F3 && m_strCurFindStr.Compare("") != 0)
-            {
+            if (pMsg->wParam == VK_F3 && m_strCurFindStr.Compare("") != 0) {
                 FindStrInListCtrl(m_strCurFindStr, m_bIsSearchDown);
                 return TRUE;
             }
 
-            if (pMsg->wParam == 'B' && GetKeyState(VK_CONTROL) < 0)
-            {
+            if (pMsg->wParam == 'B' && GetKeyState(VK_CONTROL) < 0) {
                 OnAddbreakpoint();
                 return TRUE;
             }
 
-            if (pMsg->wParam == 'D' && GetKeyState(VK_CONTROL) < 0)
-            {
+            if (pMsg->wParam == 'D' && GetKeyState(VK_CONTROL) < 0) {
                 OnDelbreakpoint();
                 return TRUE;
             }
 
-            if (pMsg->wParam == 'A' && GetKeyState(VK_CONTROL) < 0)
-            {
+            if (pMsg->wParam == 'A' && GetKeyState(VK_CONTROL) < 0) {
                 OnDasmlistSelectall();
                 return TRUE;
             }
 
-            if (pMsg->wParam == 'C' && GetKeyState(VK_CONTROL) < 0)
-            {
+            if (pMsg->wParam == 'C' && GetKeyState(VK_CONTROL) < 0) {
                 OnDasmlistCopy();
                 return TRUE;
             }
 
-            if (pMsg->wParam == 'E' && GetKeyState(VK_CONTROL) < 0)
-            {
+            if (pMsg->wParam == 'E' && GetKeyState(VK_CONTROL) < 0) {
                 OnDasmlistEdit();
                 return TRUE;
             }
         }
-        if (::GetFocus() == m_edtListCtrl.GetSafeHwnd())
-        {
-            if (pMsg->wParam == VK_RETURN)
-            {
+        if (::GetFocus() == m_edtListCtrl.GetSafeHwnd()) {
+            if (pMsg->wParam == VK_RETURN) {
                 OnEnKillfocusEdtListCtrl();
                 return TRUE;
             }
@@ -177,7 +168,7 @@ void CffndbdebugDlg::OnCancel()
 BOOL CffndbdebugDlg::OnInitDialog()
 {
     // enable ndb debugging
-    ndb_set_debug(&(m_pNES->ndb), NDB_DEBUG_MODE_ENABLE);
+    ndb_set_debug(&m_pNES->ndb, NDB_DEBUG_MODE_ENABLE);
 
     // update button
     CWnd *pwnd = GetDlgItem(IDC_BTN_NES_RUN_PAUSE);
@@ -261,7 +252,7 @@ void CffndbdebugDlg::OnDestroy()
     delete m_pDASM;
 
     // disable ndb debugging
-    ndb_set_debug(&(m_pNES->ndb), NDB_DEBUG_MODE_DISABLE);
+    ndb_set_debug(&m_pNES->ndb, NDB_DEBUG_MODE_DISABLE);
 
     // delete self
     delete this;
@@ -278,8 +269,7 @@ void CffndbdebugDlg::OnPaint()
     case DT_DEBUG_PPU: prect = &s_rtPpuInfo; break;
     }
 
-    if (prect)
-    {
+    if (prect) {
         int savedc = m_cdcDraw.SaveDC();
         m_cdcDraw.SelectObject(m_bmpDrawBmp);
         dc.BitBlt(prect->left, prect->top,
@@ -299,11 +289,9 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
         {
         case DT_DEBUG_CPU:
             //++ if bank switch occured, we need redo disassemble ++//
-            if (m_pNES->ndb.banksw)
-            {
+            if (m_pNES->ndb.banksw) {
                 UpdateData(TRUE);
-                if (m_bCheckAutoDasm)
-                {
+                if (m_bCheckAutoDasm) {
                     KillTimer(NDB_REFRESH_TIMER);
                     DoNesRomDisAsm(); // redo dasm
                     m_pNES->ndb.banksw = 0;
@@ -316,10 +304,8 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
             if (m_bEnableTracking) UpdateCurInstHighLight();
 
             // for m_bDebugTracking
-            if (m_bDebugTracking && m_pNES->ndb.stop)
-            {
-                if (m_pNES->ndb.banksw)
-                {
+            if (m_bDebugTracking && m_pNES->ndb.stop) {
+                if (m_pNES->ndb.banksw) {
                     KillTimer(NDB_REFRESH_TIMER);
                     MessageBox("nes mapper makes bank switch, need to redo disassemble!",
                         "ffndb dasm", MB_ICONASTERISK|MB_ICONINFORMATION);
@@ -332,8 +318,7 @@ void CffndbdebugDlg::OnTimer(UINT_PTR nIDEvent)
                 m_bDebugTracking = FALSE;
             }
 
-            if (m_bDebugRunNStep)
-            {
+            if (m_bDebugRunNStep) {
                 if (m_pNES->ndb.nsteps == 0) m_bDebugRunNStep = FALSE;
                 m_strCpuStopNSteps.Format("%d", m_pNES->ndb.nsteps);
                 UpdateData(FALSE);
@@ -365,8 +350,7 @@ void CffndbdebugDlg::OnMouseMove(UINT nFlags, CPoint point)
     switch (m_nDebugType)
     {
     case DT_DEBUG_PPU:
-        for (i=0; i<7; i++)
-        {
+        for (i=0; i<7; i++) {
             if (PtInRect(&(s_rtPpuAreas[i]) , point)) break;
         }
         m_nCurPpuDetails  = i;
@@ -388,8 +372,7 @@ void CffndbdebugDlg::OnBnClickedBtnNesRunPause()
     if (nes_getrun(m_pNES)) {
         nes_setrun(m_pNES, 0);
         pwnd->SetWindowText("run");
-    }
-    else {
+    } else {
         nes_setrun(m_pNES, 1);
         pwnd->SetWindowText("pause");
     }
@@ -400,8 +383,7 @@ void CffndbdebugDlg::OnBnClickedBtnNesDebugCpu()
     // for debug type
     m_nDebugType = DT_DEBUG_CPU;
 
-    for (int i=IDC_GRP_WATCH_BPOINT; i<=IDC_LST_OPCODE; i++)
-    {
+    for (int i=IDC_GRP_WATCH_BPOINT; i<=IDC_LST_OPCODE; i++) {
         CWnd *pwnd = GetDlgItem(i);
         pwnd->ShowWindow(SW_SHOW);
     }
@@ -413,8 +395,7 @@ void CffndbdebugDlg::OnBnClickedBtnNesDebugPpu()
     // for debug type
     m_nDebugType = DT_DEBUG_PPU;
 
-    for (int i=IDC_GRP_WATCH_BPOINT; i<=IDC_LST_OPCODE; i++)
-    {
+    for (int i=IDC_GRP_WATCH_BPOINT; i<=IDC_LST_OPCODE; i++) {
         CWnd *pwnd = GetDlgItem(i);
         pwnd->ShowWindow(SW_HIDE);
     }
@@ -426,7 +407,7 @@ void CffndbdebugDlg::OnBnClickedBtnAddWatch()
     DWORD addr;
     UpdateData(TRUE);
     sscanf(m_strWatchAddr, "%x", &addr);
-    ndb_add_watch(&(m_pNES->ndb), (WORD)addr);
+    ndb_add_watch(&m_pNES->ndb, (WORD)addr);
     m_strWatchAddr.Format("%04X", ++addr);
     UpdateData(FALSE);
 }
@@ -436,22 +417,20 @@ void CffndbdebugDlg::OnBnClickedBtnDelWatch()
     DWORD addr;
     UpdateData(TRUE);
     sscanf(m_strWatchAddr, "%x", &addr);
-    ndb_del_watch(&(m_pNES->ndb), (WORD)addr);
+    ndb_del_watch(&m_pNES->ndb, (WORD)addr);
 }
 
 void CffndbdebugDlg::OnBnClickedBtnDelAllWatch()
 {
-    for (int i=0; i<16; i++ )
-    {
+    for (int i=0; i<16; i++ ) {
         m_pNES->ndb.watches[i] = 0xffff;
     }
 }
 
 void CffndbdebugDlg::OnBnClickedBtnDelAllBpoint()
 {
-    for (int i=0; i<16; i++)
-    {
-        int n = ndb_dasm_pc2instn(&(m_pNES->ndb), m_pDASM, m_pNES->ndb.bpoints[i]);
+    for (int i=0; i<16; i++) {
+        int n = ndb_dasm_pc2instn(&m_pNES->ndb, m_pDASM, m_pNES->ndb.bpoints[i]);
         m_ctrInstructionList.SetItemText(n, 0, "");
         m_pNES->ndb.bpoints[i] = 0xffff;
     }
@@ -459,33 +438,33 @@ void CffndbdebugDlg::OnBnClickedBtnDelAllBpoint()
 
 void CffndbdebugDlg::OnBnClickedRdoCpuRunDebug()
 {
-    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_DEBUG, NULL);
+    ndb_cpu_runto(&m_pNES->ndb, NDB_CPU_RUN_DEBUG, NULL);
     m_bDebugTracking = TRUE;
 }
 
 void CffndbdebugDlg::OnBnClickedRdoCpuRunNsteps()
 {
     UpdateData(TRUE);
-    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_NSTEPS, (DWORD)atoi(m_strCpuStopNSteps));
+    ndb_cpu_runto(&m_pNES->ndb, NDB_CPU_RUN_NSTEPS, (DWORD)atoi(m_strCpuStopNSteps));
     m_bDebugRunNStep = TRUE;
     m_bDebugTracking = TRUE;
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuStepIn()
 {
-    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_STEP_IN, NULL); // step in
+    ndb_cpu_runto(&m_pNES->ndb, NDB_CPU_RUN_STEP_IN, NULL); // step in
     m_bDebugTracking = TRUE;
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuStepOut()
 {
-    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_STEP_OUT, NULL); // step out
+    ndb_cpu_runto(&m_pNES->ndb, NDB_CPU_RUN_STEP_OUT, NULL); // step out
     m_bDebugTracking = TRUE;
 }
 
 void CffndbdebugDlg::OnBnClickedBtnCpuStepOver()
 {
-    ndb_cpu_runto(&(m_pNES->ndb), NDB_CPU_RUN_STEP_OVER, NULL); // step over
+    ndb_cpu_runto(&m_pNES->ndb, NDB_CPU_RUN_STEP_OVER, NULL); // step over
     m_bDebugTracking = TRUE;
 }
 
@@ -503,8 +482,7 @@ LONG CffndbdebugDlg::OnFindReplace(WPARAM wparam, LPARAM lparam)
 {
     CFindReplaceDialog *dlg = CFindReplaceDialog::GetNotifier(lparam);
 
-    if (dlg->FindNext())
-    {
+    if (dlg->FindNext()) {
         // save current find string
         m_strCurFindStr = dlg->GetFindString();
         m_bIsSearchDown = dlg->SearchDown();
@@ -533,18 +511,15 @@ void CffndbdebugDlg::OnDclickListDasm(NMHDR *pNMHDR, LRESULT *pResult)
 void CffndbdebugDlg::OnAddbreakpoint()
 {
     POSITION pos = m_ctrInstructionList.GetFirstSelectedItemPosition();
-    if (pos)
-    {
-        while (pos)
-        {
+    if (pos) {
+        while (pos) {
             int   n  = 0;
             DWORD pc = 0;
             n = m_ctrInstructionList.GetNextSelectedItem(pos);
             sscanf(m_ctrInstructionList.GetItemText(n, 1), "%x", &pc);
 
             m_ctrInstructionList.SetItemText(n, 0, "B");
-            if (!ndb_add_bpoint(&(m_pNES->ndb), (WORD)pc))
-            {
+            if (!ndb_add_bpoint(&m_pNES->ndb, (WORD)pc)) {
                 MessageBox("only support 16 break points !", "ffndb find", MB_ICONASTERISK|MB_ICONINFORMATION);
                 break;
             }
@@ -555,17 +530,15 @@ void CffndbdebugDlg::OnAddbreakpoint()
 void CffndbdebugDlg::OnDelbreakpoint()
 {
     POSITION pos = m_ctrInstructionList.GetFirstSelectedItemPosition();
-    if (pos)
-    {
-        while (pos)
-        {
+    if (pos) {
+        while (pos) {
             int   n  = 0;
             DWORD pc = 0;
             n = m_ctrInstructionList.GetNextSelectedItem(pos);
             sscanf(m_ctrInstructionList.GetItemText(n, 1), "%x", &pc);
 
             m_ctrInstructionList.SetItemText(n, 0, "");
-            ndb_del_bpoint(&(m_pNES->ndb), (WORD)pc);
+            ndb_del_bpoint(&m_pNES->ndb, (WORD)pc);
         }
     }
 }
@@ -581,23 +554,19 @@ void CffndbdebugDlg::OnDasmlistSelectall()
 void CffndbdebugDlg::OnDasmlistCopy()
 {
     BeginWaitCursor();
-    if (::OpenClipboard(m_hWnd) && ::EmptyClipboard())
-    {
+    if (::OpenClipboard(m_hWnd) && ::EmptyClipboard()) {
         int    total = m_ctrInstructionList.GetSelectedCount();
         size_t cbStr = total * sizeof(char) * 50;
         HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, cbStr);
-        if (!hMem)
-        {
+        if (!hMem) {
             CloseClipboard();
             return;
         }
 
         LPTSTR lpDest = (LPTSTR)GlobalLock(hMem);
         POSITION pos = m_ctrInstructionList.GetFirstSelectedItemPosition();
-        if (pos)
-        {
-            while (pos)
-            {
+        if (pos) {
+            while (pos) {
                 int n = m_ctrInstructionList.GetNextSelectedItem(pos);
 
                 int len = sprintf_s(lpDest, cbStr, "%-6.4s %-10.8s %-12.12s\r\n",
@@ -610,8 +579,7 @@ void CffndbdebugDlg::OnDasmlistCopy()
         }
         GlobalUnlock(hMem);
 
-        if (!SetClipboardData(CF_TEXT, hMem))
-        {
+        if (!SetClipboardData(CF_TEXT, hMem)) {
             CloseClipboard();
             return;
         }
@@ -624,8 +592,7 @@ void CffndbdebugDlg::OnDasmlistEdit()
 {
     m_nCurEditItemRow = m_ctrInstructionList.GetSelectionMark();
     m_nCurEditItemCol = 2;
-    if (m_nCurEditItemRow != -1)
-    {
+    if (m_nCurEditItemRow != -1) {
         CRect rect;
         m_ctrInstructionList.GetSubItemRect(m_nCurEditItemRow, m_nCurEditItemCol, LVIR_LABEL, rect);
         rect.top  += s_rtListCtrl.top + 0; rect.bottom += s_rtListCtrl.top ;
@@ -658,7 +625,7 @@ void CffndbdebugDlg::OnEnKillfocusEdtListCtrl()
     int  btype = 0;
     WORD entry = 0;
     int  len   = 0;
-    len = ndb_dasm_one_inst(&(m_pNES->ndb), pc,
+    len = ndb_dasm_one_inst(&m_pNES->ndb, pc,
         m_pDASM->instlist[m_nCurEditItemRow].bytes,
         m_pDASM->instlist[m_nCurEditItemRow].asmstr,
         m_pDASM->instlist[m_nCurEditItemRow].comment, &btype, &entry);
@@ -672,9 +639,7 @@ void CffndbdebugDlg::OnEnKillfocusEdtListCtrl()
         m_ctrInstructionList.SetItemText(m_nCurEditItemRow, 2, str);
         m_ctrInstructionList.SetItemText(m_nCurEditItemRow, 3, m_pDASM->instlist[m_nCurEditItemRow].asmstr );
         m_ctrInstructionList.SetItemText(m_nCurEditItemRow, 4, m_pDASM->instlist[m_nCurEditItemRow].comment);
-    }
-    else
-    {
+    } else {
         MessageBox("after rom modified, the new instruction length is not same as old, need to redo disassemble!",
             "ffndb dasm", MB_ICONASTERISK|MB_ICONINFORMATION);
         DoNesRomDisAsm();
@@ -688,14 +653,12 @@ void CffndbdebugDlg::OnEnKillfocusEdtListCtrl()
 ///////////////////////////////////////////////
 void CffndbdebugDlg::DrawGrid(int m, int n, int *x, int *y)
 {
-    for (int i=0; i<n; i++)
-    {
+    for (int i=0; i<n; i++) {
         m_cdcDraw.MoveTo(x[0  ], y[i]);
         m_cdcDraw.LineTo(x[m-1], y[i]);
     }
 
-    for (int i=0; i<m; i++)
-    {
+    for (int i=0; i<m; i++) {
         m_cdcDraw.MoveTo(x[i], y[0    ]);
         m_cdcDraw.LineTo(x[i], y[n - 1]);
     }
@@ -717,10 +680,10 @@ void CffndbdebugDlg::DrawCpuDebugging()
     {
         char cpuregs[128] = {0};
         rect.left += 6; rect.top += 6;
-        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_REGS0, cpuregs);
+        ndb_dump_info(&m_pNES->ndb, NDB_DUMP_CPU_REGS0, cpuregs);
         m_cdcDraw.DrawText(cpuregs, -1, &rect, 0);
         rect.left += 0; rect.top += 22;
-        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_REGS1, cpuregs);
+        ndb_dump_info(&m_pNES->ndb, NDB_DUMP_CPU_REGS1, cpuregs);
         m_cdcDraw.DrawText(cpuregs, -1, &rect, 0);
 
         int gridx[] = { 3, 45+32*0, 45+32*1, 45+32*2, 45+32*3, 45+32*4, 256 };
@@ -728,7 +691,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
         DrawGrid(7, 3, gridx, gridy);
 
         char vector[128] = {0};
-        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_VECTOR, vector);
+        ndb_dump_info(&m_pNES->ndb, NDB_DUMP_CPU_VECTOR, vector);
         rect.left += 266; rect.top -= 27;
         m_cdcDraw.DrawText(vector, -1, &rect, DT_LEFT);
         rect.left -= 266; rect.top += 27;
@@ -738,10 +701,10 @@ void CffndbdebugDlg::DrawCpuDebugging()
     {
         char stackinfo[128] = {0};
         rect.left = 6; rect.top += 29;
-        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_STACK0, stackinfo);
+        ndb_dump_info(&m_pNES->ndb, NDB_DUMP_CPU_STACK0, stackinfo);
         m_cdcDraw.DrawText(stackinfo, -1, &rect, 0);
         rect.left = 6; rect.top += 22;
-        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_CPU_STACK1, stackinfo);
+        ndb_dump_info(&m_pNES->ndb, NDB_DUMP_CPU_STACK1, stackinfo);
         m_cdcDraw.DrawText(stackinfo, -1, &rect, 0);
 
         int gridx[] = { 3+24*0, 3+24*1, 3+24*2 , 3+24*3 , 3+24*4 , 3+24*5 , 3+24*6 , 3+24*7 ,
@@ -761,7 +724,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
         m_cdcDraw.DrawText("break points:", -1, &rect, 0);
         for (i=0; i<2; i++) {
             rect.left = 6; rect.top += 22;
-            ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_BREAK_POINT0 + i, bpwv);
+            ndb_dump_info(&m_pNES->ndb, NDB_DUMP_BREAK_POINT0 + i, bpwv);
             m_cdcDraw.DrawText(bpwv, -1, &rect, 0);
         }
         for (i=0; i<5; i++) gridy[i] += 127;
@@ -771,7 +734,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
         m_cdcDraw.DrawText("watches:", -1, &rect, 0);
         for (i=0; i<4; i++) {
             rect.left = 6; rect.top += 22;
-            ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_WATCH0 + i, bpwv);
+            ndb_dump_info(&m_pNES->ndb, NDB_DUMP_WATCH0 + i, bpwv);
             m_cdcDraw.DrawText(bpwv, -1, &rect, 0);
         }
         for (i=0; i<5; i++) gridy[i] += 72;
@@ -781,7 +744,7 @@ void CffndbdebugDlg::DrawCpuDebugging()
     // draw bank switch info
     {
         char banksw[128];
-        ndb_dump_info(&(m_pNES->ndb), NDB_DUMP_BANKSW, banksw);
+        ndb_dump_info(&m_pNES->ndb, NDB_DUMP_BANKSW, banksw);
         rect.left = 6; rect.top = 295;
         m_cdcDraw.DrawText(banksw, -1, &rect, DT_LEFT);
     }
@@ -822,7 +785,7 @@ void CffndbdebugDlg::DrawPpuDebugging()
     m_cdcDraw.TextOut(512 + 8, 298, "sprite ram:");
 
     // use ndb_dump_ppu to draw ppu info
-    ndb_dump_ppu(&(m_pNES->ndb), m_bmpDrawBuf, m_bmpDrawWidth, m_bmpDrawHeight, m_bmpDrawStride);
+    ndb_dump_ppu(&m_pNES->ndb, m_bmpDrawBuf, m_bmpDrawWidth, m_bmpDrawHeight, m_bmpDrawStride);
 
     //++ for ppu details infomation ++//
     //+ for cursor
@@ -940,10 +903,10 @@ void CffndbdebugDlg::DrawPpuDebugging()
             "sprite xy: %d, %d\r\n"
             "sprite tile: %d\r\n"
             "%c%c%c 0x%x",
-            data,
-            m_pNES->ppu.sprram[data * 4 + 3],
-            m_pNES->ppu.sprram[data * 4 + 0],
-            m_pNES->ppu.sprram[data * 4 + 1],
+             data,
+             m_pNES->ppu.sprram[data * 4 + 3],
+             m_pNES->ppu.sprram[data * 4 + 0],
+             m_pNES->ppu.sprram[data * 4 + 1],
             (m_pNES->ppu.sprram[data * 4 + 2] & (1 << 7)) ? 'v' : '-',
             (m_pNES->ppu.sprram[data * 4 + 2] & (1 << 6)) ? 'h' : '-',
             (m_pNES->ppu.sprram[data * 4 + 2] & (1 << 5)) ? 'b' : '-',
@@ -959,16 +922,16 @@ void CffndbdebugDlg::DrawPpuDebugging()
             "%04X  %-4d  %04X  %04X  %c%c%c%c %c%c",
             (m_pNES->ppu.regs[0x0000] & (1 << 7)) ? 'e' : 'd',
             (m_pNES->ppu.regs[0x0002] & (1 << 7)) ? 1 : 0,
-            m_pNES->ppu.pinvbl ? 'h' : 'l',
+            (m_pNES->ppu.regs[0x0002] & m_pNES->ppu.regs[0x0000]) & (1 << 7) ? 'l' : 'h',
             (m_pNES->ppu.regs[0x0001] & (1 << 0)) ? 'm' : 'c',
             (m_pNES->ppu.regs[0x0001] >> 5),
-            m_pNES->ppu.pclk_line,
-            m_pNES->ppu.scanline,
-            m_pNES->ppu.pclk_frame,
-            m_pNES->ppu.vaddr,
+             m_pNES->ppu.pclk_line,
+             m_pNES->ppu.scanline,
+             m_pNES->ppu.pclk_frame,
+             m_pNES->ppu.vaddr,
             (m_pNES->ppu.regs[0x0000] & (1 << 2)) ? 32 : 1,
-            m_pNES->ppu.temp0,
-            m_pNES->ppu.temp1,
+             m_pNES->ppu.temp0,
+             m_pNES->ppu.temp1,
             (m_pNES->ppu.regs[0x0001] & (1 << 4)) ? 'v' : '-',
             (m_pNES->ppu.regs[0x0001] & (1 << 2)) ? '-' : 'c',
             (m_pNES->ppu.regs[0x0002] & (1 << 6)) ? 'h' : '-',
@@ -979,8 +942,7 @@ void CffndbdebugDlg::DrawPpuDebugging()
     }
     rect.top = 392;
     m_cdcDraw.DrawText(details, -1, &rect, DT_LEFT);
-    if (cursor.right - cursor.left)
-    {
+    if (cursor.right - cursor.left) {
         rect.left += 176;
         rect.top  += 8;
         rect.right = rect.left + 64;
@@ -995,9 +957,7 @@ void CffndbdebugDlg::DrawPpuDebugging()
         {
             m_cdcDraw.StretchBlt(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
                 &m_cdcDraw, cursor.left + 1, cursor.top + 1, cursor.right - cursor.left - 2, cursor.bottom - cursor.top - 2, SRCCOPY);
-        }
-        else
-        {
+        } else {
             m_cdcDraw.StretchBlt(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
                 &m_cdcDraw, cursor.left, cursor.top, cursor.right - cursor.left, cursor.bottom - cursor.top, SRCCOPY);
         }
@@ -1033,8 +993,7 @@ void CffndbdebugDlg::UpdateDasmListControl()
     char str[32];
     m_ctrInstructionList.SetRedraw(FALSE);
     m_ctrInstructionList.DeleteAllItems();
-    for (int n=0; n<m_pDASM->curinstn; n++)
-    {
+    for (int n=0; n<m_pDASM->curinstn; n++) {
         m_ctrInstructionList.InsertItem(n, "");
 
         sprintf(str, "%04X", m_pDASM->instlist[n].pc);
@@ -1048,12 +1007,10 @@ void CffndbdebugDlg::UpdateDasmListControl()
         m_ctrInstructionList.SetItemText(n, 3, m_pDASM->instlist[n].asmstr );
         m_ctrInstructionList.SetItemText(n, 4, m_pDASM->instlist[n].comment);
     }
-    for (int i=0; i<16; i++)
-    {
-        if (m_pNES->ndb.bpoints[i] != 0xffff)
-        {
+    for (int i=0; i<16; i++) {
+        if (m_pNES->ndb.bpoints[i] != 0xffff) {
             m_ctrInstructionList.SetItemText(
-                ndb_dasm_pc2instn(&(m_pNES->ndb), m_pDASM, m_pNES->ndb.bpoints[i]),
+                ndb_dasm_pc2instn(&m_pNES->ndb, m_pDASM, m_pNES->ndb.bpoints[i]),
                 0, "B");
         }
     }
@@ -1063,18 +1020,18 @@ void CffndbdebugDlg::UpdateDasmListControl()
 void CffndbdebugDlg::DoNesRomDisAsm()
 {
     BeginWaitCursor();
-    ndb_dasm_nes_rom_begin(&(m_pNES->ndb), m_pDASM);
-    ndb_dasm_nes_rom_entry(&(m_pNES->ndb), m_pDASM, bus_readw(m_pNES->cbus, RST_VECTOR));
-    ndb_dasm_nes_rom_entry(&(m_pNES->ndb), m_pDASM, bus_readw(m_pNES->cbus, NMI_VECTOR));
-    ndb_dasm_nes_rom_entry(&(m_pNES->ndb), m_pDASM, bus_readw(m_pNES->cbus, IRQ_VECTOR));
-    ndb_dasm_nes_rom_done (&(m_pNES->ndb), m_pDASM);
+    ndb_dasm_nes_rom_begin(&m_pNES->ndb, m_pDASM);
+    ndb_dasm_nes_rom_entry(&m_pNES->ndb, m_pDASM, bus_readw(m_pNES->cbus, RST_VECTOR));
+    ndb_dasm_nes_rom_entry(&m_pNES->ndb, m_pDASM, bus_readw(m_pNES->cbus, NMI_VECTOR));
+    ndb_dasm_nes_rom_entry(&m_pNES->ndb, m_pDASM, bus_readw(m_pNES->cbus, IRQ_VECTOR));
+    ndb_dasm_nes_rom_done (&m_pNES->ndb, m_pDASM);
     UpdateDasmListControl();
     EndWaitCursor();
 }
 
 void CffndbdebugDlg::UpdateCurInstHighLight()
 {
-    int n = ndb_dasm_pc2instn(&(m_pNES->ndb), m_pDASM, m_pNES->ndb.curpc);
+    int n = ndb_dasm_pc2instn(&m_pNES->ndb, m_pDASM, m_pNES->ndb.curpc);
     m_ctrInstructionList.EnsureVisible(n, FALSE);
     m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(n), 0, LVIS_SELECTED);
     m_ctrInstructionList.SetItemState (n, LVIS_SELECTED, LVIS_SELECTED);
@@ -1100,14 +1057,11 @@ void CffndbdebugDlg::FindStrInListCtrl(CString str, BOOL down)
         n += d;
     }
 
-    if (n >= 0 && n < total)
-    {
+    if (n >= 0 && n < total) {
         m_ctrInstructionList.EnsureVisible(n, FALSE);
         m_ctrInstructionList.SetItemState (m_ctrInstructionList.SetSelectionMark(n), 0, LVIS_SELECTED);
         m_ctrInstructionList.SetItemState (n, LVIS_SELECTED, LVIS_SELECTED);
-    }
-    else
-    {
+    } else {
         MessageBox(CString("can't find \"") + str + "\"", "ffndb find", MB_ICONASTERISK|MB_ICONINFORMATION);
     }
 

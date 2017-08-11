@@ -80,8 +80,7 @@ void ndb_cpu_debug(NDB *ndb)
         break;
 
     case NDB_CPU_RUN_STEP_OUT:
-        if (ndb->pcstepout != 0xffff)
-        {
+        if (ndb->pcstepout != 0xffff) {
             if (  ndb->curpc == ndb->pcstepout + 0
                || ndb->curpc == ndb->pcstepout + 1)
             {
@@ -91,8 +90,7 @@ void ndb_cpu_debug(NDB *ndb)
         break;
 
     case NDB_CPU_RUN_STEP_OVER:
-        if (ndb->pcstepover != 0xffff)
-        {
+        if (ndb->pcstepover != 0xffff) {
             if (ndb->curpc == ndb->pcstepover) ndb->stop = 1;
         }
         else ndb->stop = 1;
@@ -100,10 +98,8 @@ void ndb_cpu_debug(NDB *ndb)
     }
 
     //++ for break points
-    for (i=0; i<16; i++)
-    {
-        if (ndb->curpc == ndb->bpoints[i])
-        {
+    for (i=0; i<16; i++) {
+        if (ndb->curpc == ndb->bpoints[i]) {
             ndb->stop = 1;
             break;
         }
@@ -128,8 +124,7 @@ void ndb_cpu_runto(NDB *ndb, int cond, DWORD dwparam)
         break;
 
     case NDB_CPU_RUN_STEP_OUT:
-        if (ndb->pcstacktop > 0)
-        {
+        if (ndb->pcstacktop > 0) {
             ndb->pcstepout = ndb->pcstackbuf[ndb->pcstacktop - 1];
         }
         else ndb->pcstepout = 0xffff;
@@ -137,8 +132,7 @@ void ndb_cpu_runto(NDB *ndb, int cond, DWORD dwparam)
         break;
 
     case NDB_CPU_RUN_STEP_OVER:
-        if (ndb->curopcode == 0x00 || ndb->curopcode == 0x20)
-        {
+        if (ndb->curopcode == 0x00 || ndb->curopcode == 0x20) {
             ndb->pcstepover = ndb->curpc + ndb_cal_inst_len(ndb->curopcode);
         }
         else ndb->pcstepover = 0xffff;
@@ -264,8 +258,7 @@ void ndb_dasm_nes_rom_entry(NDB *ndb, DASM *dasm, WORD entry)
 
     if (entry < 0x8000 || dasm->pc2instn_maptab[entry - 0x8000] != 0) return;
 
-    for (pc=entry; pc<0xfffa; pc+=len)
-    {
+    for (pc=entry; pc<0xfffa; pc+=len) {
         // dasm one instruction
         len = ndb_dasm_one_inst(ndb, pc,
             dasm->instlist[dasm->curinstn].bytes,
@@ -286,8 +279,7 @@ void ndb_dasm_nes_rom_entry(NDB *ndb, DASM *dasm, WORD entry)
         if (branchtype == NDB_DBT_STOP_DASM) break;
 
         //++ for jump, branch or call sub instruction
-        if (branchentry > 0x8000 && dasm->pc2instn_maptab[branchentry - 0x8000] == 0)
-        {
+        if (branchentry > 0x8000 && dasm->pc2instn_maptab[branchentry - 0x8000] == 0) {
             switch (branchtype)
             {
             case NDB_DBT_JMP_DIRECT:
@@ -337,13 +329,11 @@ int ndb_dasm_pc2instn(NDB *ndb, DASM *dasm, WORD pc)
 BOOL ndb_add_bpoint(NDB *ndb, WORD bpoint)
 {
     int i, free = -1;
-    for (i=0; i<16; i++)
-    {
+    for (i=0; i<16; i++) {
         if (ndb->bpoints[i] == bpoint) return TRUE;
         if (ndb->bpoints[i] == 0xffff && free == -1) free = i;
     }
-    if (free != -1)
-    {
+    if (free != -1) {
         ndb->bpoints[free] = bpoint;
         return TRUE;
     }
@@ -353,8 +343,7 @@ BOOL ndb_add_bpoint(NDB *ndb, WORD bpoint)
 void ndb_del_bpoint(NDB *ndb, WORD bpoint)
 {
     int i;
-    for (i=0; i<16; i++)
-    {
+    for (i=0; i<16; i++) {
         if (ndb->bpoints[i] == bpoint) break;
     }
     if (i < 16) ndb->bpoints[i] = 0xffff;
@@ -363,13 +352,11 @@ void ndb_del_bpoint(NDB *ndb, WORD bpoint)
 BOOL ndb_add_watch(NDB *ndb, WORD watch)
 {
     int i, free = -1;
-    for (i=0; i<16; i++)
-    {
+    for (i=0; i<16; i++) {
         if (ndb->watches[i] == watch) return TRUE;
         if (ndb->watches[i] == 0xffff && free == -1) free = i;
     }
-    if (free != -1)
-    {
+    if (free != -1) {
         ndb->watches[free] = watch;
         return TRUE;
     }
@@ -379,8 +366,7 @@ BOOL ndb_add_watch(NDB *ndb, WORD watch)
 void ndb_del_watch(NDB *ndb, WORD watch)
 {
     int i;
-    for (i=0; i<16; i++)
-    {
+    for (i=0; i<16; i++) {
         if (ndb->watches[i] == watch) break;
     }
     if (i < 16) ndb->watches[i] = 0xffff;
@@ -410,8 +396,7 @@ static void ndb_dump_cpu_regs1(NDB *ndb, char *str)
         ndb->nes->cpu.pc, ndb->nes->cpu.ax, ndb->nes->cpu.xi, ndb->nes->cpu.yi, ndb->nes->cpu.sp);
 
     str += strlen(str);
-    for (i=7; i>=0; i--)
-    {
+    for (i=7; i>=0; i--) {
         if (ndb->nes->cpu.ps & (1 << i)) {
             *str++ = psflag_chars[i];
         }
@@ -437,8 +422,7 @@ static void ndb_dump_cpu_stack1(NDB *ndb, char *str)
     int  i;
 
     str[0] = '\0';
-    for (i=bottom; i>bottom-16; i--)
-    {
+    for (i=bottom; i>bottom-16; i--) {
         if (i > top) sprintf(byte, "%02X ", ndb->nes->cpu.cram[i]);
         else         sprintf(byte, "-- ");
         strcat (str, byte);
@@ -459,8 +443,7 @@ static void ndb_dump_break_point(NDB *ndb, int type, char *str)
     int   i;
 
     if (type == NDB_DUMP_BREAK_POINT1) bps += 8;
-    for (i=0; i<8; i++)
-    {
+    for (i=0; i<8; i++) {
         if (bps[i] == 0xffff) {
             sprintf(str+i*5, "---- ");
         }
@@ -476,23 +459,17 @@ static void ndb_dump_watch(NDB *ndb, int type, char *str)
 
     if (type == NDB_DUMP_WATCH2 || type == NDB_DUMP_WATCH3) wts += 8;
 
-    if (type == NDB_DUMP_WATCH0 || type == NDB_DUMP_WATCH2)
-    {
+    if (type == NDB_DUMP_WATCH0 || type == NDB_DUMP_WATCH2) {
         sprintf(str, "addr "); str += 5;
-        for (i=0; i<8; i++)
-        {
+        for (i=0; i<8; i++) {
             if (wts[i] == 0xffff) sprintf(str+i*5, "---- ");
             else sprintf(str+i*5, "%04X ", wts[i]);
         }
-    }
-    else
-    {
+    } else {
         sprintf(str, "data "); str += 5;
-        for (i=0; i<8; i++)
-        {
+        for (i=0; i<8; i++) {
             if (wts[i] == 0xffff) sprintf(str+i*5, " --  ");
-            else
-            {
+            else {
                 byte = bus_readb_norwcb(ndb->nes->cbus, wts[i]);
                 sprintf(str+i*5, " %02X  ", byte);
             }
@@ -541,22 +518,18 @@ static void render_name_table(void *bmp, int stride, BYTE *vram, BYTE *chrom, BY
     int    maxntabsize = (div == 1) ? 960 : (1024 / div);
     int    maxscanline = (div == 1) ? 240 : (256  / div);
 
-    for (n=0; n<maxatabsize; n++)
-    {
+    for (n=0; n<maxatabsize; n++) {
         adata = atab[n];
         ax = (n & 0x7) * 32;
         ay = (n >>  3) * 32;
 
-        for (s=0; s<4; s++)
-        {
+        for (s=0; s<4; s++) {
             sx = ax + (s & 0x1) * 16;
             sy = ay + (s >>  1) * 16;
             dwbuf = (DWORD*)bmp + sy * stride + sx;
 
-            for (i=0; i<16; i++)
-            {
-                for (j=0; j<16; j++)
-                {
+            for (i=0; i<16; i++) {
+                for (j=0; j<16; j++) {
                     *dwbuf++ = (adata & 0x3) << 2;
                 }
                 dwbuf -= 16;
@@ -566,19 +539,16 @@ static void render_name_table(void *bmp, int stride, BYTE *vram, BYTE *chrom, BY
         }
     }
 
-    for (n=0; n<maxntabsize; n++)
-    {
+    for (n=0; n<maxntabsize; n++) {
         tx = (n & 0x1f) * 8;
         ty = (n >>   5) * 8;
         tdata = ntab[n];
         dwbuf = (DWORD*)bmp + ty * stride + tx;
 
-        for (i=0; i<8; i++)
-        {
+        for (i=0; i<8; i++) {
             cdatl = chrom[tdata * 16 + i + 0];
             cdath = chrom[tdata * 16 + i + 8];
-            for (j=0; j<8; j++)
-            {
+            for (j=0; j<8; j++) {
                 *dwbuf += ((cdath >> 7) << 1) | ((cdatl >> 7) << 0);
                  dwbuf ++;
                 cdath <<= 1;
@@ -590,10 +560,8 @@ static void render_name_table(void *bmp, int stride, BYTE *vram, BYTE *chrom, BY
     }
 
     dwbuf = (DWORD*)bmp;
-    for (i=0; i<maxscanline; i++)
-    {
-        for (j=0; j<256; j++)
-        {
+    for (i=0; i<maxscanline; i++) {
+        for (j=0; j<256; j++) {
             r = pal1[(pal0[*dwbuf] & 0x3f) * 3 + 2];
             g = pal1[(pal0[*dwbuf] & 0x3f) * 3 + 1];
             b = pal1[(pal0[*dwbuf] & 0x3f) * 3 + 0];
@@ -609,10 +577,8 @@ static void draw_color_bar(void *bmp, int stride, int x, int y, int color, BYTE 
     DWORD *dwbuf   = (DWORD*)bmp + y * stride + x;
     DWORD  dwcolor = RGB(pal1[pal0[color] * 3 + 2], pal1[pal0[color] * 3 + 1], pal1[pal0[color] * 3 + 0]);
     int    i, j;
-    for (i=0; i<16; i++)
-    {
-        for (j=0; j<16; j++)
-        {
+    for (i=0; i<16; i++) {
+        for (j=0; j<16; j++) {
             if (i==0 || i==15 || j==0) *dwbuf++ = RGB(255,255,255);
             else *dwbuf++ = dwcolor;
         }
@@ -630,28 +596,20 @@ static void draw_sprite(void *bmp, int stride, int x, int y, BYTE *sprite, PPU *
     BYTE   tile, cdatal, cdatah;
     BYTE  *chrrom;
 
-    if (sh == 8)
-    {
+    if (sh == 8) {
         chrrom = ppu->chrom_spr;
         tile   = sprite[1];
-    }
-    else
-    {
+    } else {
         chrrom = (sprite[1] & 1) ? nes->chrrom1.data : nes->chrrom0.data;
         tile   = sprite[1] & ~(1 << 0);
     }
 
-    for (i=0; i<sh; i++)
-    {
+    for (i=0; i<sh; i++) {
         sy = (sprite[2] & (1 << 7)) ? (sh - i - 1) : i;
-        if (sh == 16)
-        {
-            if (sy < 8)
-            {
+        if (sh == 16) {
+            if (sy < 8) {
                 tile &= ~(1 << 0);
-            }
-            else
-            {
+            } else {
                 tile |=  (1 << 0);
                 sy -= 8;
             }
@@ -660,21 +618,17 @@ static void draw_sprite(void *bmp, int stride, int x, int y, BYTE *sprite, PPU *
         cdatal = chrrom[tile * 16 + 8 * 0 + sy];
         cdatah = chrrom[tile * 16 + 8 * 1 + sy];
 
-        for (j=0; j<8; j++)
-        {
-            if (sprite[2] & (1 << 6)) // hflip - 1
-            {
+        for (j=0; j<8; j++) {
+            if (sprite[2] & (1 << 6)) { // hflip - 1
                 scolor = (cdatal & 1) | ((cdatah & 1) << 1);
                 cdatal >>= 1; cdatah >>= 1;
             }
-            else // hflip - 0
-            {
+            else { // hflip - 0
                 scolor = (cdatal >> 7) | ((cdatah >> 7) << 1);
                 cdatal <<= 1; cdatah <<= 1;
             }
 
-            if (scolor)
-            {
+            if (scolor) {
                 scolor |= (sprite[2] << 2) & 0xc;
                 *dwbuf  = ((DWORD*)ppu->vdevpal)[ppu->palette[16 + scolor]];
             }
@@ -712,13 +666,12 @@ void ndb_dump_ppu(NDB *ndb, void *bmpbuf, int w, int h, int stride)
     render_name_table((DWORD*)bmpbuf + 32  * stride + 512 + 8, stride, ntabtmp, tilebkg, pal0, pal1, 4);
     render_name_table((DWORD*)bmpbuf + 128 * stride + 512 + 8, stride, ntabtmp, tilespr, pal0, pal1, 4);
 
-    for (i=0; i<16; i++)
-    {
+    for (i=0; i<16; i++) {
         draw_color_bar(bmpbuf, stride, 512 + 8 + i * 16, 224 + 0  , 0  + i, pal0, pal1);
         draw_color_bar(bmpbuf, stride, 512 + 8 + i * 16, 224 + 48 , 16 + i, pal0, pal1);
-        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 96 , ndb->nes->ppu.sprram + (0  + i) * 4, &(ndb->nes->ppu));
-        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 112, ndb->nes->ppu.sprram + (16 + i) * 4, &(ndb->nes->ppu));
-        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 128, ndb->nes->ppu.sprram + (32 + i) * 4, &(ndb->nes->ppu));
-        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 144, ndb->nes->ppu.sprram + (48 + i) * 4, &(ndb->nes->ppu));
+        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 96 , ndb->nes->ppu.sprram + (0  + i) * 4, &ndb->nes->ppu);
+        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 112, ndb->nes->ppu.sprram + (16 + i) * 4, &ndb->nes->ppu);
+        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 128, ndb->nes->ppu.sprram + (32 + i) * 4, &ndb->nes->ppu);
+        draw_sprite   (bmpbuf, stride, 512 + 8 + i * 16, 224 + 144, ndb->nes->ppu.sprram + (48 + i) * 4, &ndb->nes->ppu);
     }
 }
