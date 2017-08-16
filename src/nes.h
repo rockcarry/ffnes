@@ -13,7 +13,7 @@
 #include "ndb.h"
 #include "cartridge.h"
 #include "joypad.h"
-#include "replay.h"
+#include "save.h"
 
 // 常量定义
 // clock defines

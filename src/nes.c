@@ -262,9 +262,9 @@ void nes_textout(NES *nes, int x, int y, char *text, int time, int priority)
     nes->ppu.vdev->textout(nes->ppu.vctxt, x, y, text, time, priority);
 }
 
-void nes_save_game  (NES *nes, char *file) { saver_save_game  (nes, file); }
-void nes_load_game  (NES *nes, char *file) { saver_load_game  (nes, file); }
-void nes_load_replay(NES *nes, char *file) { saver_load_replay(nes, file); }
+void nes_save_game  (NES *nes, char *file) { save_game  (nes, file); }
+void nes_load_game  (NES *nes, char *file) { load_game  (nes, file); }
+void nes_load_replay(NES *nes, char *file) { load_replay(nes, file); }
 int  nes_getfullscreen(NES *nes)           { return nes->ppu.vdev->getfullscreen(nes->ppu.vctxt); }
 void nes_setfullscreen(NES *nes, int mode) { nes->ppu.vdev->setfullscreen(nes->ppu.vctxt, mode);  }
 
