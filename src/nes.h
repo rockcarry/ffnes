@@ -4,12 +4,12 @@
 // 包含头文件
 #include <pthread.h>
 #include "stdefine.h"
+#include "apu.h"
 #include "cpu.h"
 #include "ppu.h"
-#include "apu.h"
-#include "mmc.h"
 #include "bus.h"
 #include "mem.h"
+#include "mmc.h"
 #include "ndb.h"
 #include "cartridge.h"
 #include "joypad.h"

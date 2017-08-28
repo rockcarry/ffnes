@@ -26,9 +26,5 @@ void replay_reset(REPLAY *rep);
 BYTE replay_run  (REPLAY *rep, BYTE data);
 int  replay_isend(REPLAY *rep);
 
-void save_game  (void *nes, char *file);
-void load_game  (void *nes, char *file);
-void load_replay(void *nes, char *file);
-
 #endif
 

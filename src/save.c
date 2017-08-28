@@ -131,7 +131,7 @@ int replay_isend(REPLAY *rep)
     return (rep->curpos < rep->total);
 }
 
-void save_game(NES *nes, char *file)
+void nes_save_game(NES *nes, char *file)
 {
     NES_SAVE_FILE save;
     void    *fp = NULL;
@@ -177,7 +177,7 @@ void save_game(NES *nes, char *file)
     fclose(fp);
 }
 
-void load_game(NES *nes, char *file)
+void nes_load_game(NES *nes, char *file)
 {
     NES_SAVE_FILE save;
     void         *fp;
@@ -268,7 +268,7 @@ void load_game(NES *nes, char *file)
     fclose(fp);
 }
 
-void load_replay(NES *nes, char *file)
+void nes_load_replay(NES *nes, char *file)
 {
     FILE *fpsrc;
     FILE *fpdst;

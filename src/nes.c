@@ -33,7 +33,7 @@ static void* nes_thread_proc(void *param)
     {
         //++ for run/pause and end of replay ++//
         if (  (nes->thread_status & TS_PAUSE_REQ) // request pause
-           ||!(nes->thread_status & TS_RESET) && !replay_isend(&nes->replay)) // end of replay
+           || (!(nes->thread_status & TS_RESET) && !replay_isend(&nes->replay)) ) // end of replay
         {
             nes->thread_status |= TS_PAUSE_ACK;
             nes->ppu.vdev->dequeue(nes->ppu.vctxt, NULL, NULL);
@@ -262,9 +262,6 @@ void nes_textout(NES *nes, int x, int y, char *text, int time, int priority)
     nes->ppu.vdev->textout(nes->ppu.vctxt, x, y, text, time, priority);
 }
 
-void nes_save_game  (NES *nes, char *file) { save_game  (nes, file); }
-void nes_load_game  (NES *nes, char *file) { load_game  (nes, file); }
-void nes_load_replay(NES *nes, char *file) { load_replay(nes, file); }
 int  nes_getfullscreen(NES *nes)           { return nes->ppu.vdev->getfullscreen(nes->ppu.vctxt); }
 void nes_setfullscreen(NES *nes, int mode) { nes->ppu.vdev->setfullscreen(nes->ppu.vctxt, mode);  }
 

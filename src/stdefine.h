@@ -20,8 +20,8 @@
 typedef int BOOL;
 typedef unsigned char  BYTE;
 typedef unsigned short WORD;
-typedef unsigned long  DWORD;
-typedef long     int   LONG;
+typedef unsigned int   DWORD;
+typedef signed   long  LONG;
 
 #endif
 

@@ -62,7 +62,7 @@ void ppu_free    (PPU *ppu);
 void ppu_reset   (PPU *ppu);
 void ppu_run_pclk(PPU *ppu);
 
-__inline int ppu_pin_vbl(PPU *ppu) { return (ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7) ? 0 : 1; }
+static __inline int ppu_pin_vbl(PPU *ppu) { return (ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7) ? 0 : 1; }
 
 BYTE NES_PPU_REG_RCB(MEM *pm, int addr);
 void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte);

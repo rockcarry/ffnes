@@ -447,7 +447,7 @@ static void ndb_dump_break_point(NDB *ndb, int type, char *str)
         if (bps[i] == 0xffffffff) {
             sprintf(str+i*5, "---- ");
         }
-        else sprintf(str+i*5, "%04X ", bps[i]);
+        else sprintf(str+i*5, "%04X ", (unsigned)bps[i]);
     }
 }
 
@@ -463,7 +463,7 @@ static void ndb_dump_watch(NDB *ndb, int type, char *str)
         sprintf(str, "addr "); str += 5;
         for (i=0; i<8; i++) {
             if (wts[i] == 0xffffffff) sprintf(str+i*5, "---- ");
-            else sprintf(str+i*5, "%04X ", wts[i]);
+            else sprintf(str+i*5, "%04X ", (unsigned)wts[i]);
         }
     } else {
         sprintf(str, "data "); str += 5;
