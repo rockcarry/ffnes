@@ -4,10 +4,6 @@
 // 包含头文件
 #include "stdefine.h"
 
-// 常量定义
-#define INES_HEADER_SIZE   16
-#define INES_TRAINER_SIZE  512
-
 // 类型定义
 #pragma pack(1)
 typedef struct {

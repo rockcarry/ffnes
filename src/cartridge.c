@@ -3,6 +3,10 @@
 #include "cartridge.h"
 #include "log.h"
 
+// 常量定义
+#define INES_HEADER_SIZE   16
+#define INES_TRAINER_SIZE  512
+
 // 内部函数实现
 static void modify_file_ext(char *dst, char *src)
 {
