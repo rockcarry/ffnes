@@ -3,20 +3,6 @@
 #include "nes.h"
 #include "save.h"
 
-// 预编译开关
-#define USE_LZW_COMPRESS   1
-
-#if USE_LZW_COMPRESS
-#define fopen  lzw_fopen
-#define fclose lzw_fclose
-#define fgetc  lzw_fgetc
-#define fputc  lzw_fputc
-#define fread  lzw_fread
-#define fwrite lzw_fwrite
-#define fseek  lzw_fseek
-#define ftell  lzw_ftell
-#endif
-
 // 内部类型定义
 typedef struct
 {
@@ -72,7 +58,7 @@ void replay_init(REPLAY *rep)
     // init replay mode
     strcpy(rep->fname, getenv("TEMP"));
     strcat(rep->fname, "\\lastreplay");
-    rep->fp   = fopen(rep->fname, "wb");
+    rep->fp   = fopen(rep->fname, "wb+");
     rep->mode = NES_REPLAY_RECORD;
 }
 
@@ -93,10 +79,10 @@ void replay_reset(REPLAY *rep)
     switch (rep->mode)
     {
     case NES_REPLAY_RECORD:
-        rep->fp = fopen(rep->fname, "wb");
+        rep->fp = fopen(rep->fname, "wb+");
         break;
     case NES_REPLAY_PLAY:
-        rep->fp = fopen(rep->fname, "rb");
+        rep->fp = fopen(rep->fname, "rb+");
         fseek(rep->fp, 0, SEEK_END);
         rep->total = ftell(rep->fp);
         fseek(rep->fp, 0, SEEK_SET);
@@ -270,10 +256,12 @@ void nes_load_game(NES *nes, char *file)
 
 void nes_load_replay(NES *nes, char *file)
 {
+    NES_SAVE_FILE save;
     FILE *fpsrc;
     FILE *fpdst;
     int   running;
     int   data;
+    long  offset;
 
     // pause nes thread if running
     running = nes_getrun(nes);
@@ -284,14 +272,20 @@ void nes_load_replay(NES *nes, char *file)
 
     fpsrc = fopen(file, "rb");
     fpdst = fopen(nes->replay.fname, "wb");
+
+    fread(&save, sizeof(save), 1, fpsrc);
+    offset = save.head_size + save.neso_size + save.sram_size + save.cram_size;
+    fseek(fpsrc, offset, SEEK_SET);
+
     if (fpsrc && fpdst) {
         // copy replay data from .sav file to lastrelay file
         while (1) {
-            data = getc(fpsrc);
+            data = fgetc(fpsrc);
             if (data == EOF) break;
             fputc(data, fpdst);
         }
     }
+
     // close files
     fclose(fpsrc);
     fclose(fpdst);
