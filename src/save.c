@@ -68,7 +68,7 @@ void replay_free(REPLAY *rep)
         fclose(rep->fp);
         rep->fp = NULL;
     }
-//  unlink(rep->fname);
+    unlink(rep->fname);
 }
 
 void replay_reset(REPLAY *rep)
