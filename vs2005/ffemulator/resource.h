@@ -59,13 +59,15 @@
 #define ID_TOOLS_FFNDB                  32810
 #define ID_TOOLS_FFENCODER              32811
 #define ID_HELP_ABOUT                   32812
+#define ID_FILE_SAVE_REPLAY             32813
+#define ID_FILE_SAVE_REPLAY_AS          32814
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        134
-#define _APS_NEXT_COMMAND_VALUE         32813
+#define _APS_NEXT_COMMAND_VALUE         32815
 #define _APS_NEXT_CONTROL_VALUE         1026
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

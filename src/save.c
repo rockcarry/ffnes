@@ -12,7 +12,6 @@ typedef struct
     DWORD neso_size;    // nes object size
     DWORD sram_size;    // sram size
     DWORD cram_size;    // cram size
-    DWORD rply_size;    // replay size
 } NES_SAVE_FILE;
 
 // 内部函数实现
@@ -53,80 +52,16 @@ static void restore_mmc(MMC *mmc)
 }
 
 // 函数实现
-void replay_init(REPLAY *rep)
-{
-    // init replay mode
-    strcpy(rep->fname, getenv("TEMP"));
-    strcat(rep->fname, "\\lastreplay");
-    rep->fp   = fopen(rep->fname, "wb+");
-    rep->mode = NES_REPLAY_RECORD;
-}
-
-void replay_free(REPLAY *rep)
-{
-    if (rep->fp) {
-        fclose(rep->fp);
-        rep->fp = NULL;
-    }
-    unlink(rep->fname);
-}
-
-void replay_reset(REPLAY *rep)
-{
-    // close old fp
-    if (rep->fp) fclose(rep->fp);
-
-    switch (rep->mode)
-    {
-    case NES_REPLAY_RECORD:
-        rep->fp = fopen(rep->fname, "wb+");
-        break;
-    case NES_REPLAY_PLAY:
-        rep->fp = fopen(rep->fname, "rb+");
-        fseek(rep->fp, 0, SEEK_END);
-        rep->total = ftell(rep->fp);
-        fseek(rep->fp, 0, SEEK_SET);
-        break;
-    }
-}
-
-BYTE replay_run(REPLAY *rep, BYTE data)
-{
-    int value = 0;
-    switch (rep->mode)
-    {
-    case NES_REPLAY_RECORD:
-        fputc(data, rep->fp);
-        break;
-
-    case NES_REPLAY_PLAY:
-        value = fgetc(rep->fp);
-        data  = (value == EOF) ? 0 : value;
-        break;
-    }
-    return data;
-}
-
-int replay_isend(REPLAY *rep)
-{
-    // if record mode
-    if (rep->mode == NES_REPLAY_RECORD) return 1;
-
-    // if play mode
-    rep->curpos = ftell(rep->fp);
-    return (rep->curpos < rep->total);
-}
-
-void nes_save_game(NES *nes, char *file)
+int nes_save_game(NES *nes, char *file)
 {
     NES_SAVE_FILE save;
     void    *fp = NULL;
     int      running;
-    int      value;
+    int      length;
 
     // open file
     fp = fopen(file, "wb");
-    if (!fp) return;
+    if (!fp) return 0;
 
     // pause nes thread if running
     running = nes_getrun(nes);
@@ -138,32 +73,23 @@ void nes_save_game(NES *nes, char *file)
     save.neso_size = sizeof(NES );
     save.sram_size = cartridge_has_sram(&nes->cart) ? 0x2000 : 0;
     save.cram_size = nes->cart.ischrram ? nes->cart.crom_count * 0x2000 : 0;
-    save.rply_size = ftell(nes->replay.fp);
-    save.rply_size = (save.rply_size == -1) ? 0 : save.rply_size;
+    length         = save.head_size + save.neso_size + save.sram_size + save.cram_size;
 
     if (save.head_size) fwrite(&save             , sizeof(save)  , 1, fp);
     if (save.neso_size) fwrite(nes               , sizeof(NES )  , 1, fp);
     if (save.sram_size) fwrite(nes->cart.buf_sram, save.sram_size, 1, fp);
     if (save.cram_size) fwrite(nes->cart.buf_crxm, save.cram_size, 1, fp);
 
-    // copy replay data
-    if (save.rply_size) {
-        fseek(nes->replay.fp, 0, SEEK_SET);
-        while (1) {
-            value = fgetc(nes->replay.fp);
-            if (value == EOF) break;
-            else fputc(value, fp);
-        }
-    }
-
     // resume running
     if (running) nes_setrun(nes, 1);
 
     // close file
     fclose(fp);
+
+    return length;
 }
 
-void nes_load_game(NES *nes, char *file)
+int nes_load_game(NES *nes, char *file)
 {
     NES_SAVE_FILE save;
     void         *fp;
@@ -172,6 +98,7 @@ void nes_load_game(NES *nes, char *file)
     int           oldapuaclk;
     int           newapuaclk;
     int           running;
+    int           length;
 
     // protected member list
     static int plist[][2] =
@@ -193,7 +120,7 @@ void nes_load_game(NES *nes, char *file)
 
     // open save file
     fp = fopen(file, "rb");
-    if (!fp) return;
+    if (!fp) return 0;
 
     // pause nes thread if running
     running = nes_getrun(nes);
@@ -201,6 +128,7 @@ void nes_load_game(NES *nes, char *file)
 
     // read .sav file header
     fread(&save, sizeof(save), 1, fp);
+    length = save.head_size + save.neso_size + save.sram_size + save.cram_size;
 
     if (save.neso_size) {
         fseek(fp, save.head_size, SEEK_SET);
@@ -220,10 +148,6 @@ void nes_load_game(NES *nes, char *file)
     // reset replay to record mode
     nes->replay.mode = NES_REPLAY_RECORD;
     replay_reset(&nes->replay);
-
-    // copy replay data from .sav file to lastrelay file
-    fseek(fp, save.head_size + save.neso_size + save.sram_size + save.cram_size, SEEK_SET);
-    while (save.rply_size--) fputc(fgetc(fp), nes->replay.fp);
 
     // get ppu & apu old/new pclk
     oldapuaclk = nes->apu.aclk_counter;
@@ -252,43 +176,131 @@ void nes_load_game(NES *nes, char *file)
 
     // close save file
     fclose(fp);
+
+    return length;
 }
 
-void nes_load_replay(NES *nes, char *file)
+void replay_init(REPLAY *rep)
 {
-    NES_SAVE_FILE save;
-    FILE *fpsrc;
-    FILE *fpdst;
-    int   running;
-    int   data;
-    long  offset;
+    // init replay mode
+    strcpy(rep->fname, getenv("TEMP"));
+    strcat(rep->fname, "\\lastreplay");
+    rep->mode = NES_REPLAY_RECORD;
+    replay_reset(rep); // reset replay
+}
+
+void replay_free(REPLAY *rep)
+{
+    if (rep->fp) {
+        fclose(rep->fp);
+        rep->fp = NULL;
+    }
+    unlink(rep->fname);
+}
+
+void replay_reset(REPLAY *rep)
+{
+    NES *nes = container_of(rep, NES, replay);
+    int  len = 0;
+
+    // close old fp if needed
+    if (rep->fp) fclose(rep->fp);
+
+    switch (rep->mode)
+    {
+    case NES_REPLAY_RECORD:
+        len = nes_save_game(nes, rep->fname);
+        rep->fp = fopen(rep->fname, "ab+");
+        break;
+    case NES_REPLAY_PLAY:
+        len = nes_load_game(nes, rep->fname);
+        rep->fp = fopen(rep->fname, "rb+");
+        fseek(rep->fp, 0, SEEK_END);
+        rep->total = ftell(rep->fp) - len;
+        fseek(rep->fp, len, SEEK_SET);
+        break;
+    }
+
+    // reset curpos
+    rep->curpos = 0;
+}
+
+BYTE replay_run(REPLAY *rep, BYTE data)
+{
+    int value = 0;
+    switch (rep->mode)
+    {
+    case NES_REPLAY_RECORD:
+        fputc(data, rep->fp);
+        break;
+    case NES_REPLAY_PLAY:
+        value = fgetc(rep->fp);
+        data  = (value == EOF) ? 0 : value;
+        break;
+    }
+    rep->curpos++;
+    return data;
+}
+
+int replay_isend(REPLAY *rep)
+{
+    if (rep->mode == NES_REPLAY_RECORD) return 1; // if record mode
+    else return (rep->curpos < rep->total);       // if play mode
+}
+
+static int copyfile(FILE *fpdst, FILE *fpsrc)
+{
+    int data = 0;
+    int len  = 0;
+    if (!fpdst || !fpsrc) return -1;
+    while (1) {
+        data = fgetc(fpsrc);
+        if (data == EOF) break;
+        fputc(data, fpdst);
+        len++;
+    }
+    return len;
+}
+
+int nes_save_replay(NES *nes, char *file)
+{
+    FILE *fpdst   = fopen(file, "wb");
+    FILE *fpsrc   = nes->replay.fp;
+    int   running = 0;
+    int   ret     = 0;
 
     // pause nes thread if running
     running = nes_getrun(nes);
     if (running) nes_setrun(nes, 0);
 
-    // free replay
-    replay_free(&nes->replay);
+    if (fpsrc) fseek(fpsrc, 0, SEEK_SET);
+    ret = copyfile(fpdst, fpsrc);
 
-    fpsrc = fopen(file, "rb");
-    fpdst = fopen(nes->replay.fname, "wb");
+    // resume running
+    if (running) nes_setrun(nes, 1);
 
-    fread(&save, sizeof(save), 1, fpsrc);
-    offset = save.head_size + save.neso_size + save.sram_size + save.cram_size;
-    fseek(fpsrc, offset, SEEK_SET);
+    return ret;
+}
 
-    if (fpsrc && fpdst) {
-        // copy replay data from .sav file to lastrelay file
-        while (1) {
-            data = fgetc(fpsrc);
-            if (data == EOF) break;
-            fputc(data, fpdst);
-        }
+int nes_load_replay(NES *nes, char *file)
+{
+    FILE *fpsrc   = fopen(file, "rb");
+    FILE *fpdst   = NULL;
+    int   running = 0;
+    int   ret     = 0;
+
+    // pause nes thread if running
+    running = nes_getrun(nes);
+    if (running) nes_setrun(nes, 0);
+
+    // close lastreplay file
+    if (nes->replay.fp) {
+        fclose(nes->replay.fp);
+        nes->replay.fp = NULL;
     }
 
-    // close files
-    fclose(fpsrc);
-    fclose(fpdst);
+    fpdst = fopen(nes->replay.fname, "wb");
+    ret   = copyfile(fpdst, fpsrc);
 
     // set replay to play mode
     nes->replay.mode = NES_REPLAY_PLAY;
@@ -301,6 +313,8 @@ void nes_load_replay(NES *nes, char *file)
 
     // resume running
     if (running) nes_setrun(nes, 1);
+
+    return ret;
 }
 
 

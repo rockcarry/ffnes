@@ -194,6 +194,9 @@ BEGIN
         MENUITEM "&Save Game         Ctrl+S",   ID_FILE_SAVE_GAME
         MENUITEM "Save Game &As...   Ctrl+Alt+S", ID_FILE_SAVE_GAME_AS
         MENUITEM "&Load Game...      Ctrl+L",   ID_FILE_LOAD_GAME
+        MENUITEM SEPARATOR
+        MENUITEM "Save Replay...",              ID_FILE_SAVE_REPLAY
+        MENUITEM "Save Replay As...",           ID_FILE_SAVE_REPLAY_AS
         MENUITEM "&Watch Replay...   Ctrl+W",   ID_FILE_LOAD_REPLAY
         MENUITEM SEPARATOR
         MENUITEM "E&xit              Alt+F4",   ID_EXIT

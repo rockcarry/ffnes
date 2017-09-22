@@ -95,6 +95,8 @@ BEGIN_MESSAGE_MAP(CffemulatorDlg, CDialog)
     ON_COMMAND(ID_FILE_SAVE_GAME, &CffemulatorDlg::OnFileSaveGame)
     ON_COMMAND(ID_FILE_SAVE_GAME_AS, &CffemulatorDlg::OnFileSaveGameAs)
     ON_COMMAND(ID_FILE_LOAD_GAME, &CffemulatorDlg::OnFileLoadGame)
+    ON_COMMAND(ID_FILE_SAVE_REPLAY, &CffemulatorDlg::OnFileSaveReplay)
+    ON_COMMAND(ID_FILE_SAVE_REPLAY_AS, &CffemulatorDlg::OnFileSaveReplayAs)
     ON_COMMAND(ID_FILE_LOAD_REPLAY, &CffemulatorDlg::OnFileLoadReplay)
 END_MESSAGE_MAP()
 
@@ -117,6 +119,7 @@ BOOL CffemulatorDlg::OnInitDialog()
 
     // init nes
     nes_init(&m_nes, "", (DWORD)GetSafeHwnd());
+    nes_setrun(&m_nes, 1);
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -201,7 +204,8 @@ void CffemulatorDlg::OnOpenRom()
         nes_init  (&m_nes, file, (DWORD)GetSafeHwnd());
         nes_setrun(&m_nes, 1);
 
-        m_strGameSaveFile = "";
+        m_strGameSaveFile   = "";
+        m_strGameReplayFile = "";
 
         // enable save and saveas menu item
         GetMenu()->GetSubMenu(0)->EnableMenuItem(2, MF_BYPOSITION|MF_ENABLED);
@@ -284,13 +288,59 @@ void CffemulatorDlg::OnFileLoadGame()
     if (running) nes_setrun(&m_nes, 1);
 }
 
+void CffemulatorDlg::OnFileSaveReplay()
+{
+    if (m_strGameReplayFile.Compare("") == 0)
+    {
+        // pause nes thread if running
+        int running = nes_getrun(&m_nes);
+        if (running) nes_setrun(&m_nes, 0);
+
+        CFileDialog dlg(FALSE, ".rpl", NULL, 0, "nes replay file (*.rpl)|*.rpl||");
+        if (dlg.DoModal() == IDOK) m_strGameReplayFile = dlg.GetPathName();
+
+        // resume running
+        if (running) nes_setrun(&m_nes, 1);
+    }
+
+    if (m_strGameReplayFile.Compare("") != 0)
+    {
+        char file[MAX_PATH] = {0};
+        strncpy(file, m_strGameReplayFile, MAX_PATH);
+        BeginWaitCursor();
+        nes_save_replay(&m_nes, file);
+        EndWaitCursor();
+    }
+}
+
+void CffemulatorDlg::OnFileSaveReplayAs()
+{
+    // pause nes thread if running
+    int running = nes_getrun(&m_nes);
+    if (running) nes_setrun(&m_nes, 0);
+
+    CFileDialog dlg(FALSE, ".rpl", NULL, 0, "nes replay file (*.rpl)|*.rpl||");
+    if (dlg.DoModal() == IDOK)
+    {
+        char file[MAX_PATH] = {0};
+        m_strGameReplayFile = dlg.GetPathName();
+        strncpy(file, m_strGameReplayFile, MAX_PATH);
+        BeginWaitCursor();
+        nes_save_replay(&m_nes, file);
+        EndWaitCursor();
+    }
+
+    // resume running
+    if (running) nes_setrun(&m_nes, 1);
+}
+
 void CffemulatorDlg::OnFileLoadReplay()
 {
     // pause nes thread if running
     int running = nes_getrun(&m_nes);
     if (running) nes_setrun(&m_nes, 0);
 
-    CFileDialog dlg(TRUE, ".sav", NULL, 0, "nes save file (*.sav)|*.sav||");
+    CFileDialog dlg(TRUE, ".rpl", NULL, 0, "nes replay file (*.rpl)|*.rpl||");
     if (dlg.DoModal() == IDOK)
     {
         char file[MAX_PATH] = {0};
@@ -394,5 +444,7 @@ void CffemulatorDlg::OnHelpAbout()
     CDialog dlg(IDD_DIALOG_ABOUT);
     dlg.DoModal();
 }
+
+
 
 

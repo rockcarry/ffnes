@@ -35,17 +35,17 @@ static void* nes_thread_proc(void *param)
         if (  (nes->thread_status & TS_PAUSE_REQ) // request pause
            || (!(nes->thread_status & TS_RESET) && !replay_isend(&nes->replay)) ) // end of replay
         {
-            nes->thread_status |= TS_PAUSE_ACK;
             nes->ppu.vdev->dequeue(nes->ppu.vctxt, NULL, NULL);
             nes->ppu.vdev->enqueue(nes->ppu.vctxt);
+            nes->thread_status |= TS_PAUSE_ACK;
             continue;
         }
         //-- for run/pause and end of replay --//
 
         //++ for nes reset ++//
         if (nes->thread_status & TS_RESET) {
-            nes->thread_status &= ~TS_RESET;
             nes_do_reset(nes);
+            nes->thread_status &= ~TS_RESET;
         }
         //-- for nes reset --//
 
@@ -86,12 +86,11 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
     // clear it
     memset(nes, 0, sizeof(NES));
 
-    // extra data
-    nes->extra = extra;
+    nes->extra         = extra;
+    nes->thread_status = TS_PAUSE_REQ;
 
     // load cartridge first
-    if (!cartridge_load(&nes->cart, file))
-    {
+    if (!cartridge_load(&nes->cart, file)) {
         log_printf("failed to load nes rom file !\n");
     }
 
@@ -148,8 +147,7 @@ BOOL nes_init(NES *nes, char *file, DWORD extra)
 
     // create vram
     mirroring = cartridge_get_vram_mirroring(&nes->cart);
-    for (i=0; i<4; i++)
-    {
+    for (i=0; i<4; i++) {
         nes->vram[i].type = MEM_RAM;
         nes->vram[i].size = NES_VRAM_SIZE;
         nes->vram[i].data = nes->buf_vram[mirroring[i]];
@@ -230,20 +228,19 @@ void nes_reset(NES *nes)
     // disable ndb debugging will make cpu keep running
     ndb_set_debug(&nes->ndb, NDB_DEBUG_MODE_DISABLE);
     nes->thread_status |= TS_RESET; // request reset
-    nes_textout(nes, 0, 222, "reset", 2000, 1);
 }
 
 void nes_setrun(NES *nes, int run)
 {
     if (run) {
-        nes_textout(nes, 0, 222, "running", 2000, 1); Sleep(20);
+        nes_textout(nes, 0, 222, "running", 2000, 1);
         nes->thread_status &= ~TS_PAUSE_ACK;
         nes->thread_status &= ~TS_PAUSE_REQ;
     } else {
-        nes_textout(nes, 0, 222, "paused" , -1  , 1); Sleep(20);
+        nes_textout(nes, 0, 222, "paused" , -1  , 1);
         nes->thread_status &= ~TS_PAUSE_ACK;
         nes->thread_status |=  TS_PAUSE_REQ;
-        while (!(nes->thread_status & TS_PAUSE_ACK)) Sleep(1);
+        while (!(nes->thread_status & (TS_PAUSE_ACK|TS_RESET))) Sleep(20);
     }
 }
 
