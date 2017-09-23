@@ -1,5 +1,4 @@
 // 包含头文件
-#include "lzw.h"
 #include "nes.h"
 #include "save.h"
 
