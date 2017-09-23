@@ -145,10 +145,6 @@ int nes_load_game(NES *nes, char *file)
         fread(nes->cart.buf_crxm, nes->cart.crom_count * 0x2000, 1, fp);
     }
 
-    // reset replay to record mode
-    nes->replay.mode = NES_REPLAY_RECORD;
-    replay_reset(&nes->replay);
-
     // get ppu & apu old/new pclk
     oldapuaclk = nes->apu.aclk_counter;
     newapuaclk = buf. apu.aclk_counter;
@@ -168,8 +164,10 @@ int nes_load_game(NES *nes, char *file)
     restore_ppu(&nes->ppu);
     restore_mmc(&nes->mmc);
 
-    // show text
-    nes_textout(nes, 0, 222, "load save...", 2000, 2);
+    // reset replay if record modes
+    if (nes->replay.mode == NES_REPLAY_RECORD) {
+        replay_reset(&nes->replay);
+    }
 
     // resume running
     if (running) nes_setrun(nes, 1);

@@ -210,6 +210,7 @@ void CffemulatorDlg::OnOpenRom()
         // enable save and saveas menu item
         GetMenu()->GetSubMenu(0)->EnableMenuItem(2, MF_BYPOSITION|MF_ENABLED);
         GetMenu()->GetSubMenu(0)->EnableMenuItem(3, MF_BYPOSITION|MF_ENABLED);
+        GetMenu()->GetSubMenu(0)->EnableMenuItem(4, MF_BYPOSITION|MF_ENABLED);
     }
 
     // resume running
@@ -352,6 +353,7 @@ void CffemulatorDlg::OnFileLoadReplay()
         // disable save and saveas menu item
         GetMenu()->GetSubMenu(0)->EnableMenuItem(2, MF_BYPOSITION|MF_DISABLED|MF_GRAYED);
         GetMenu()->GetSubMenu(0)->EnableMenuItem(3, MF_BYPOSITION|MF_DISABLED|MF_GRAYED);
+        GetMenu()->GetSubMenu(0)->EnableMenuItem(4, MF_BYPOSITION|MF_DISABLED|MF_GRAYED);
     }
 
     // resume running
