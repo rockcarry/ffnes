@@ -1,14 +1,9 @@
 #ifndef _NES_APU_H_
 #define _NES_APU_H_
 
-// 包含头文件
-#include "stdefine.h"
 #include "mem.h"
-#include "adev.h"
 
-// 类型定义
-typedef struct
-{
+typedef struct {
     int length_counter;
     int envlop_unit[4];
     int sweepu_divider;
@@ -20,8 +15,7 @@ typedef struct
     int output_value;
 } SQUARE_CHANNEL;
 
-typedef struct
-{
+typedef struct {
     int length_counter;
     int linear_haltflg;
     int linear_counter;
@@ -30,8 +24,7 @@ typedef struct
     int output_value;
 } TRIANGLE_CHANNEL;
 
-typedef struct
-{
+typedef struct {
     int length_counter;
     int envlop_unit[4];
     int ntimer_divider;
@@ -39,8 +32,7 @@ typedef struct
     int output_value;
 } NOISE_CHANNEL;
 
-typedef struct
-{
+typedef struct {
     int remain_bytes;
     int remain_bits;
     int sample_buffer;
@@ -53,7 +45,7 @@ typedef struct
 } DMC_CHANNEL;
 
 typedef struct {
-    BYTE regs[0x20];
+    uint8_t regs[0x20];
 
     int  aclk_counter;
     int  frame_divider;
@@ -69,21 +61,18 @@ typedef struct {
     DMC_CHANNEL      dmc;
 
 // private:
-    ADEV     *adev;
-    void     *actxt;
-    AUDIOBUF *audiobuf;
+    void *adev;
 } APU;
 
-// 函数声明
-void apu_init (APU *apu, DWORD extra, ADEV *pdev);
+void apu_init (APU *apu);
 void apu_free (APU *apu);
 void apu_reset(APU *apu);
-void apu_run_aclk(APU *apu);
+void apu_run  (APU *apu);
 
 static __inline int apu_pin_irq(APU *apu) { return (apu->regs[0x0015] & 0xC0) ? 0 : 1; }
 
-BYTE NES_APU_REG_RCB(MEM *pm, int addr);
-void NES_APU_REG_WCB(MEM *pm, int addr, BYTE byte);
+uint8_t NES_APU_REG_RCB(MEM *pm, int addr);
+void    NES_APU_REG_WCB(MEM *pm, int addr, uint8_t byte);
 
 #endif
 

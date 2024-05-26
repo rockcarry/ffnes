@@ -1,71 +1,64 @@
 #ifndef _NES_PPU_H_
 #define _NES_PPU_H_
 
-// 包含头文件
-#include "stdefine.h"
 #include "mem.h"
-#include "vdev.h"
 
-// 类型定义
 typedef struct {
-    BYTE  regs   [8  ]; // ppu regs
-    BYTE  sprram [256]; // sprite ram
-    BYTE  palette[32 ]; // palette
+    uint8_t  regs   [8  ]; // ppu regs
+    uint8_t  sprram [256]; // sprite ram
+    uint8_t  palette[32 ]; // palette
 
 // private:
-    VDEV *vdev;
-    void *vctxt;
-    int   toggle;
-    int   finex;
-    WORD  vaddr;
-    WORD  temp0; // correspond to vaddr
-    WORD  temp1; // correspond to finex
-    BYTE _2007_lazy;
-    BYTE *chrom_bkg;
-    BYTE *chrom_spr;
+    void     *vdev;
+    int       toggle;
+    int       finex;
+    uint16_t  vaddr;
+    uint16_t  temp0; // correspond to vaddr
+    uint16_t  temp1; // correspond to finex
+    uint8_t  _2007_lazy;
+    uint8_t  *chrom_bkg;
+    uint8_t  *chrom_spr;
 
     //++ for ppu open bus ++//
-    BYTE  open_busv;
-    BYTE  open_bust[8];
+    uint8_t   open_busv;
+    uint8_t   open_bust[8];
     //-- for ppu open bus --//
 
     //++ for step pclk rendering ++//
-    int   pclk_frame; // current pclk cycles in one frame
-    int   pclk_line;  // current pclk cycles in one line
-    int   oddevenflag;// odd/even frame toggle flag
-    int   scanline;   // current scanline
-    BYTE  vblklast;   // for vblk flag read suppression
+    int      pclk_frame; // current pclk cycles in one frame
+    int      pclk_line;  // current pclk cycles in one line
+    int      oddevenflag;// odd/even frame toggle flag
+    int      scanline;   // current scanline
+    uint8_t  vblklast;   // for vblk flag read suppression
 
-    DWORD*draw_buffer;
-    int   draw_stride;
-    DWORD tdatal;
-    DWORD tdatah;
-    DWORD adata;
+    uint32_t*draw_buffer;
+    int      draw_stride;
+    uint32_t tdatal;
+    uint32_t tdatah;
+    uint32_t adata;
     //-- for step pclk rendering --//
 
     //++ sprite buffer for rendering
-    BYTE  sprbuf[64]; // sprite buffer
-    BYTE  sprnum;     // sprite number
-    BYTE *sprzero;    // sprite zero
+    uint8_t  sprbuf[64]; // sprite buffer
+    uint8_t  sprnum;     // sprite number
+    uint8_t *sprzero;    // sprite zero
     //-- sprite buffer for rendering
 
     // palette for vdev rendering
-    BYTE  vdevpal[64*4];
+    uint8_t  vdevpal[64*4];
 } PPU;
 
-// 全局变量声明
-extern BYTE DEF_PPU_PAL[];
+extern uint8_t DEF_PPU_PAL[];
 
-// 函数声明
-void ppu_init    (PPU *ppu, DWORD extra, VDEV *pdev);
-void ppu_free    (PPU *ppu);
-void ppu_reset   (PPU *ppu);
-void ppu_run_pclk(PPU *ppu);
+void ppu_init (PPU *ppu);
+void ppu_free (PPU *ppu);
+void ppu_reset(PPU *ppu);
+void ppu_run  (PPU *ppu);
 
 static __inline int ppu_pin_vbl(PPU *ppu) { return (ppu->regs[0x0002] & ppu->regs[0x0000]) & (1 << 7) ? 0 : 1; }
 
-BYTE NES_PPU_REG_RCB(MEM *pm, int addr);
-void NES_PPU_REG_WCB(MEM *pm, int addr, BYTE byte);
+uint8_t NES_PPU_REG_RCB(MEM *pm, int addr);
+void    NES_PPU_REG_WCB(MEM *pm, int addr, uint8_t byte);
 
 #endif
 

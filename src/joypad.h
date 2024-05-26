@@ -1,11 +1,8 @@
 #ifndef _NES_JOYPAD_H_
 #define _NES_JOYPAD_H_
 
-// 包含头文件
-#include "stdefine.h"
 #include "mem.h"
 
-// 常量定义
 #define NES_KEY_A       (1 << 0)
 #define NES_KEY_B       (1 << 1)
 #define NES_KEY_SELECT  (1 << 2)
@@ -23,23 +20,21 @@
 // the joypad_run will update key state for turbo function.
 #define JOYPAD_DIVIDER  4
 
-// 类型定义
 typedef struct {
-    BOOL  strobe;
-    int   counter_4016;
-    int   counter_4017;
-    DWORD pad_data[4];
-    int   divider;
+    int      strobe;
+    int      counter_4016;
+    int      counter_4017;
+    uint32_t pad_data[4];
+    int      divider;
 } JOYPAD;
 
-// 函数声明
 void joypad_init  (JOYPAD *jp);
 void joypad_free  (JOYPAD *jp);
 void joypad_reset (JOYPAD *jp);
 void joypad_run   (JOYPAD *jp);
 void joypad_setkey(JOYPAD *jp, int pad, int key, int value);
 
-BYTE NES_PAD_REG_RCB(MEM *pm, int addr);
-void NES_PAD_REG_WCB(MEM *pm, int addr, BYTE byte);
+uint8_t NES_PAD_REG_RCB(MEM *pm, int addr);
+void    NES_PAD_REG_WCB(MEM *pm, int addr, uint8_t byte);
 
 #endif

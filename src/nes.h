@@ -1,21 +1,16 @@
 #ifndef _NES_NES_H_
 #define _NES_NES_H_
 
-// 包含头文件
 #include <pthread.h>
-#include "stdefine.h"
 #include "apu.h"
 #include "cpu.h"
 #include "ppu.h"
 #include "bus.h"
 #include "mem.h"
 #include "mmc.h"
-#include "ndb.h"
 #include "cartridge.h"
 #include "joypad.h"
-#include "save.h"
 
-// 常量定义
 // clock defines
 #define NES_FREQ_MCLK   21477272            // mclk freq
 #define NES_FREQ_CPU   (NES_FREQ_MCLK / 12) // cpu freq
@@ -41,21 +36,16 @@
 // nes max bus size
 #define NES_MAX_BUS_SIZE  8
 
-// 类型声明
-struct tagNDB; // for ndb
-
-// 类型定义
-typedef struct tagNES {
+typedef struct {
     CPU cpu;  // 6502
     PPU ppu;  // 2c02
     APU apu;  // 2a03
     MMC mmc;  // mmc
     CARTRIDGE cart;
     JOYPAD    pad ;
-    DWORD     extra;
 
     // cpu bus
-    BUSITEM cbus[NES_MAX_BUS_SIZE];
+    BUS cbus[NES_MAX_BUS_SIZE];
     MEM cram;    // cpu ram
     MEM ppuregs; // ppu regs
     MEM apuregs; // apu regs
@@ -64,7 +54,7 @@ typedef struct tagNES {
     MEM prom1;   // PRG-ROM 1
 
     // ppu bus
-    BUSITEM pbus[NES_MAX_BUS_SIZE];
+    BUS pbus[NES_MAX_BUS_SIZE];
     MEM chrrom0; // CHR-ROM 4KB, int cart
     MEM chrrom1; // CHR-ROM 4KB, int cart
     MEM vram[4]; // vram0 1KB * 4 vram, in ppu/cart
@@ -78,40 +68,17 @@ typedef struct tagNES {
     pthread_t thread_id;
     int       thread_status;
 
-    // for replay
-    REPLAY replay;
-
-    // ndb object
-    struct tagNDB ndb;
-
-    BYTE buf_vram[4][NES_VRAM_SIZE]; // vram buffer on pbus
+    uint8_t buf_vram[4][NES_VRAM_SIZE]; // vram buffer on pbus
 } NES;
 
-// 函数声明
-BOOL nes_init   (NES *nes, char *file, DWORD extra);
-void nes_free   (NES *nes);
-void nes_reset  (NES *nes);
+int  nes_init  (NES *nes, char *file);
+void nes_free  (NES *nes);
+void nes_reset (NES *nes);
 
-void nes_setrun (NES *nes, int run);
-int  nes_getrun (NES *nes);
-void nes_joypad (NES *nes, int pad, int key, int value);
-void nes_textout(NES *nes, int x, int y, char *text, int time, int priority);
-
-// for nes save
-int  nes_save_game  (NES *nes, char *file);
-int  nes_load_game  (NES *nes, char *file);
-int  nes_save_replay(NES *nes, char *file);
-int  nes_load_replay(NES *nes, char *file);
-
-// fullscreen
-int  nes_getfullscreen(NES *nes);
-void nes_setfullscreen(NES *nes, int mode);
+void nes_setrun(NES *nes, int run);
+int  nes_getrun(NES *nes);
+void nes_joypad(NES *nes, int pad, int key, int value);
 
 #endif
-
-
-
-
-
 
 

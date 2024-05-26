@@ -1,7 +1,5 @@
-// 包含头文件
 #include <stdio.h>
-#include "nes.h"
-#include "log.h"
+#include "cpu.h"
 
 /*
 6510 Instructions by Addressing Modes
@@ -63,14 +61,6 @@ instruction, except it does not store the result anywhere nor affects the
 flags.
 */
 
-#ifdef ENABLE_FAST_CBUS
-#define bus_readb  bus_readb_fast_cbus
-#define bus_readw  bus_readw_fast_cbus
-#define bus_writeb bus_writeb_fast_cbus
-#define bus_writew bus_writew_fast_cbus
-#endif
-
-// 常量定义
 #define IRQ_FLAG    (1 << 0)
 #define NMI_FLAG    (1 << 1)
 
@@ -110,25 +100,25 @@ flags.
 #define WRITEB(addr, byte) (bus_writeb(cpu->cbus, addr, byte))
 #define WRITEW(addr, word) (bus_writew(cpu->cbus, addr, word))
 
-#define ZPRDB(addr)        (RAM[(BYTE)(addr)])
+#define ZPRDB(addr)        (RAM[(uint8_t)(addr)])
 #define ZPRDW(addr)        ((ZPRDB(addr + 0) << 0) | (ZPRDB(addr + 1) << 8))
-#define ZPWRB(addr, byte)  do { RAM[(BYTE)(addr)] = byte;            } while (0)
-#define ZPWRW(addr, word)  do { *(WORD*)(RAM + (BYTE)(addr)) = word; } while (0)
+#define ZPWRB(addr, byte)  do { RAM[(uint8_t)(addr)] = byte;             } while (0)
+#define ZPWRW(addr, word)  do { *(uint16_t*)(RAM + (BYTE)(addr)) = word; } while (0)
 //-- basic --//
 
 //++ addressing mode ++//
 #define MR_IM()    do { DT = READB(PC++);                                               } while (0)
 #define MR_ZP()    do { EA = READB(PC++); DT = ZPRDB(EA);                               } while (0)
-#define MR_ZX()    do { DT = READB(PC++); EA = (BYTE)(DT + XI); DT = ZPRDB(EA);         } while (0)
-#define MR_ZY()    do { DT = READB(PC++); EA = (BYTE)(DT + YI); DT = ZPRDB(EA);         } while (0)
+#define MR_ZX()    do { DT = READB(PC++); EA = (uint8_t)(DT + XI); DT = ZPRDB(EA);      } while (0)
+#define MR_ZY()    do { DT = READB(PC++); EA = (uint8_t)(DT + YI); DT = ZPRDB(EA);      } while (0)
 #define MR_AB()    do { EA = READW(PC  ); PC += 2; DT = READB(EA);                      } while (0)
 #define MR_AX()    do { ET = READW(PC  ); PC += 2; EA = ET + XI; DT = READB(EA);        } while (0)
 #define MR_AY()    do { ET = READW(PC  ); PC += 2; EA = ET + YI; DT = READB(EA);        } while (0)
 #define MR_IX()    do { DT = READB(PC++); EA = ZPRDW(DT + XI); DT = READB(EA);          } while (0)
 #define MR_IY()    do { DT = READB(PC++); ET = ZPRDW(DT); EA = ET + YI; DT = READB(EA); } while (0)
 #define EA_ZP()    do { EA = READB(PC++);                                               } while (0)
-#define EA_ZX()    do { DT = READB(PC++); EA = (BYTE)(DT + XI);                         } while (0)
-#define EA_ZY()    do { DT = READB(PC++); EA = (BYTE)(DT + YI);                         } while (0)
+#define EA_ZX()    do { DT = READB(PC++); EA = (uint8_t)(DT + XI);                      } while (0)
+#define EA_ZY()    do { DT = READB(PC++); EA = (uint8_t)(DT + YI);                      } while (0)
 #define EA_AB()    do { EA = READW(PC  ); PC += 2;                                      } while (0)
 #define EA_AX()    do { ET = READW(PC  ); PC += 2; EA = ET + XI;                        } while (0)
 #define EA_AY()    do { ET = READW(PC  ); PC += 2; EA = ET + YI;                        } while (0)
@@ -148,21 +138,21 @@ flags.
     WT = AX + DT + (PS & C_FLAG);   \
     TST_FLAG(WT > 0xFF, C_FLAG);    \
     TST_FLAG(~(AX^DT) & (AX^WT) & 0x80, O_FLAG); \
-    AX = (BYTE)WT;                  \
+    AX = (uint8_t)WT;               \
     SET_ZN_FLAG(AX);                \
 } while (0)
 
 #define CMP() do {                  \
-    WT = (WORD)AX - (WORD)DT;       \
+    WT = (uint16_t)AX - (uint16_t)DT; \
     TST_FLAG((WT & 0x8000) == 0, C_FLAG); \
-    SET_ZN_FLAG((BYTE)WT);          \
+    SET_ZN_FLAG((uint8_t)WT);       \
 } while (0)
 
 #define SBC() do {                  \
     WT = AX - DT - (~PS & C_FLAG);  \
     TST_FLAG(WT < 0x100, C_FLAG);   \
     TST_FLAG((AX^DT) & (AX^WT) & 0x80, O_FLAG); \
-    AX = (BYTE)WT;                  \
+    AX = (uint8_t)WT;               \
     SET_ZN_FLAG(AX);                \
 } while (0)
 
@@ -254,16 +244,16 @@ flags.
 #define SHX() do { DT = XI & ((ET>>8)+1);               } while (0)
 #define SHS() do { SP = AX & XI; DT = SP & ((ET>>8)+1); } while (0)
 
-#define CPX() do {                  \
-    WT = (WORD)XI - (WORD)DT;       \
-    TST_FLAG((WT&0x8000)==0, C_FLAG); \
-    SET_ZN_FLAG((BYTE)WT);          \
+#define CPX() do { \
+    WT = (uint16_t)XI - (uint16_t)DT; \
+    TST_FLAG((WT & 0x8000)==0, C_FLAG); \
+    SET_ZN_FLAG((uint8_t)WT); \
 } while (0)
 
-#define CPY() do {                  \
-    WT = (WORD)YI - (WORD)DT;       \
-    TST_FLAG((WT&0x8000)==0, C_FLAG); \
-    SET_ZN_FLAG((BYTE)WT);          \
+#define CPY() do { \
+    WT = (uint16_t)YI - (uint16_t)DT; \
+    TST_FLAG((WT & 0x8000)==0, C_FLAG); \
+    SET_ZN_FLAG((uint8_t)WT); \
 } while (0)
 
 #define INC() do { DT++; SET_ZN_FLAG(DT); } while (0)
@@ -327,7 +317,7 @@ flags.
 #define JMP_6C() do {       \
     WT = READW(PC);         \
     EA = READB(WT);         \
-    WT = (WT&0xFF00)|((WT+1)&0x00FF); \
+    WT = (WT & 0xFF00) | ((WT + 1) & 0x00FF); \
     PC = EA + (READB(WT) << 8); \
 } while (0)
 
@@ -366,12 +356,12 @@ flags.
 #define ANC() do {          \
     AX &= DT;               \
     SET_ZN_FLAG(AX);        \
-    TST_FLAG(PS & N_FLAG, C_FLAG);  \
+    TST_FLAG(PS & N_FLAG, C_FLAG); \
 } while (0)
 
 #define ASR() do {          \
     DT &= AX;               \
-    TST_FLAG(DT & 0x01, C_FLAG );   \
+    TST_FLAG(DT & 0x01, C_FLAG ); \
     AX  = DT >> 1;          \
     SET_ZN_FLAG(AX);        \
 } while (0)
@@ -382,12 +372,12 @@ flags.
     DT &= AX;               \
     AX  = (DT >> 1)|((PS&C_FLAG) << 7); \
     SET_ZN_FLAG(AX);        \
-    TST_FLAG(AX & 0x40, C_FLAG);        \
-    TST_FLAG((AX^(AX<<1))&0x40, O_FLAG);\
+    TST_FLAG(AX & 0x40, C_FLAG); \
+    TST_FLAG((AX ^ (AX << 1)) & 0x40, O_FLAG); \
 } while (0)
 
 #define ANE() do {          \
-    AX = (AX|0xEE) & XI & DT;   \
+    AX = (AX | 0xEE) & XI & DT; \
     SET_ZN_FLAG(AX);        \
 } while (0)
 
@@ -395,17 +385,17 @@ flags.
     XI &= AX;               \
     PS |= C_FLAG;           \
     WT  = XI - DT;          \
-    TST_FLAG(WT < 0x100, C_FLAG);   \
-    XI  = (BYTE)WT;         \
+    TST_FLAG(WT < 0x100, C_FLAG); \
+    XI  = (uint8_t)WT;      \
     SET_ZN_FLAG(XI);        \
 } while (0)
 
 #define NOP() do {} while (0)
 #define UDF() do { \
-    log_printf("6502 cpu, undefined opcode: 0x%02X, pc = %04X !\n", opcode, cpu->pc); \
+    printf("6502 cpu, undefined opcode: 0x%02X, pc = %04X !\n", opcode, cpu->pc); \
 } while (0)
 
-static BYTE CPU_CYCLE_TAB[256] =
+static uint8_t CPU_CYCLE_TAB[256] =
 {
     7, 6, 0, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
     2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
@@ -425,8 +415,7 @@ static BYTE CPU_CYCLE_TAB[256] =
     2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
 };
 
-// 函数实现
-void cpu_init(CPU *cpu, BUS cbus)
+void cpu_init(CPU *cpu, BUS *cbus)
 {
     cpu->cbus = cbus;
     cpu->ax   = 0x00;
@@ -465,10 +454,10 @@ void cpu_irq(CPU *cpu, int irq)
     cpu->irq_flag = irq;
 }
 
-void cpu_run_cclk(CPU *cpu)
+void cpu_run(CPU *cpu)
 {
-    BYTE opcode, opmat, opopt, DT;
-    WORD ET, EA, WT;
+    uint8_t opcode, opmat, opopt, DT = 0;
+    uint16_t WT, ET, EA = 0;
 
     //++ dma cclk counting ++//
     if (cpu->cclk_dma > 0) { cpu->cclk_dma--; return; }
@@ -476,10 +465,7 @@ void cpu_run_cclk(CPU *cpu)
 
     if (++cpu->cclk_counter == cpu->cclk_instr) {
         //++ for ndb cpu debug ++//
-        {
-            NES *nes = container_of(cpu, NES, cpu);
-            ndb_cpu_debug(&nes->ndb);
-        }
+        if (cpu->ndb_callback) cpu->ndb_callback(cpu->ndb_context);
         //-- for ndb cpu debug --//
 
         // fetch opcode
@@ -507,8 +493,7 @@ void cpu_run_cclk(CPU *cpu)
                 //-- for lda abs,x & lda abs,y dummy read
                 {
                     // addressing
-                    switch (opmat)
-                    {
+                    switch (opmat) {
                     case 0: MR_IX(); break; // (indir,x)
                     case 1: MR_ZP(); break; // zeropage
                     case 2: MR_IM(); break; // immediate
@@ -521,8 +506,7 @@ void cpu_run_cclk(CPU *cpu)
                 }
 
                 // excute
-                switch (opopt)
-                {
+                switch (opopt) {
                 case 0: ORA(); break; // ORA
                 case 1: AND(); break; // AND
                 case 2: EOR(); break; // EOR
@@ -532,8 +516,7 @@ void cpu_run_cclk(CPU *cpu)
                 case 7: SBC(); break; // SBC
                 }
             } else {
-                switch (opmat)
-                {
+                switch (opmat) {
                 case 0: EA_IX(); STA(); MW_EA(); break; // STA (indir,x)
                 case 1: EA_ZP(); STA(); MW_ZP(); break; // STA zeropage
                 case 2: NOP();   PC++;           break; // NOP immediate
@@ -548,12 +531,10 @@ void cpu_run_cclk(CPU *cpu)
         }
         //-- ORA, AND, EOR, ADC, LDA, CMP, SBC --//
 
-
         //++ SLO, RLA, SRE, RRA ++//
         if ((opcode & 0x83) == 0x03 && opmat != 2) {
             // addressing
-            switch (opmat)
-            {
+            switch (opmat) {
             case 0: MR_IX(); break; // (indir,x)
             case 1: MR_ZP(); break; // zeropage
             case 3: MR_AB(); break; // absolute
@@ -564,8 +545,7 @@ void cpu_run_cclk(CPU *cpu)
             }
 
             // excute
-            switch (opopt)
-            {
+            switch (opopt) {
             case 0: SLO(); break; // SLO
             case 1: RLA(); break; // RLA
             case 2: SRE(); break; // SRE
@@ -573,8 +553,7 @@ void cpu_run_cclk(CPU *cpu)
             }
 
             // addressing
-            switch (opmat)
-            {
+            switch (opmat) {
             case 1:
             case 5: MW_ZP(); break;
             default:MW_EA(); break;
@@ -582,7 +561,6 @@ void cpu_run_cclk(CPU *cpu)
             goto done;
         }
         //-- SLO, RLA, SRE, RRA --//
-
 
         //++ ASL, ROL, LSR, ROR ++//
         if ( (opcode & 0x83) == 0x02
@@ -597,8 +575,7 @@ void cpu_run_cclk(CPU *cpu)
             //-- for rol abs,x dummy read
             {
                 // addressing
-                switch (opmat)
-                {
+                switch (opmat) {
                 case 1: MR_ZP(); break; // zeropage
                 case 2: DT = AX; break; // implied
                 case 3: MR_AB(); break; // absolute
@@ -608,8 +585,7 @@ void cpu_run_cclk(CPU *cpu)
             }
 
             // excute
-            switch (opopt)
-            {
+            switch (opopt) {
             case 0: ASL(); break; // ASL
             case 1: ROL(); break; // ROL
             case 2: LSR(); break; // LSR
@@ -617,8 +593,7 @@ void cpu_run_cclk(CPU *cpu)
             }
 
             // addressing
-            switch (opmat)
-            {
+            switch (opmat) {
             case 1:
             case 5: MW_ZP(); break;
             case 2: AX = DT; break;
@@ -629,8 +604,7 @@ void cpu_run_cclk(CPU *cpu)
         //-- ASL, ROL, LSR, ROR --//
 
         // others
-        switch (opcode)
-        {
+        switch (opcode) {
         case 0xa3: MR_IX(); LAX(); break; // LAX
         case 0xa7: MR_ZP(); LAX(); break; // LAX
         case 0xaf: MR_AB(); LAX(); break; // LAX

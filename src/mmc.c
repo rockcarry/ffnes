@@ -1,38 +1,25 @@
-// 包含头文件
+#include "mmc.h"
 #include "nes.h"
+#include "utils.h"
 
-// 内部函数实现
 void mmc_switch_pbank16k0(MMC *mmc, int bank)
 {
-    BYTE *oldbank0 = mmc->cbus[1].membank->data;
     mmc->pbanksize = 16 * 1024;
     mmc->pbank8000 = bank;
     bank = (bank == -1) ? (mmc->cart->prom_count - 1) : bank; // -1 is special, means the last bank
     mmc->cbus[1].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
-
-    if (oldbank0 != mmc->cbus[1].membank->data) {
-        ((NES*)container_of(mmc, NES, mmc))->ndb.banksw = 1;
-    }
 }
 
 void mmc_switch_pbank16k1(MMC *mmc, int bank)
 {
-    BYTE *oldbank1 = mmc->cbus[0].membank->data;
     mmc->pbanksize = 16 * 1024;
     mmc->pbankc000 = bank;
     bank = (bank == -1) ? (mmc->cart->prom_count - 1) : bank; // -1 is special, means the last bank
     mmc->cbus[0].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
-
-    if (oldbank1 != mmc->cbus[0].membank->data) {
-        ((NES*)container_of(mmc, NES, mmc))->ndb.banksw = 1;
-    }
 }
 
 void mmc_switch_pbank32k(MMC *mmc, int bank)
 {
-    BYTE *oldbank0 = mmc->cbus[1].membank->data;
-    BYTE *oldbank1 = mmc->cbus[0].membank->data;
-
     mmc->pbanksize = 32 * 1024;
     mmc->pbank8000 = bank;
     mmc->pbankc000 = bank;
@@ -41,10 +28,6 @@ void mmc_switch_pbank32k(MMC *mmc, int bank)
     bank = (bank <   0) ? 0 : bank; // make sure bank is >= 0
     mmc->cbus[1].membank->data = mmc->cbus[0].membank->data = mmc->cart->buf_prom + 0x4000 * (bank % mmc->cart->prom_count);
     if (bank + 1 < mmc->cart->prom_count) mmc->cbus[0].membank->data += 0x4000;
-
-    if (oldbank0 != mmc->cbus[1].membank->data || oldbank1 != mmc->cbus[0].membank->data) {
-        ((NES*)container_of(mmc, NES, mmc))->ndb.banksw = 1;
-    }
 }
 
 void mmc_switch_cbank4k0(MMC *mmc, int bank)
@@ -73,28 +56,23 @@ void mmc_switch_cbank8k(MMC *mmc, int bank)
     mmc->pbus[6].membank->data = mmc->pbus[7].membank->data + 0x1000;
 }
 
-// 内部类型定义
-typedef struct
-{
+typedef struct {
     void (*init )(MMC *mmc);
     void (*free )(MMC *mmc);
     void (*reset)(MMC *mmc);
-    void (*wcb0 )(MEM *pm, int addr, BYTE byte);
-    void (*wcb1 )(MEM *pm, int addr, BYTE byte);
+    void (*wcb0 )(MEM *pm, int addr, uint8_t byte);
+    void (*wcb1 )(MEM *pm, int addr, uint8_t byte);
 } MAPPER;
 
-
 //++ mapper000 实现 ++//
-static void mapper000_reset(MMC *mmc)
-{
+static void mapper000_reset(MMC *mmc) {
     mmc_switch_pbank16k0(mmc, 0); // prom0 - first bank
     mmc_switch_pbank16k1(mmc,-1); // prom1 - last  bank
     mmc_switch_cbank4k0 (mmc, 0); // crom0 - first bank
     mmc_switch_cbank4k1 (mmc,-1); // crom1 - last  bank
 }
 
-static MAPPER mapper000 =
-{
+static MAPPER mapper000 = {
     NULL,
     NULL,
     mapper000_reset,
@@ -102,7 +80,6 @@ static MAPPER mapper000 =
     NULL,
 };
 //-- mapper000 实现 --//
-
 
 //++ mapper001 实现 ++//
 #define MAPPER001_TEMPREG  (nes->mmc.regs[6])
@@ -116,7 +93,7 @@ static void mapper001_reset(MMC *mmc)
     mmc->regs[7] = 0x00; // set bit counter to 0
 }
 
-static void mapper001_wcb0(MEM *pm, int addr, BYTE byte)
+static void mapper001_wcb0(MEM *pm, int addr, uint8_t byte)
 {
     NES *nes = container_of(pm, NES, prom0);
     if (byte & (1 << 7)) {
@@ -128,8 +105,7 @@ static void mapper001_wcb0(MEM *pm, int addr, BYTE byte)
         MAPPER001_TEMPREG |= (byte & 1) << MAPPER001_COUNTER;
         if (++MAPPER001_COUNTER == 5) {
             //++ for vram nametable mirroring ++//
-            static int vram_mirroring_map[4][4] =
-            {
+            static int vram_mirroring_map[4][4] = {
                 {0, 0, 0, 0}, // one-screen, lower bank
                 {1, 1, 1, 1}, // one-screen, upper bank
                 {0, 1, 0, 1}, // vertical
@@ -143,8 +119,7 @@ static void mapper001_wcb0(MEM *pm, int addr, BYTE byte)
             MAPPER001_REG(regaddr) = MAPPER001_TEMPREG;
 
             //++ handle mapper001 reg writing ++//
-            switch (regaddr)
-            {
+            switch (regaddr) {
             case 0:
                 // for mmc1 mirroring control
                 mirroring = vram_mirroring_map[MAPPER001_REG(0) & 0x3];
@@ -171,7 +146,7 @@ static void mapper001_wcb0(MEM *pm, int addr, BYTE byte)
     }
 }
 
-static void mapper001_wcb1(MEM *pm, int addr, BYTE byte)
+static void mapper001_wcb1(MEM *pm, int addr, uint8_t byte)
 {
     NES *nes = container_of(pm, NES, prom1);
     if (byte & (1 << 7)) {
@@ -187,8 +162,7 @@ static void mapper001_wcb1(MEM *pm, int addr, BYTE byte)
             MAPPER001_REG(regaddr) = MAPPER001_TEMPREG;
 
             //++ handle mapper001 reg writing ++//
-            switch (regaddr)
-            {
+            switch (regaddr) {
             case 2:
                 // chr rom reg1, chr rom bank switch 1
                 if (MAPPER001_REG(0) & (1 << 4)) {
@@ -234,8 +208,7 @@ static void mapper001_wcb1(MEM *pm, int addr, BYTE byte)
     }
 }
 
-static MAPPER mapper001 =
-{
+static MAPPER mapper001 = {
     NULL,
     NULL,
     mapper001_reset,
@@ -244,22 +217,20 @@ static MAPPER mapper001 =
 };
 //-- mapper001 实现 --//
 
-
 //++ mapper002 实现 ++//
-static void mapper002_wcb0(MEM *pm, int addr, BYTE byte)
+static void mapper002_wcb0(MEM *pm, int addr, uint8_t byte)
 {
     NES *nes = container_of(pm, NES, prom0);
     mmc_switch_pbank16k0(&nes->mmc, byte);
 }
 
-static void mapper002_wcb1(MEM *pm, int addr, BYTE byte)
+static void mapper002_wcb1(MEM *pm, int addr, uint8_t byte)
 {
     NES *nes = container_of(pm, NES, prom1);
     mmc_switch_pbank16k0(&nes->mmc, byte);
 }
 
-static MAPPER mapper002 =
-{
+static MAPPER mapper002 = {
     NULL,
     NULL,
     NULL,
@@ -268,27 +239,25 @@ static MAPPER mapper002 =
 };
 //-- mapper002 实现 --//
 
-
 //++ mapper003 实现 ++//
 static void mapper003_reset(MMC *mmc)
 {
     mmc_switch_cbank8k(mmc, 0);
 }
 
-static void mapper003_wcb0(MEM *pm, int addr, BYTE byte)
+static void mapper003_wcb0(MEM *pm, int addr, uint8_t byte)
 {
     NES *nes = container_of(pm, NES, prom0);
     mmc_switch_cbank8k(&nes->mmc, byte);
 }
 
-static void mapper003_wcb1(MEM *pm, int addr, BYTE byte)
+static void mapper003_wcb1(MEM *pm, int addr, uint8_t byte)
 {
     NES *nes = container_of(pm, NES, prom1);
     mmc_switch_cbank8k(&nes->mmc, byte);
 }
 
-static MAPPER mapper003 =
-{
+static MAPPER mapper003 = {
     NULL,
     NULL,
     mapper003_reset,
@@ -297,10 +266,8 @@ static MAPPER mapper003 =
 };
 //-- mapper003 实现 --//
 
-
 //++ mapper list ++//
-static MAPPER *g_mapper_list[256] =
-{
+static MAPPER *g_mapper_list[256] = {
     &mapper000,
     &mapper001,
     &mapper002,
@@ -309,9 +276,7 @@ static MAPPER *g_mapper_list[256] =
 };
 //-- mapper list --//
 
-
-// 函数实现
-void mmc_init(MMC *mmc, CARTRIDGE *cart, BUS cbus, BUS pbus)
+void mmc_init(MMC *mmc, CARTRIDGE *cart, BUS *cbus, BUS *pbus)
 {
     MAPPER *mapper;
     mmc->cart   = cart;
