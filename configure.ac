@@ -19,7 +19,22 @@ PKG_PROG_PKG_CONFIG
 # Checks for libraries.
 AC_CHECK_LIB([pthread], [pthread_create])
 
-CFLAGS="-Ofast -g -Wall -Wno-strict-aliasing -funwind-tables -ffunction-sections -fdata-sections"
+# Checks for build & host enviroment
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+case $host_os in
+  *cygwin* | *mingw*)
+    win32="yes"
+    LDFLAGS="-lgdi32 -lwinmm"
+  ;;
+  *linux*)
+    linux="yes"
+  ;;
+esac
+AM_CONDITIONAL([WIN32], [test "x$win32" = "xyes"])
+AM_CONDITIONAL([LINUX], [test "x$linux" = "xyes"])
+
+CFLAGS="-Ofast -g -Wall -Wno-strict-aliasing -ffunction-sections -fdata-sections"
 
 # Checks for libavdev
 AC_ARG_WITH([libavdev], [AS_HELP_STRING([--with-libavdev], [--with-libavdev=PATH, use libavdev, specify path of libavdev])], [], [with_libavdev="no"])

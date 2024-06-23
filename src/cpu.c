@@ -61,6 +61,13 @@ instruction, except it does not store the result anywhere nor affects the
 flags.
 */
 
+#ifdef ENABLE_FAST_CBUS
+#define bus_readb  bus_readb_fast_cbus
+#define bus_readw  bus_readw_fast_cbus
+#define bus_writeb bus_writeb_fast_cbus
+#define bus_writew bus_writew_fast_cbus
+#endif
+
 #define IRQ_FLAG    (1 << 0)
 #define NMI_FLAG    (1 << 1)
 
@@ -464,10 +471,6 @@ void cpu_run(CPU *cpu)
     //-- dma cclk counting --//
 
     if (++cpu->cclk_counter == cpu->cclk_instr) {
-        //++ for ndb cpu debug ++//
-        if (cpu->ndb_callback) cpu->ndb_callback(cpu->ndb_context);
-        //-- for ndb cpu debug --//
-
         // fetch opcode
         opcode = bus_readb(cpu->cbus, cpu->pc++);
         opmat  = (opcode & 0x1c) >> 2;

@@ -24,8 +24,6 @@ typedef struct {
     int   cclk_counter;
     int   cclk_instr;
     int   cclk_dma;
-    void (*ndb_callback)(void *ndb);
-    void  *ndb_context;
 } CPU;
 
 void cpu_init (CPU *cpu, BUS *cbus);

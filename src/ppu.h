@@ -3,13 +3,20 @@
 
 #include "mem.h"
 
+#define NES_HTOTAL      341 // htotal
+#define NES_VTOTAL      262 // vtotal
+#define NES_WIDTH       256 // screen width
+#define NES_HEIGHT      240 // screen height
+#define NES_FRAMERATE  (FREQ_PPU / (NES_HTOTAL * NES_VTOTAL)) // frame rate
+
+typedef void (*PPU_RENDER_CB)(void *cbctx, int type, uint8_t *buf, int len);
+
 typedef struct {
     uint8_t  regs   [8  ]; // ppu regs
     uint8_t  sprram [256]; // sprite ram
     uint8_t  palette[32 ]; // palette
 
 // private:
-    void     *vdev;
     int       toggle;
     int       finex;
     uint16_t  vaddr;
@@ -19,20 +26,12 @@ typedef struct {
     uint8_t  *chrom_bkg;
     uint8_t  *chrom_spr;
 
-    //++ for ppu open bus ++//
-    uint8_t   open_busv;
-    uint8_t   open_bust[8];
-    //-- for ppu open bus --//
-
     //++ for step pclk rendering ++//
     int      pclk_frame; // current pclk cycles in one frame
     int      pclk_line;  // current pclk cycles in one line
     int      oddevenflag;// odd/even frame toggle flag
     int      scanline;   // current scanline
-    uint8_t  vblklast;   // for vblk flag read suppression
 
-    uint32_t*draw_buffer;
-    int      draw_stride;
     uint32_t tdatal;
     uint32_t tdatah;
     uint32_t adata;
@@ -45,12 +44,18 @@ typedef struct {
     //-- sprite buffer for rendering
 
     // palette for vdev rendering
-    uint8_t  vdevpal[64*4];
+    uint8_t  vdevpal[64 * 4];
+
+    uint32_t*draw_buffer;
+    uint32_t draw_bitmap[NES_WIDTH * NES_HEIGHT];
+
+    PPU_RENDER_CB callback;
+    void         *cbctxt;
 } PPU;
 
 extern uint8_t DEF_PPU_PAL[];
 
-void ppu_init (PPU *ppu);
+void ppu_init (PPU *ppu, PPU_RENDER_CB callback, void *cbctxt);
 void ppu_free (PPU *ppu);
 void ppu_reset(PPU *ppu);
 void ppu_run  (PPU *ppu);

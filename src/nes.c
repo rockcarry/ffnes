@@ -36,32 +36,36 @@ static void* nes_thread_proc(void *param)
         //-- for nes reset --//
 
         //++ run cpu & apu & ppu
-        do {
-            apu_run(&nes->apu); // run apu
+        for (int i = 0; i < NES_HTOTAL * NES_VTOTAL; i += 3) {
+            apu_run(&nes->apu); // apu run 1 pclk
+            apu_run(&nes->apu); // apu run 1 pclk
+            apu_run(&nes->apu); // apu run 1 pclk
+            ppu_run(&nes->ppu); // ppu run 1 pclk
+            ppu_run(&nes->ppu); // ppu run 1 pclk
+            ppu_run(&nes->ppu); // ppu run 1 pclk
+            cpu_nmi(&nes->cpu, ppu_pin_vbl(&nes->ppu));
             cpu_irq(&nes->cpu, apu_pin_irq(&nes->apu));
-
-            ppu_run(&nes->ppu); // run ppu
-            ppu_run(&nes->ppu); // run ppu
-            ppu_run(&nes->ppu); // run ppu
-            cpu_nmi(&nes->cpu, ppu_pin_vbl(&nes->ppu));
-            cpu_run(&nes->cpu); // run cpu
-
-            ppu_run(&nes->ppu); // run ppu
-            ppu_run(&nes->ppu); // run ppu
-            ppu_run(&nes->ppu); // run ppu
-            cpu_nmi(&nes->cpu, ppu_pin_vbl(&nes->ppu));
-            cpu_run(&nes->cpu); // run cpu
-        } while (!(  nes->ppu.pclk_frame >= NES_HTOTAL * 241 + 1
-                  && nes->ppu.pclk_frame <= NES_HTOTAL * 241 + 6));
+            cpu_run(&nes->cpu); // cpu run 1 cclk
+        }
         //-- run cpu & apu & ppu
 
         // run joypad for turbo key function
+        static int key_map[][2] = {
+            { 'E', NES_KEY_UP     }, { 'D', NES_KEY_DOWN  }, { 'S', NES_KEY_LEFT    }, { 'F', NES_KEY_RIGHT   },
+            { 'J', NES_KEY_A      }, { 'K', NES_KEY_B     }, { 'U', NES_KEY_TURBO_A }, { 'I', NES_KEY_TURBO_B },
+            { 'B', NES_KEY_SELECT }, { 'N', NES_KEY_START }, {  0 , 0 }
+        };
+        for (int i = 0; key_map[i][0]; i++) {
+            uint8_t key = key_map[i][0];
+            nes->callback(nes->cbctx, 2, &key, sizeof(key));
+            joypad_setkey(&nes->pad, 0, key_map[i][1], key);
+        }
         joypad_run(&nes->pad);
     }
     return NULL;
 }
 
-int nes_init(NES *nes, char *file)
+int nes_init(NES *nes, char *file, NES_RENDER_CB callback, void *cbctxt)
 {
     int *mirroring = NULL;
     int  i         = 0;
@@ -70,9 +74,11 @@ int nes_init(NES *nes, char *file)
     memset(nes, 0, sizeof(NES));
 
     nes->thread_status = TS_PAUSE_REQ;
+    nes->callback      = callback;
+    nes->cbctx         = cbctxt;
 
     // load cartridge first
-    if (!cartridge_load(&nes->cart, file)) {
+    if (cartridge_load(&nes->cart, file) != 0) {
         printf("failed to load nes rom file !\n");
     }
 
@@ -157,8 +163,8 @@ int nes_init(NES *nes, char *file)
 
     // now it's time to init cpu & ppu & apu
     cpu_init(&nes->cpu, nes->cbus);
-    ppu_init(&nes->ppu);
-    apu_init(&nes->apu);
+    ppu_init(&nes->ppu, callback, cbctxt);
+    apu_init(&nes->apu, callback, cbctxt);
 
     // init joypad
     joypad_init  (&nes->pad);
@@ -211,9 +217,4 @@ void nes_setrun(NES *nes, int run)
 int nes_getrun(NES *nes)
 {
     return !(nes->thread_status & TS_PAUSE_REQ);
-}
-
-void nes_joypad(NES *nes, int pad, int key, int value)
-{
-    joypad_setkey(&nes->pad, pad, key, value);
 }

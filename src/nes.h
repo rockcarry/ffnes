@@ -11,16 +11,14 @@
 #include "cartridge.h"
 #include "joypad.h"
 
+// render callback
+typedef void (*NES_RENDER_CB)(void *cbctx, int type, uint8_t *buf, int len);
+
 // clock defines
 #define NES_FREQ_MCLK   21477272            // mclk freq
 #define NES_FREQ_CPU   (NES_FREQ_MCLK / 12) // cpu freq
 #define NES_FREQ_PPU   (NES_FREQ_MCLK / 4 ) // ppu freq
 #define NES_FREQ_APU   (NES_FREQ_MCLK / 24) // apu freq
-#define NES_HTOTAL      341                 // htotal
-#define NES_VTOTAL      262                 // vtotal
-#define NES_WIDTH       256                 // screen width
-#define NES_HEIGHT      240                 // screen height
-#define NES_FRAMERATE  (FREQ_PPU / (NES_HTOTAL*NES_VTOTAL))  // frame rate
 
 // memory size defines
 #define NES_CRAM_SIZE     0x0800
@@ -69,16 +67,15 @@ typedef struct {
     int       thread_status;
 
     uint8_t buf_vram[4][NES_VRAM_SIZE]; // vram buffer on pbus
+    NES_RENDER_CB callback;
+    void         *cbctx;
 } NES;
 
-int  nes_init  (NES *nes, char *file);
+int  nes_init  (NES *nes, char *file, NES_RENDER_CB callback, void *cbctxt);
 void nes_free  (NES *nes);
 void nes_reset (NES *nes);
-
 void nes_setrun(NES *nes, int run);
 int  nes_getrun(NES *nes);
-void nes_joypad(NES *nes, int pad, int key, int value);
 
 #endif
-
 

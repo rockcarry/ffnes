@@ -1,6 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
 
 INCLUDES = -I$(top_srcdir)/src
+LDFLAGS += -Wl,--start-group -flto
 
 libffnesincludedir = $(includedir)
 libffnesinclude_HEADERS = src/*.h
@@ -8,7 +9,7 @@ libffnesinclude_HEADERS = src/*.h
 lib_LTLIBRARIES = libffnes.la
 
 libffnes_la_SOURCES = \
-    src/mem.c src/bus.c src/cpu.c src/mmc.c src/nes.c src/cartridge.c src/joypad.c
+    src/mem.c src/bus.c src/apu.c src/cpu.c src/ppu.c src/mmc.c src/nes.c src/cartridge.c src/joypad.c
 
 libffnes_la_LDFLAGS = -no-undefined
 
