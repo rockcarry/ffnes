@@ -3,6 +3,7 @@
 
 #include "mem.h"
 
+#define NES_KEY_ALL     0x030000ff
 #define NES_KEY_A       (1 << 0)
 #define NES_KEY_B       (1 << 1)
 #define NES_KEY_SELECT  (1 << 2)

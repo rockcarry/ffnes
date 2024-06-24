@@ -49,18 +49,14 @@ static void* nes_thread_proc(void *param)
         }
         //-- run cpu & apu & ppu
 
-        // run joypad for turbo key function
-        static int key_map[][2] = {
-            { 'E', NES_KEY_UP     }, { 'D', NES_KEY_DOWN  }, { 'S', NES_KEY_LEFT    }, { 'F', NES_KEY_RIGHT   },
-            { 'J', NES_KEY_A      }, { 'K', NES_KEY_B     }, { 'U', NES_KEY_TURBO_A }, { 'I', NES_KEY_TURBO_B },
-            { 'B', NES_KEY_SELECT }, { 'N', NES_KEY_START }, {  0 , 0 }
-        };
-        for (int i = 0; key_map[i][0]; i++) {
-            uint8_t key = key_map[i][0];
-            nes->callback(nes->cbctx, 2, &key, sizeof(key));
-            joypad_setkey(&nes->pad, 0, key_map[i][1], key);
-        }
+        //++ run joypad
+        uint32_t keystate = 0;
+        nes->callback(nes->cbctx, 2, (uint8_t*)&keystate, sizeof(keystate)); joypad_setkey(&nes->pad, 0, NES_KEY_ALL, keystate);
+        nes->callback(nes->cbctx, 3, (uint8_t*)&keystate, sizeof(keystate)); joypad_setkey(&nes->pad, 1, NES_KEY_ALL, keystate);
+        nes->callback(nes->cbctx, 4, (uint8_t*)&keystate, sizeof(keystate)); joypad_setkey(&nes->pad, 2, NES_KEY_ALL, keystate);
+        nes->callback(nes->cbctx, 5, (uint8_t*)&keystate, sizeof(keystate)); joypad_setkey(&nes->pad, 3, NES_KEY_ALL, keystate);
         joypad_run(&nes->pad);
+        //-- run joypad
     }
     return NULL;
 }

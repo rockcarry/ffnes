@@ -15,6 +15,11 @@ static void my_nes_cb(void *cbctx, int type, uint8_t *buf, int len)
 {
     EMULATOR *emulator = cbctx;
     BMP      *bitmap   = NULL;
+    static int key_map_pad0[][2] = {
+        { 'E', NES_KEY_UP     }, { 'D', NES_KEY_DOWN  }, { 'S', NES_KEY_LEFT    }, { 'F', NES_KEY_RIGHT   },
+        { 'J', NES_KEY_A      }, { 'K', NES_KEY_B     }, { 'U', NES_KEY_TURBO_A }, { 'I', NES_KEY_TURBO_B },
+        { 'B', NES_KEY_SELECT }, { 'N', NES_KEY_START }, {  0 , 0 }
+    };
     switch (type) {
     case 0:
         adev_play(emulator->adev, buf, len, 100);
@@ -25,7 +30,9 @@ static void my_nes_cb(void *cbctx, int type, uint8_t *buf, int len)
         vdev_unlock(emulator->vdev);
         break;
     case 2:
-        *buf = idev_getkey(emulator->idev, *buf);
+        for (int i = 0; key_map_pad0[i][0]; i++) {
+            if (idev_getkey(emulator->idev, key_map_pad0[i][0])) *((uint32_t*)buf) |= key_map_pad0[i][1];
+        }
         break;
     }
 }

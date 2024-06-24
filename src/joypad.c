@@ -34,8 +34,8 @@ void joypad_setkey(JOYPAD *jp, int pad, int key, int value)
     //-- handle pad connect --//
 
     //++ handle pad key up/down ++//
-    if (value) jp->pad_data[pad] |=  key;
-    else       jp->pad_data[pad] &= ~key;
+    jp->pad_data[pad] &= ~key;
+    jp->pad_data[pad] |= (key & value);
     //-- handle pad key up/down --//
 }
 
@@ -112,8 +112,5 @@ void NES_PAD_REG_WCB(MEM *pm, int addr, uint8_t byte)
         }
         break;
     }
-
-    // save reg write value
-    pm->data[addr] = byte;
 }
 

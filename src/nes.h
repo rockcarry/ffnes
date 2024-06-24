@@ -12,7 +12,7 @@
 #include "joypad.h"
 
 // render callback
-typedef void (*NES_RENDER_CB)(void *cbctx, int type, uint8_t *buf, int len);
+typedef void (*NES_RENDER_CB)(void *cbctx, int type, uint8_t *buf, int len); // 0 - audio, 1 - video, 2 - joypad0, 3 - joypad1
 
 // clock defines
 #define NES_FREQ_MCLK   21477272            // mclk freq

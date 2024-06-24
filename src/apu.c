@@ -212,8 +212,8 @@ void apu_run(APU *apu)
 
         if (--apu->timer_divider_triangle == 0) {
             apu->timer_divider_triangle = (TIMER_PEROID(apu->regs + 0x0008) + 1) * 1;
-            if (apu->wave_sequencer_triangle.counter < 16) apu->wave_sequencer_triangle.output = 15 - apu->wave_sequencer_triangle.counter;
-            else apu->wave_sequencer_triangle.output = apu->wave_sequencer_triangle.counter - 16;
+            if (apu->wave_sequencer_triangle.counter < 16) apu->wave_sequencer_triangle.output = 8 - apu->wave_sequencer_triangle.counter;
+            else apu->wave_sequencer_triangle.output = apu->wave_sequencer_triangle.counter - 23;
             if (++apu->wave_sequencer_triangle.counter == 32) apu->wave_sequencer_triangle.counter = 0;
         }
 
@@ -241,7 +241,7 @@ void apu_run(APU *apu)
         int triangle = ( apu->linear_counter_counter && apu->length_counter_triangle) ? apu->wave_sequencer_triangle.output : 0;
         int noise    = ((apu->noise_shift_register & 1) && apu->length_counter_noise) ? apu->envelope_noise.output : 0;
         int dmc      = ( apu->dmc_output );
-        int pcm      = 2 * (246 * (square1 + square2) + 279 * (triangle - 7) + 162 * (noise - 7) + 110 * (dmc - 63));
+        int pcm      = 2 * (246 / 2 * (square1 + square2) + 279 * triangle + 162 * (noise - 7) + 110 * (dmc - 63));
         apu->mixer_buffer[apu->mixer_counter++] = pcm;
         if (apu->mixer_counter == sizeof(apu->mixer_buffer) / sizeof(int16_t)) {
             apu->mixer_counter = 0;
@@ -345,7 +345,7 @@ void NES_APU_REG_WCB(MEM *pm, int addr, uint8_t byte)
     case 0x0016:
         // call joypad memrw callback
         NES_PAD_REG_WCB(pm, addr, byte);
-        return; // return directly
+        break;
 
     case 0x0017:
         // reset frame divider & sequencer
